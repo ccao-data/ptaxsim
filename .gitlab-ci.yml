@@ -1,0 +1,104 @@
+# TEMPLATE GITLAB-CI FOR CCAO R PACKAGES
+
+# This CI script creates the R environment necessary to build and test a package
+# It is broken down into three overall stages:
+# 1. BUILD. Builds the actual R package in the same way one would in RStudio
+# 2. TEST. Runs unit tests and checks on the package code
+# 3. PAGES. Builds documentation into GitLab Pages using pkgdown
+
+# This setup uses dependency caching to speed up build times, see below for
+# more details
+
+# Base R image to build the package with
+# Should be version locked to the highest version most CCAO employees are using
+image: rocker/r-ver:4.1.0
+
+# Defining static variables used throughout the CI pipeline
+variables:
+  DOCKER_DRIVER: "overlay2" # Docker FS driver, don't change this
+  GIT_SUBMODULE_STRATEGY: "recursive" # Set how GitLab handles submodules
+  # If a package has a linux dependency that isn't already listed, add it here
+  APT_DEPS: "libcurl4-openssl-dev libssl-dev libxml2-dev libgit2-dev pandoc git libudunits2-dev libgdal-dev libgeos-dev libproj-dev libfontconfig1-dev libharfbuzz-dev libfribidi-dev"
+  # Specify vars to enable caching and dependency management via renv
+  RENV_CONFIG_REPOS_OVERRIDE: "https://cloud.r-project.org/"
+  RENV_PATHS_CACHE: ${CI_PROJECT_DIR}/cache
+  RENV_PATHS_LIBRARY: ${CI_PROJECT_DIR}/renv/library
+
+# Cache settings. R libraries are installed into the R_LIBS_USER folder based
+# on the libraries listed in the DESCRIPTION file. These libraries are then
+# copied between each build as a .zip file. This mitigates the need to reinstall
+# libraries for every build (which takes a long time). The cache will be re-used
+# until the DESCRIPTION file changes
+cache:
+  key:
+    files:
+      - DESCRIPTION
+  paths:
+    - .apt
+    - ${RENV_PATHS_CACHE}
+    - ${RENV_PATHS_LIBRARY}
+
+# Run all of these commands before starting any jobs
+before_script:
+  # These are commands for caching installed APT_DEPS, they slightly speed up
+  # overall build times but aren't strictly necessary
+  - rm -f /etc/apt/apt.conf.d/docker-clean
+  - mkdir -p .apt && mkdir -p /var/cache/apt/archives && mount --bind .apt /var/cache/apt/archives/
+
+  # Install apt dependencies listed in APT_DEPS variable
+  - apt-get update && apt-get install --no-install-recommends -y ${APT_DEPS}
+  
+  # Install R dependencies listed in DESCRIPTION using renv
+  - Rscript -e 'renv::install()'
+  
+stages:
+  - build
+  # - test
+  - pages
+
+# Run the actual build command to generate the package. The resulting
+# tarball (.tar.gz) is saved for 6 months for debugging purposes and to be used
+# in the test stage
+build:
+  stage: build
+  script:
+    - R CMD build . --no-build-vignettes --no-manual
+  artifacts:
+    name: "$CI_JOB_STAGE"
+    expire_in: 6 mos 
+    when: on_success
+    paths:
+      - ${CI_PROJECT_NAME}*.tar.gz
+
+# Test stage composed of 3 steps:
+# 1) Run R's built-in package check function on the tarball generated in build
+# This test for completion of documentation, code errors, and many other things
+# 2) Run the unit tests defined in the tests/ folder. Outputs a report in the 
+# Junit format that can be read by GitLab CI to display test results
+# 3) Test coverage report that is output to the build logs of each pipeline
+# This output gets scraped by GitLab and turned into a coverage badge
+# test:
+#   stage: test
+#   script:
+#     - R CMD check $(ls -1t *.tar.gz | head -n 1) --no-manual --no-build-vignettes --no-tests
+#     - Rscript -e 'devtools::test(reporter = testthat::JunitReporter$new(file = "test-out.xml"))'
+#     - Rscript -e 'covr::package_coverage()'
+#   artifacts:
+#     when: always
+#     paths:
+#       - ./tests/testthat/test-out.xml
+#     reports:
+#       junit: ./tests/testthat/test-out.xml
+     
+# The pages stage will build package documentation using pkgdown, save the
+# the static site content to public/, and create an artifact that is deployed
+# to GitLab Pages
+pages:
+  stage: pages
+  script:
+    - Rscript -e 'pkgdown::build_site()'
+  artifacts:
+    paths:
+      - public
+  only:
+    - master

@@ -1,0 +1,27 @@
+destination: public
+url: https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/
+
+reference:
+
+- title: Functions
+- subtitle: Calculate tax bills
+- contents:
+  - tax_bill
+- subtitle: Lookup tax data
+- contents:
+  - starts_with("lookup_")
+
+- title: Data
+- subtitle: Lookup tables
+  desc: Data used by lookup functions to populate missing arguments 
+- contents:
+  - av_exe_and_tax_code_by_pin
+  - equalization_factors
+  - levy_and_total_eav_by_agency
+  - tax_codes_by_agency
+  - tifs
+- subtitle: Sample tax bills 
+  desc: Real Cook County tax bill data used for testing and examples 
+- contents:
+  - sample_tax_bills_detail
+  - sample_tax_bills_summary
