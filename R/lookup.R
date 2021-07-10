@@ -287,7 +287,7 @@ lookup_tifs <- function(year, tax_code) {
       ptaxsim::levy_and_total_eav_by_agency,
       by = c("year", "agency")
     ) %>%
-    dplyr::select(
+    dplyr::distinct(
       .data$year, .data$tax_code, .data$agency,
       agency_name = .data$tif_name,
       tif_share = .data$tax_code_distribution_percent
