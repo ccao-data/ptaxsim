@@ -1,6 +1,7 @@
 library(dplyr)
 library(tidyr)
 library(tabulizer)
+library(miniUI)
 library(stringr)
 library(purrr)
 
@@ -80,7 +81,6 @@ bills_df <- bills_df %>%
   group_by(pin, year, cook) %>%
   mutate(across(tax:prev_tax, ~ ifelse(cook, sum(.x), .x))) %>%
   ungroup() %>%
-  filter(!is.na(agency)) %>%
   select(-cook)
 
 # Separate TIF amounts into their own column
@@ -88,7 +88,8 @@ bills_df <- bills_df %>%
   group_by(pin, year) %>%
   mutate(tif_total = sum(tax * str_detect(agency_name, "TIF"))) %>%
   filter(!str_detect(agency_name, "TIF")) %>%
-  ungroup()
+  ungroup() %>%
+  filter(!is.na(agency))
 
 # Write detail results to file for safekeeping
 bills_df %>%
