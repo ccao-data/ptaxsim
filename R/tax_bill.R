@@ -116,12 +116,17 @@ tax_bill <- function(year_vec,
   # Basic type/input checking
   stopifnot(
     is.numeric(year_vec),
+    length(year_vec) > 0,
     all(nchar(pin_vec) == 14),
     is.character(pin_vec),
     all(nchar(tax_code_vec) == 5),
     is.character(tax_code_vec),
     is.numeric(eav_vec),
-    is.numeric(eq_fct_vec)
+    length(eav_vec) > 0,
+    is.numeric(eq_fct_vec),
+    length(eq_fct_vec) > 0,
+    is.logical(simplify),
+    length(simplify) == 1
   )
 
   # Combine the input vectors in a single tibble. Let tibble() handle errors
@@ -151,7 +156,7 @@ tax_bill <- function(year_vec,
 
   # Error checking for exemptions data, make sure all required columns present
   if (is.data.frame(exemptions_df) &
-    all(names(exemptions_req_cols %in% exemptions_df))) {
+    all(exemptions_req_cols %in% names(exemptions_df))) {
     df <- dplyr::left_join(df, exemptions_df, by = c("year", "pin"))
   } else {
     stop(
@@ -198,7 +203,8 @@ tax_bill <- function(year_vec,
   # rows from 1 per PIN per year, to N per PIN per year, where N is the number
   # of agencies associated with a PIN's tax code
   if (is.data.frame(levies_df) & all(levies_req_cols %in% names(levies_df))) {
-    df <- dplyr::left_join(df, levies_df, by = c("year", "tax_code")) %>%
+    df <- df %>%
+      dplyr::left_join(levies_df, by = c("year", "tax_code")) %>%
       dplyr::filter(!is.na(.data$total_levy))
   } else {
     stop(

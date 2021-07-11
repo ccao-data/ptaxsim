@@ -2,6 +2,8 @@ context("test lookup_vec()")
 
 ##### TEST lookup_vec() #####
 
+library(dplyr)
+
 # Create a vector of PINs with known, correct lookup values
 pins <- c(
   "14081020190000", "09274240240000", "07101010391078"
@@ -135,10 +137,14 @@ test_that("function returns expect data type/structure", {
   )
 })
 
-test_that("lookup returns 1 row for each PIN in a TIF", {
+test_that("lookup returns 1 row for each tax code in a TIF", {
   expect_equal(
     nrow(lookup_tifs(sum_df$year, sum_df$tax_code)),
-    sum(sum_df$in_tif)
+    sum_df %>%
+      group_by(tax_code) %>%
+      summarise(in_tif = sum(in_tif) > 0) %>%
+      filter(in_tif) %>%
+      nrow()
   )
 })
 
@@ -208,5 +214,98 @@ test_that("bad/incorrect inputs throw errors", {
 })
 
 
-#' lookup_agency_eavs(2019, "73105")
-#' lookup_levies(2019, "73105")
+context("test lookup_agency_eavs()")
+
+##### TEST lookup_agency_eavs() #####
+
+test_that("lookup values/data are correct", {
+  expect_equal(
+    lookup_agency_eavs(2019, "73105")$total_eav,
+    c(
+      rep(166917611547, 2),
+      rep(87816177317, 3),
+      87766563300,
+      rep(87816177317, 3),
+      164054703895
+    )
+  )
+  expect_known_hash(
+    lookup_agency_eavs(2014:2019, "12064"),
+    "2b7347916b"
+  )
+  expect_known_hash(
+    lookup_agency_eavs(sum_df$year, sum_df$tax_code),
+    "beb304e9fa"
+  )
+})
+
+test_that("function returns expect data type/structure", {
+  expect_s3_class(
+    lookup_agency_eavs(2018, "73105"),
+    "data.frame"
+  )
+  expect_named(
+    lookup_agency_eavs(2018:2019, "73105"),
+    c("year", "tax_code", "agency", "agency_name", "total_eav")
+  )
+  expect_equal(
+    sum(is.na(lookup_agency_eavs(sum_df$year, sum_df$tax_code))),
+    0
+  )
+})
+
+test_that("bad/incorrect inputs throw errors", {
+  expect_error(lookup_agency_eavs("2019", "73105"))
+  expect_error(lookup_agency_eavs(2019, "06231050360000"))
+  expect_error(lookup_agency_eavs(c(2000, 2019), "73105"))
+  expect_error(lookup_agency_eavs(2019, 73105))
+})
+
+
+context("test lookup_levies()")
+
+##### TEST lookup_levies() #####
+
+test_that("lookup values/data are correct", {
+  expect_equal(
+    lookup_levies(2019, "73105")$total_levy,
+    c(
+      757607672, 98376002, 1407000058, 106209378, 148214344, 130493952,
+      3178308249, 286039844, 0, 637188905
+    )
+  )
+  expect_known_hash(
+    lookup_levies(2014:2019, "12064"),
+    "de5644f194"
+  )
+  expect_known_hash(
+    lookup_levies(sum_df$year, sum_df$tax_code),
+    "ab96070030"
+  )
+  expect_equal(
+    nrow(lookup_agency_eavs(sum_df$year, sum_df$tax_code)),
+    nrow(lookup_levies(sum_df$year, sum_df$tax_code))
+  )
+})
+
+test_that("function returns expect data type/structure", {
+  expect_s3_class(
+    lookup_levies(2018, "73105"),
+    "data.frame"
+  )
+  expect_named(
+    lookup_levies(2018:2019, "73105"),
+    c("year", "tax_code", "agency", "agency_name", "total_levy")
+  )
+  expect_equal(
+    sum(is.na(lookup_levies(sum_df$year, sum_df$tax_code))),
+    0
+  )
+})
+
+test_that("bad/incorrect inputs throw errors", {
+  expect_error(lookup_levies("2019", "73105"))
+  expect_error(lookup_levies(2019, "06231050360000"))
+  expect_error(lookup_levies(c(2000, 2019), "73105"))
+  expect_error(lookup_levies(2019, 73105))
+})
