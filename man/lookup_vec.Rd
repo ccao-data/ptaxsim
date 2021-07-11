@@ -43,9 +43,11 @@ Returns a character vector the same length as the longest input.
 
 \examples{
 
+\donttest{
 lookup_eav(2017:2019, "20304190020000")
 lookup_equalization_factor(2014:2019)
 lookup_tax_code(2019, c("20304190020000", "16152090350000"))
+}
 }
 \seealso{
 Other lookups: 

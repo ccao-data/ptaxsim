@@ -82,7 +82,7 @@
 #'   separate line item and instead are contained in their own column(s).
 #'
 #' @examples
-#'
+#' \donttest{
 #' # Get a single tax bill
 #' tax_bill(2019, "14081020210000")
 #'
@@ -97,6 +97,7 @@
 #'
 #' # Get a tax bill for a new location
 #' tax_bill(2019, "14081020210000", tax_code_vec = "35011")
+#' }
 #' @md
 #' @importFrom magrittr %>%
 #' @importFrom rlang .data

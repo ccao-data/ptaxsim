@@ -114,7 +114,7 @@ features. The Assessor's office expressly disclaims any liability for
 any entity's reliance on this package.
 }
 \examples{
-
+\donttest{
 # Get a single tax bill
 tax_bill(2019, "14081020210000")
 
@@ -129,5 +129,6 @@ tax_bill(2019, "14081020210000", eav_vec = 200000)
 
 # Get a tax bill for a new location
 tax_bill(2019, "14081020210000", tax_code_vec = "35011")
+}
 }
 \concept{tax_bill}

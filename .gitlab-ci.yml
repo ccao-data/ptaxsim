@@ -23,6 +23,8 @@ variables:
   RENV_CONFIG_REPOS_OVERRIDE: "https://cloud.r-project.org/"
   RENV_PATHS_CACHE: ${CI_PROJECT_DIR}/cache
   RENV_PATHS_LIBRARY: ${CI_PROJECT_DIR}/renv/library
+  # Disable checking of long-running examples during build testing
+  _R_CHECK_DONTTEST_EXAMPLES_: "FALSE"
 
 # Cache settings. R libraries are installed into the R_LIBS_USER folder based
 # on the libraries listed in the DESCRIPTION file. These libraries are then

@@ -58,10 +58,12 @@ if the tax code is not within a TIF.
 
 \examples{
 
+\donttest{
 lookup_agency_eavs(2019, "73105")
 lookup_exemptions(2018:2019, "20304190020000")
 lookup_levies(2019, "73105")
 lookup_tifs(2019, "73105")
+}
 }
 \seealso{
 Other lookups: 
