@@ -53,7 +53,7 @@ before_script:
   
 stages:
   - build
-  # - test
+  - test
   - pages
 
 # Run the actual build command to generate the package. The resulting
@@ -77,18 +77,18 @@ build:
 # Junit format that can be read by GitLab CI to display test results
 # 3) Test coverage report that is output to the build logs of each pipeline
 # This output gets scraped by GitLab and turned into a coverage badge
-# test:
-#   stage: test
-#   script:
-#     - R CMD check $(ls -1t *.tar.gz | head -n 1) --no-manual --no-build-vignettes --no-tests
-#     - Rscript -e 'devtools::test(reporter = testthat::JunitReporter$new(file = "test-out.xml"))'
-#     - Rscript -e 'covr::package_coverage()'
-#   artifacts:
-#     when: always
-#     paths:
-#       - ./tests/testthat/test-out.xml
-#     reports:
-#       junit: ./tests/testthat/test-out.xml
+test:
+  stage: test
+  script:
+    - R CMD check $(ls -1t *.tar.gz | head -n 1) --no-manual --no-build-vignettes --no-tests
+    - Rscript -e 'devtools::test(reporter = testthat::JunitReporter$new(file = "test-out.xml"))'
+    - Rscript -e 'covr::package_coverage()'
+  artifacts:
+    when: always
+    paths:
+      - ./tests/testthat/test-out.xml
+    reports:
+      junit: ./tests/testthat/test-out.xml
      
 # The pages stage will build package documentation using pkgdown, save the
 # the static site content to public/, and create an artifact that is deployed
