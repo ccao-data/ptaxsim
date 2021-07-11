@@ -15,10 +15,10 @@
 ^LICENSE$ 
 ^LICENSE\.md$ 
 ^README\.Rmd$
-^README\.md$
 \.travis\.yml$
 \.gitlab-ci\.yml$
 ^codecov\.yml$
+^\.git$
 ^\.github$
 ^\.gitlab$
 \.gitignore$
