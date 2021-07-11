@@ -86,6 +86,7 @@ test:
   artifacts:
     when: always
     paths:
+      - ./*.Rcheck/*.log
       - ./tests/testthat/test-out.xml
     reports:
       junit: ./tests/testthat/test-out.xml
