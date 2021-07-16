@@ -17,7 +17,6 @@
 #' @return A data frame containing the looked-up values.
 #'
 #' @examples
-#'
 #' \donttest{
 #' lookup_agency_eavs(2019, "73105")
 #' lookup_exemptions(2018:2019, "20304190020000")
@@ -47,7 +46,6 @@ NULL
 #'   the longest vector in the inputs.
 #'
 #' @examples
-#'
 #' \donttest{
 #' lookup_eav(2017:2019, "20304190020000")
 #' lookup_equalization_factor(2014:2019)
