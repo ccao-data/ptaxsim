@@ -195,10 +195,9 @@ tax_bill <- function(year_vec,
   # Fill any missing values in TIF share or indicator
   df <- df %>%
     dplyr::mutate(
-      tif_share = tidyr::replace_na(.data$tif_share, 0),
-      in_rpm_tif = tidyr::replace_na(.data$in_rpm_tif, FALSE)
+      tif_share = replace(.data$tif_share, is.na(.data$tif_share), 0),
+      in_rpm_tif = replace(.data$in_rpm_tif, is.na(.data$in_rpm_tif), FALSE)
     )
-
 
   # Fetch levy for all agencies of a tax code, this will expand the number of
   # rows from 1 per PIN per year, to N per PIN per year, where N is the number

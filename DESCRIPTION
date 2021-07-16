@@ -20,8 +20,7 @@ Imports:
     dplyr,
     dtplyr,
     magrittr,
-    rlang,
-    tidyr
+    rlang
 RoxygenNote: 7.1.1
 Suggests: 
     covr,
