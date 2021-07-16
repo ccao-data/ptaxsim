@@ -33,3 +33,6 @@
 public
 pkgdown
 
+# Any temp files for windows
+~*
+
