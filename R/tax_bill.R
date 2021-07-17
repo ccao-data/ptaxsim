@@ -263,42 +263,36 @@ tax_bill <- function(year_vec,
     dplyr::group_by(.data$year, .data$pin) %>%
     dplyr::mutate(
       is_cps_agency = .data$agency == "044060000",
-      tax_rate_for_cps = sum(
-        ifelse(.data$is_cps_agency, .data$agency_tax_rate, 0)
-      ),
+      tax_rate_for_cps = sum(.data$is_cps_agency * .data$agency_tax_rate),
       tax_prop_for_cps = .data$tax_rate_for_cps / sum(.data$agency_tax_rate),
 
-      # Get total amount from TIF held for CPS
+      # Get total amount from TIF held for CPS. Will be 0 if not in RPM TIF
       tax_amt_rpm_tif_to_cps =
-        .data$tax_amt_total_to_tif * .data$in_rpm_tif * .data$tax_prop_for_cps,
+        .data$tax_amt_total_to_tif * .data$tax_prop_for_cps * .data$in_rpm_tif,
 
-      # Get total amount from TIF held for the RPM project
+      # Get total amount from TIF held for the RPM project, which is 80% of the
+      # funds remaining after the CPS cut
       tax_amt_rpm_tif_to_rpm =
         (.data$tax_amt_total_to_tif - .data$tax_amt_rpm_tif_to_cps) * 0.8 *
           .data$in_rpm_tif,
 
-      # Get total amount from TIF sent BACK to jurisdictions, EXCLUDING CPS.
-      # Remainder is divided proportional to tax rates, excluding the CPS rate
-      tax_amt_rpm_tif_cps_jur_amt = sum(ifelse(
-        !.data$is_cps_agency,
-        (.data$tax_amt_total_to_tif - .data$tax_amt_rpm_tif_to_cps) * 0.2 *
-          .data$in_rpm_tif,
-        0
-      )),
-      tax_amt_rpm_tif_cps_jur_prop = ifelse(
+      # Get total amount from TIF sent BACK to jurisdictions. Need to divvy up
+      # the amount that would be sent to CPS proportionally among other bodies
+      # using each agency's tax rate
+      tax_amt_rpm_tif_jur_total = sum(
+        (.data$tax_amt_total_to_tif -
+          .data$tax_amt_rpm_tif_to_cps - .data$tax_amt_rpm_tif_to_rpm)
+      ),
+      tax_amt_rpm_tif_jur_dist = ifelse(
         !.data$is_cps_agency,
         .data$agency_tax_rate /
-          (sum(.data$agency_tax_rate) - .data$tax_rate_for_cps) *
+          (sum(.data$agency_tax_rate * !.data$is_cps_agency)) *
           .data$in_rpm_tif,
         0
       ),
       tax_amt_rpm_tif_to_jur =
-        ((.data$tax_amt_total_to_tif - .data$tax_amt_rpm_tif_to_cps) * 0.2 *
-          .data$in_rpm_tif) +
-          (.data$tax_amt_rpm_tif_cps_jur_amt *
-            .data$tax_amt_rpm_tif_cps_jur_prop),
-      tax_amt_rpm_tif_to_jur =
-        .data$tax_amt_rpm_tif_to_jur * !.data$is_cps_agency,
+        (.data$tax_amt_rpm_tif_jur_total *
+          .data$tax_amt_rpm_tif_jur_dist),
       tax_amt_final =
         .data$tax_amt_post_exemptions - .data$tax_amt_total_to_tif +
           .data$tax_amt_rpm_tif_to_jur,
@@ -306,6 +300,7 @@ tax_bill <- function(year_vec,
         .data$tax_amt_total_to_tif - .data$tax_amt_rpm_tif_to_jur
     ) %>%
     dplyr::ungroup()
+
 
   # Remove extraneous columns if simplify is TRUE
   if (simplify) {

@@ -270,17 +270,17 @@ test_that("lookup values/data are correct", {
   expect_equal(
     lookup_levies(2019, "73105")$total_levy,
     c(
-      757607672, 98376002, 1407000058, 106209378, 148214344, 130493952,
-      3178308249, 286039844, 0, 637188905
+      757805956, 98481391, 1407693322, 106257575, 148409340, 130772179,
+      3178945619, 286280738, 0, 638172798
     )
   )
   expect_known_hash(
     lookup_levies(2014:2019, "12064"),
-    "de5644f194"
+    "d3ae515c92"
   )
   expect_known_hash(
     lookup_levies(sum_df$year, sum_df$tax_code),
-    "ab96070030"
+    "ffd9384dbf"
   )
   expect_equal(
     nrow(lookup_agency_eavs(sum_df$year, sum_df$tax_code)),

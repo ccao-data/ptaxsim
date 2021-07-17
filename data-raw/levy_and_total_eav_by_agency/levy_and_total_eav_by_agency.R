@@ -55,7 +55,7 @@ levy_and_total_eav_by_agency <- levy_and_total_eav_by_agency %>%
   select(
     year, agency, agency_name,
     agency_rate = grand_total_final_rate,
-    total_eav = cook_eav, total_levy = grand_total_final_levy
+    total_eav = cook_eav, total_levy = grand_total_ext
   ) %>%
   group_by(agency) %>%
   # Replace agency name with modal name (some are misspelled)

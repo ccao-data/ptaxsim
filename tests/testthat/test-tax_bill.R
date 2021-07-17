@@ -78,7 +78,7 @@ test_that("function returns expect data type/structure", {
       "tax_amt_pre_exemptions", "tax_amt_post_exemptions",
       "tax_amt_total_to_tif", "is_cps_agency", "tax_rate_for_cps",
       "tax_prop_for_cps", "tax_amt_rpm_tif_to_cps", "tax_amt_rpm_tif_to_rpm",
-      "tax_amt_rpm_tif_cps_jur_amt", "tax_amt_rpm_tif_cps_jur_prop",
+      "tax_amt_rpm_tif_jur_total", "tax_amt_rpm_tif_jur_dist",
       "tax_amt_rpm_tif_to_jur", "tax_amt_final"
     )
   )
@@ -109,7 +109,7 @@ test_that("returned amount/output correct for single PIN", {
       filter(pin == pins[1]) %>%
       slice(1) %>%
       pull(tif_total),
-    tolerance = 0.005
+    tolerance = 0.001
   )
 })
 
