@@ -56,10 +56,9 @@ test_that("function returns expect data type/structure", {
   expect_named(
     tax_bill(2018:2019, pins[1:2]),
     c(
-      "year", "pin", "tax_code", "agency_name", "agency_tax_rate",
+      "year", "pin", "tax_code", "agency", "agency_name", "agency_tax_rate",
       "eav_before_exemptions", "tax_amt_post_exemptions",
-      "tax_amt_total_to_tif", "tax_amt_rpm_tif_to_cps",
-      "tax_amt_rpm_tif_to_rpm", "tax_amt_final"
+      "tax_amt_total_to_tif", "tax_amt_final"
     )
   )
   expect_equal(
@@ -78,8 +77,8 @@ test_that("function returns expect data type/structure", {
       "tax_amt_pre_exemptions", "tax_amt_post_exemptions",
       "tax_amt_total_to_tif", "is_cps_agency", "tax_rate_for_cps",
       "tax_prop_for_cps", "tax_amt_rpm_tif_to_cps", "tax_amt_rpm_tif_to_rpm",
-      "tax_amt_rpm_tif_jur_total", "tax_amt_rpm_tif_jur_dist",
-      "tax_amt_rpm_tif_to_jur", "tax_amt_final"
+      "tax_amt_rpm_tif_back_to_jur_total", "tax_amt_rpm_tif_back_to_jur_dist",
+      "tax_amt_rpm_tif_back_to_jur", "tax_amt_final"
     )
   )
   expect_equal(

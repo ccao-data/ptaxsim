@@ -279,25 +279,25 @@ tax_bill <- function(year_vec,
       # Get total amount from TIF sent BACK to jurisdictions. Need to divvy up
       # the amount that would be sent to CPS proportionally among other bodies
       # using each agency's tax rate
-      tax_amt_rpm_tif_jur_total = sum(
+      tax_amt_rpm_tif_back_to_jur_total = sum(
         (.data$tax_amt_total_to_tif -
           .data$tax_amt_rpm_tif_to_cps - .data$tax_amt_rpm_tif_to_rpm)
       ),
-      tax_amt_rpm_tif_jur_dist = ifelse(
+      tax_amt_rpm_tif_back_to_jur_dist = ifelse(
         !.data$is_cps_agency,
         .data$agency_tax_rate /
           (sum(.data$agency_tax_rate * !.data$is_cps_agency)) *
           .data$in_rpm_tif,
         0
       ),
-      tax_amt_rpm_tif_to_jur =
-        (.data$tax_amt_rpm_tif_jur_total *
-          .data$tax_amt_rpm_tif_jur_dist),
+      tax_amt_rpm_tif_back_to_jur =
+        (.data$tax_amt_rpm_tif_back_to_jur_total *
+          .data$tax_amt_rpm_tif_back_to_jur_dist),
       tax_amt_final =
         .data$tax_amt_post_exemptions - .data$tax_amt_total_to_tif +
-          .data$tax_amt_rpm_tif_to_jur,
+          .data$tax_amt_rpm_tif_back_to_jur,
       tax_amt_total_to_tif =
-        .data$tax_amt_total_to_tif - .data$tax_amt_rpm_tif_to_jur
+        .data$tax_amt_total_to_tif - .data$tax_amt_rpm_tif_back_to_jur
     ) %>%
     dplyr::ungroup()
 
@@ -309,13 +309,12 @@ tax_bill <- function(year_vec,
         .data$year,
         .data$pin,
         .data$tax_code,
+        .data$agency,
         .data$agency_name,
         .data$agency_tax_rate,
         .data$eav_before_exemptions,
         .data$tax_amt_post_exemptions,
         .data$tax_amt_total_to_tif,
-        .data$tax_amt_rpm_tif_to_cps,
-        .data$tax_amt_rpm_tif_to_rpm,
         .data$tax_amt_final
       )
   }
