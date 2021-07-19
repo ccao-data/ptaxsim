@@ -3,14 +3,15 @@ Type: Package
 Title: Calculate Cook County Property Tax Bills and Simulate Scenarios
 Version: 0.1.0
 Authors@R: c(
-    person(given = "Mike", family = "Wu", email="mwu@cookcountyassessor.com", role=c("aut", "cre")),
-    person(given = "Dan", family = "Snow", email="dsnow@cookcountyassessor.com", role=c("aut", "ctb"))
+    person(given = "Dan", family = "Snow", email="dsnow@cookcountyassessor.com", role=c("aut", "cre"))
+    person(given = "Mike", family = "Wu", email="mwu@cookcountyassessor.com", role=c("aut", "ctb")),
+    person(given = "Rob", family = "Ross", role=c("aut", "ctb"))
     )
-Date: 2021-06-14
 Description: An R package to calculate property tax bills and simulate tax
     scenarios specifically for Cook County, IL. Includes the raw data necessary
     for historical calculations as well as functions to calculate future taxes.
 URL: https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/, https://gitlab.com/ccao-data-science---modeling/packages/ptaxsim/
+BugReports: https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/issues
 License: GPL-3 + file LICENSE
 Encoding: UTF-8
 LazyData: true
