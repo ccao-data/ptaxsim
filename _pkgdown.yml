@@ -16,6 +16,7 @@ reference:
   desc: Data used by lookup functions to populate missing arguments 
 - contents:
   - av_exe_and_tax_code_by_pin
+  - cpis
   - equalization_factors
   - levy_and_total_eav_by_agency
   - tax_codes_by_agency
