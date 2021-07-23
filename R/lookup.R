@@ -70,7 +70,7 @@ lookup_agency_eavs <- function(year, tax_code) {
     is.numeric(year),
     is.character(tax_code),
     all(year >= 2014),
-    all(nchar(tax_code) == 5)
+    all(nchar(tax_code) == 5 | is.na(tax_code))
   )
 
   # Convert input vectors into data frame. Use tibble() first to enforce
@@ -194,7 +194,7 @@ lookup_levies <- function(year, tax_code) {
     is.numeric(year),
     is.character(tax_code),
     all(year >= 2014),
-    all(nchar(tax_code) == 5)
+    all(nchar(tax_code) == 5 | is.na(tax_code))
   )
 
   # Convert input vectors into data frame. Use tibble() first to enforce
@@ -266,7 +266,7 @@ lookup_tifs <- function(year, tax_code) {
     is.numeric(year),
     is.character(tax_code),
     all(year >= 2014),
-    all(nchar(tax_code) == 5)
+    all(nchar(tax_code) == 5 | is.na(tax_code))
   )
 
   # Convert input vectors into data frame. Use tibble() first to enforce
