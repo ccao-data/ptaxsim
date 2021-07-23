@@ -89,6 +89,7 @@ test:
     when: always
     paths:
       - ./*.Rcheck/*.log
+      - ./*.Rcheck/*.out
       - ./tests/testthat/test-out.xml
     reports:
       junit: ./tests/testthat/test-out.xml
