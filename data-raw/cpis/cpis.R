@@ -23,7 +23,8 @@ cpis <- setNames(cpis, c("year", "cpi", "ptell_cook", "comments", "levy_year"))
 # Merge Cook rate into main column
 cpis <- cpis %>%
   mutate(
-    across(c(year, cpi, levy_year), as.numeric),
+    across(c(year, levy_year), as.integer),
+    across(c(cpi), as.numeric),
     across(c(ptell_cook, comments), readr::parse_number),
     ptell_cook = ifelse(!is.na(comments), comments, ptell_cook),
     ptell_cook = ptell_cook / 100
@@ -32,7 +33,7 @@ cpis <- cpis %>%
   filter(year != 1991)
 
 # Convert the data to a data.table and use setkey to sort for faster joins
-cpis <- as.data.table(cpis)
+setDT(cpis)
 setkey(cpis, levy_year)
 
 # Write data to R package

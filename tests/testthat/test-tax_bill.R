@@ -96,7 +96,8 @@ test_that("returned amount/output correct for single PIN", {
     det_df %>%
       filter(pin == pins[1]) %>%
       select(year, pin, agency, tax) %>%
-      arrange(agency),
+      arrange(agency) %>%
+      as_tibble(),
     tolerance = 0.005
   )
   # TIF total amounts
@@ -115,8 +116,12 @@ test_that("returned amount/output correct for single PIN", {
 # Remove certain PINs from the test because they are anomalies/have VERY unique
 # situations
 exclude_pins <- c("20031180060000")
-sum_df <- sum_df %>% filter(!pin %in% exclude_pins)
-det_df <- det_df %>% filter(!pin %in% exclude_pins)
+sum_df <- sum_df %>%
+  filter(!pin %in% exclude_pins) %>%
+  as_tibble()
+det_df <- det_df %>%
+  filter(!pin %in% exclude_pins) %>%
+  as_tibble()
 
 test_that("returned amount/output correct for all sample bills", {
   # Output is correct number of rows
@@ -127,18 +132,19 @@ test_that("returned amount/output correct for all sample bills", {
   )
 
   # District level tax amounts
-  expect_equal(
+  expect_equivalent(
     tax_bill(sum_df$year, sum_df$pin, simplify = F) %>%
       select(year, pin, agency, tax_amt_final) %>%
       arrange(year, pin, agency),
     det_df %>%
       select(year, pin, agency, tax_amt_final = tax) %>%
-      arrange(year, pin, agency),
+      arrange(year, pin, agency) %>%
+      as_tibble(),
     tolerance = 0.005
   )
 
   # TIF total amounts
-  expect_equal(
+  expect_equivalent(
     tax_bill(sum_df$year, sum_df$pin) %>%
       group_by(year, pin) %>%
       summarize(tif_total = sum(tax_amt_total_to_tif)) %>%
@@ -146,7 +152,8 @@ test_that("returned amount/output correct for all sample bills", {
     det_df %>%
       group_by(year, pin) %>%
       summarize(tif_total = first(tif_total)) %>%
-      arrange(pin),
+      arrange(pin) %>%
+      as_tibble(),
     tolerance = 0.005
   )
 })
@@ -157,7 +164,8 @@ test_that("all differences are less than $25", {
       tax_bill(sum_df$year, sum_df$pin, simplify = F) %>%
         select(year, pin, agency, tax_calc = tax_amt_final),
       det_df %>%
-        select(year, pin, agency, tax_real = tax),
+        select(year, pin, agency, tax_real = tax) %>%
+        as_tibble(),
       by = c("year", "pin", "agency")
     ) %>%
       mutate(diff = abs(tax_calc - tax_real) < 25) %>%

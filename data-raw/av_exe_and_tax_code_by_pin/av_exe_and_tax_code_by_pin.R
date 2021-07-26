@@ -48,10 +48,13 @@ av_exe_and_tax_code_by_pin <- readr::read_csv(str_c(file_path, ".bz2"))
 
 # Ensure expected col types
 av_exe_and_tax_code_by_pin <- av_exe_and_tax_code_by_pin %>%
-  mutate(across(c(pin, tax_code, class), as.character))
+  mutate(
+    across(c(pin, tax_code, class), as.character),
+    across(c(year, av, starts_with("exe_")), as.integer)
+  )
 
 # Convert the data to a data.table and use setkey to sort for faster joins
-av_exe_and_tax_code_by_pin <- as.data.table(av_exe_and_tax_code_by_pin)
+setDT(av_exe_and_tax_code_by_pin)
 setkey(av_exe_and_tax_code_by_pin, year, pin)
 
 # Save data to package

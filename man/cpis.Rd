@@ -10,7 +10,7 @@ A data frame containing 29 rows and 4 columns:
   \item{year}{Year of CPI-U value}
   \item{cpi}{December CPI-U value for \code{year}}
   \item{ptell_cook}{Percent change used as the PTELL limit. This value is
-  sometimes rounded and is occasionally different specifically for Cook 
+  sometimes rounded and is occasionally different specifically for Cook
   County}
   \item{levy_year}{Levy year for which the PTELL limit is used. For example,
   the tax year 2018 (payable in 2019) CPI-U increase was 2.1\% and the tax
@@ -28,11 +28,11 @@ Cook County and the non-home-rule taxing districts within it are
   subject to the Property Tax Extension Limitation Law (PTELL). PTELL limits
   the growth of an overall taxing district levy to 5.0% or the rate of
   inflation, whichever is less.
-  
+
   The rate of inflation used to calculate the PTELL limit is the CPI-U for
   the year preceding the tax year, as published by the United States Bureau
   of Labor Statistics in January of each year.
-  
+
   This data frame contains the CPI values and rate of change used for PTELL
   *in Cook County*.
 }

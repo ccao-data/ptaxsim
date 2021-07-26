@@ -144,6 +144,7 @@ test_that("lookup returns 1 row for each tax code in a TIF", {
       group_by(tax_code) %>%
       summarise(in_tif = sum(in_tif) > 0) %>%
       filter(in_tif) %>%
+      as_tibble() %>%
       nrow()
   )
 })
@@ -182,7 +183,8 @@ test_that("lookup values/data are correct", {
       select(
         year, pin, exe_homeowner:exe_disabled,
         exe_vet_dis = exe_vet_disabled
-      )
+      ) %>%
+      as_tibble()
   )
 })
 
@@ -235,7 +237,7 @@ test_that("lookup values/data are correct", {
   )
   expect_known_hash(
     lookup_agency_eavs(sum_df$year, sum_df$tax_code),
-    "beb304e9fa"
+    "86afdfb78e"
   )
 })
 
@@ -280,7 +282,7 @@ test_that("lookup values/data are correct", {
   )
   expect_known_hash(
     lookup_levies(sum_df$year, sum_df$tax_code),
-    "ffd9384dbf"
+    "f94333b085"
   )
   expect_equal(
     nrow(lookup_agency_eavs(sum_df$year, sum_df$tax_code)),

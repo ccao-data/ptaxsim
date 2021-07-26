@@ -7,7 +7,7 @@ equalization_factors <- readr::read_csv(
 )
 
 # Convert the data to a data.table and use setkey to sort for faster joins
-equalization_factors <- as.data.table(equalization_factors)
+setDT(equalization_factors)
 setkey(equalization_factors, year)
 
 usethis::use_data(equalization_factors, overwrite = TRUE)

@@ -48,14 +48,15 @@ levy_and_total_eav_by_agency <- map_dfr(file_names, function(file) {
 
 # Clean up resulting combined data frame
 levy_and_total_eav_by_agency <- levy_and_total_eav_by_agency %>%
+  select(
+    year, agency, agency_name, home_rule_ind,
+    total_eav = cook_eav, total_levy = grand_total_ext
+  ) %>%
   mutate(
     agency_name = str_trim(str_squish(agency_name)),
-    year = as.integer(year)
-  ) %>%
-  select(
-    year, agency, agency_name,
-    agency_rate = grand_total_final_rate,
-    total_eav = cook_eav, total_levy = grand_total_ext
+    year = as.integer(year),
+    home_rule_ind = ifelse(home_rule_ind == "Y", TRUE, FALSE),
+    home_rule_ind = replace_na(home_rule_ind, FALSE)
   ) %>%
   group_by(agency) %>%
   # Replace agency name with modal name (some are misspelled)
@@ -63,7 +64,7 @@ levy_and_total_eav_by_agency <- levy_and_total_eav_by_agency %>%
   ungroup()
 
 # Convert the data to a data.table and use setkey to sort for faster joins
-levy_and_total_eav_by_agency <- as.data.table(levy_and_total_eav_by_agency)
+setDT(levy_and_total_eav_by_agency)
 setkey(levy_and_total_eav_by_agency, year, agency)
 
 # Save each data set to package
