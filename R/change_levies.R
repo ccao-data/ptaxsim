@@ -56,8 +56,10 @@ NULL
 #'
 #' @export
 change_levies_amt <- function(levies_df, amount, ...) {
-  check_levies_df_str(levies_df)
-  stopifnot(is.numeric(amount))
+  stopifnot(
+    check_levies_df_str(levies_df),
+    is.numeric(amount)
+  )
 
   levies_df_new <- levies_df %>%
     dplyr::mutate(amount = amount) %>%
@@ -74,8 +76,8 @@ change_levies_amt <- function(levies_df, amount, ...) {
 #'
 #' @export
 change_levies_avg <- function(levies_df, n_years, ...) {
-  check_levies_df_str(levies_df)
   stopifnot(
+    check_levies_df_str(levies_df),
     is.numeric(n_years),
     length(n_years) == 1,
     n_years >= 2
@@ -138,7 +140,9 @@ change_levies_avg <- function(levies_df, n_years, ...) {
 #'
 #' @export
 change_levies_cpi <- function(levies_df, ...) {
-  check_levies_df_str(levies_df)
+  stopifnot(
+    check_levies_df_str(levies_df)
+  )
 
   levies_df_new <- levies_df %>%
     dplyr::left_join(
@@ -158,8 +162,10 @@ change_levies_cpi <- function(levies_df, ...) {
 #'
 #' @export
 change_levies_pct <- function(levies_df, percent, ...) {
-  check_levies_df_str(levies_df)
-  stopifnot(is.numeric(percent))
+  stopifnot(
+    check_levies_df_str(levies_df),
+    is.numeric(percent)
+  )
 
   levies_df_new <- levies_df %>%
     dplyr::mutate(percent = percent) %>%

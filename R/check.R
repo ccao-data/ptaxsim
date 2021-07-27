@@ -42,12 +42,19 @@
 #'   \code{\link{lookup_levies}}. Contains the original (unchanged) levies.
 #' @param levies_df_new A data frame in the format returned by
 #'   \code{\link{lookup_levies}}. Contains the new, altered levies.
+#' @param fudge_factor Default 0.05. A percentage multiplier by which to
+#'   increase the PTELL limiting rate. This helps adjust for things like
+#'   recovered TIF increment and non-capped funds, which aren't included in this
+#'   check. Formula used is \code{lim_rate + (lim_rate * fudge_factor)}.
 #' @param quiet Default FALSE. A boolean value for whether or not to warn about
 #'   violations of PTELL. See details for more information.
-#' @param agency_eavs_df A data frame containing all aggregate agency EAVs to be
-#'   used to calculate PTELL limiting rates. Defaults to the actual EAVs
-#'   supplied by the Clerk in \code{\link{levy_and_total_eav_by_agency}}. Can be
-#'   altered in the case of changed or future (estimated EAVs).
+#' @param keep_ptell_cols Default FALSE. A boolean value indicating whether to
+#'   keep PTELL columns joined to \code{levies_df_new}. When FALSE, the function
+#'   just returns the unaltered \code{levies_df_new} plus any warnings.
+#' @param eavs_df A data frame containing all aggregate agency EAVs used to
+#'   calculate PTELL limiting rates. Defaults to the built-in data supplied by
+#'   the Clerk (\code{\link{levy_and_total_eav_by_agency}}). Can be altered in
+#'   the case of changed or future (estimated EAVs).
 #'
 #' @return Returns a warning when any change to levies between
 #'   \code{levies_df_old} and \code{levies_df_new} could violate PTELL.
@@ -59,18 +66,100 @@
 #' @export
 check_levies_ptell <- function(levies_df_old,
                                levies_df_new,
+                               fudge_factor = 0.05,
                                quiet = FALSE,
-                               agency_eavs_df = ptaxsim::levy_and_total_eav_by_agency) { # nolint
-  check_levies_df_str(levies_df_old)
-  check_levies_df_str(levies_df_new)
+                               keep_ptell_cols = FALSE,
+                               eavs_df = ptaxsim::levy_and_total_eav_by_agency) { # nolint
+  stopifnot(
+    check_levies_df_str(levies_df_old),
+    check_levies_df_str(levies_df_new),
+    is.numeric(fudge_factor),
+    length(fudge_factor) == 1,
+    fudge_factor >= 0,
+    fudge_factor <= 1,
+    is.logical(quiet),
+    length(quiet) == 1,
+    is.logical(keep_ptell_cols),
+    length(keep_ptell_cols) == 1
+  )
 
-  levies_df_old %>%
-    dplyr::left_join(
-      agency_eavs_df %>%
-        dplyr::select(.data$year, .data$agency, .data$home_rule_ind),
-      by = c("year", "agency"),
-      copy = TRUE
+  eavs_df_str <- c(
+    "year" = "numeric", "agency" = "character", "agency_name" = "character",
+    "home_rule_ind" = "logical",
+    "total_eav" = "numeric", "total_levy" = "numeric"
+  )
+
+  if (!identical(eavs_df_str, sapply(eavs_df, mode))) {
+    stop(
+      "eavs_df must be in the same format as the built-in data ",
+      "frame levy_and_total_eav_by_agency. Ensure columns have the same ",
+      "names and types"
     )
+  }
+
+  # Get the lagged (previous) levy for each year, to be used when calculating
+  # the PTELL limiting rate
+  eavs_df <- eavs_df %>%
+    dplyr::group_by(.data$agency) %>%
+    dplyr::arrange(.data$agency, .data$year) %>%
+    dplyr::mutate(prev_levy = dplyr::lag(.data$total_levy)) %>%
+    dplyr::select(
+      .data$year, .data$agency, .data$home_rule_ind,
+      .data$prev_levy, .data$total_eav
+    ) %>%
+    dplyr::ungroup()
+
+  cpis <- ptaxsim::cpis %>%
+    dplyr::select(.data$levy_year, .data$ptell_cook)
+
+  # Join data onto old levies data frame and calculate the naive limiting rate,
+  # fudged limiting rate, and max levy
+  levies_df_old <- levies_df_old %>%
+    dplyr::left_join(eavs_df, by = c("year", "agency"), copy = TRUE) %>%
+    dplyr::left_join(cpis, by = c("year" = "levy_year"), copy = TRUE) %>%
+    dplyr::mutate(
+      ptell_lim_rate = (.data$prev_levy * (1 +
+        .data$ptell_cook)) / .data$total_eav,
+      ptell_fudge_rate = (.data$ptell_lim_rate +
+        (.data$ptell_lim_rate * fudge_factor)),
+      ptell_max_levy = .data$total_eav * .data$ptell_fudge_rate
+    ) %>%
+    dplyr::select(
+      .data$year, .data$agency, .data$home_rule_ind, .data$total_eav,
+      .data$prev_levy, .data$ptell_cook,
+      .data$ptell_lim_rate, .data$ptell_fudge_rate, .data$ptell_max_levy
+    )
+
+  # Join max levies onto new levies df and create and indicate col for exceeding
+  levies_df_new <- levies_df_new %>%
+    dplyr::left_join(levies_df_old, by = c("year", "agency")) %>%
+    dplyr::mutate(
+      ptell_viol = .data$total_levy > .data$ptell_max_levy &
+        !.data$home_rule_ind
+    )
+
+  # Get the number of districts that exceed PTELL. Throw warning if any exceed
+  num_ptell_violations <- sum(levies_df_new$ptell_viol)
+  if (num_ptell_violations > 0) {
+    warning(
+      "At least ", num_ptell_violations, " taxing district have levy increases",
+      " that may violate PTELL. Consider inspecting the new levies by setting ",
+      "keep_ptell_cols to TRUE"
+    )
+  }
+
+  # Return calculated PTELL columns attached to levies_df_new. Useful for
+  # diagnostics and debugging
+  if (keep_ptell_cols) {
+    return(levies_df_new)
+  } else {
+    levies_df_new <- levies_df_new %>%
+      dplyr::select(
+        .data$year, .data$tax_code, .data$agency,
+        .data$agency_name, .data$total_levy
+      )
+    return(levies_df_new)
+  }
 }
 
 

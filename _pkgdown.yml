@@ -7,17 +7,18 @@ reference:
 - subtitle: Calculate tax bills
 - contents:
   - tax_bill
-- subtitle: Lookup tax data components (levy, base, TIFs, etc.)
+- subtitle: Lookup tax data
 - contents:
   - starts_with("lookup_")
-- subtitle: Change tax data to test new scenarios
+- subtitle: Test new scenarios
 - contents:
   - starts_with("change_")
-- subtitle: Check changes to tax data to ensure sensibility and compliance
+- subtitle: Check compliance
+- contents:
   - starts_with("check_")
 
 - title: Data
-- subtitle: Lookup tax data components
+- subtitle: Tax data components
   desc: Data used by lookup functions to populate missing arguments
 - contents:
   - av_exe_and_tax_code_by_pin

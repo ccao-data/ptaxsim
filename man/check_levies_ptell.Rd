@@ -7,8 +7,10 @@
 check_levies_ptell(
   levies_df_old,
   levies_df_new,
+  fudge_factor = 0.05,
   quiet = FALSE,
-  agency_eavs_df = ptaxsim::levy_and_total_eav_by_agency
+  keep_ptell_cols = FALSE,
+  eavs_df = ptaxsim::levy_and_total_eav_by_agency
 )
 }
 \arguments{
@@ -18,13 +20,22 @@ check_levies_ptell(
 \item{levies_df_new}{A data frame in the format returned by
 \code{\link{lookup_levies}}. Contains the new, altered levies.}
 
+\item{fudge_factor}{Default 0.05. A percentage multiplier by which to
+increase the PTELL limiting rate. This helps adjust for things like
+recovered TIF increment and non-capped funds, which aren't included in this
+check. Formula used is \code{lim_rate + (lim_rate * fudge_factor)}.}
+
 \item{quiet}{Default FALSE. A boolean value for whether or not to warn about
 violations of PTELL. See details for more information.}
 
-\item{agency_eavs_df}{A data frame containing all aggregate agency EAVs to be
-used to calculate PTELL limiting rates. Defaults to the actual EAVs
-supplied by the Clerk in \code{\link{levy_and_total_eav_by_agency}}. Can be
-altered in the case of changed or future (estimated EAVs).}
+\item{keep_ptell_cols}{Default FALSE. A boolean value indicating whether to
+keep PTELL columns joined to \code{levies_df_new}. When FALSE, the function
+just returns the unaltered \code{levies_df_new} plus any warnings.}
+
+\item{eavs_df}{A data frame containing all aggregate agency EAVs used to
+calculate PTELL limiting rates. Defaults to the built-in data supplied by
+the Clerk (\code{\link{levy_and_total_eav_by_agency}}). Can be altered in
+the case of changed or future (estimated EAVs).}
 }
 \value{
 Returns a warning when any change to levies between
