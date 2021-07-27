@@ -7,13 +7,18 @@ reference:
 - subtitle: Calculate tax bills
 - contents:
   - tax_bill
-- subtitle: Lookup tax data
+- subtitle: Lookup tax data components (levy, base, TIFs, etc.)
 - contents:
   - starts_with("lookup_")
+- subtitle: Change tax data to test new scenarios
+- contents:
+  - starts_with("change_")
+- subtitle: Check changes to tax data to ensure sensibility and compliance
+  - starts_with("check_")
 
 - title: Data
-- subtitle: Lookup tables
-  desc: Data used by lookup functions to populate missing arguments 
+- subtitle: Lookup tax data components
+  desc: Data used by lookup functions to populate missing arguments
 - contents:
   - av_exe_and_tax_code_by_pin
   - cpis
@@ -21,8 +26,8 @@ reference:
   - levy_and_total_eav_by_agency
   - tax_codes_by_agency
   - tifs
-- subtitle: Sample tax bills 
-  desc: Real Cook County tax bill data used for testing and examples 
+- subtitle: Sample tax bills
+  desc: Real Cook County tax bill data used for testing and examples
 - contents:
   - sample_tax_bills_detail
   - sample_tax_bills_summary

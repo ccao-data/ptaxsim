@@ -130,12 +130,13 @@ tax_bill <- function(year_vec,
     length(simplify) == 1
   )
 
-  # Input checking for data frame inputs
+  # Input checking to ensure data frames have expected structure (col name and
+  # data type)
   stopifnot(
-    is.data.frame(exemptions_df),
-    is.data.frame(levies_df),
-    is.data.frame(agency_eavs_df),
-    is.data.frame(tifs_df)
+    check_agency_eavs_df_str(agency_eavs_df),
+    check_exemptions_df_str(exemptions_df),
+    check_levies_df_str(levies_df),
+    check_tifs_df_str(tifs_df)
   )
 
   # Combine the input vectors in a single tibble. Let tibble() handle errors
@@ -148,57 +149,18 @@ tax_bill <- function(year_vec,
     "eq_factor" = eq_fct_vec
   )
 
-  # Get structure of each result from lookup functions. Use to check
-  # that data frame arguments are valid inputs
-  exemptions_df_str <- c(
-    "year" = "numeric", "pin" = "character", "exe_homeowner" = "numeric",
-    "exe_senior" = "numeric", "exe_freeze" = "numeric",
-    "exe_longtime_homeowner" = "numeric", "exe_disabled" = "numeric",
-    "exe_vet_returning" = "numeric", "exe_vet_dis_lt50" = "numeric",
-    "exe_vet_dis_50_69" = "numeric", "exe_vet_dis_ge70" = "numeric",
-    "exe_abate" = "numeric"
-  )
-  tifs_df_str <- c(
-    "year" = "numeric", "tax_code" = "character", "agency" = "character",
-    "agency_name" = "character", "tif_share" = "numeric"
-  )
-  levies_df_str <- c(
-    "year" = "numeric", "tax_code" = "character", "agency" = "character",
-    "agency_name" = "character", "total_levy" = "numeric"
-  )
-  agency_eavs_df_str <- c(
-    "year" = "numeric", "tax_code" = "character", "agency" = "character",
-    "agency_name" = "character", "total_eav" = "numeric"
-  )
-
-  # Error checking for exemptions data, make sure all required columns present
-  if (identical(exemptions_df_str, sapply(exemptions_df, mode))) {
-    df <- dplyr::left_join(df, exemptions_df, by = c("year", "pin"))
-  } else {
-    stop(
-      "exemptions_df must be in the same format as the exemptions data ",
-      "returned by lookup_exemptions(). Ensure there is 1 row per PIN per ",
-      "year and all column names and types are the same"
-    )
-  }
+  # Join exemptions data to the PIN and year
+  df <- dplyr::left_join(df, exemptions_df, by = c("year", "pin"))
 
   # Fetch TIF for a given tax code. There should only be one TIF per tax code (
   # with a few exceptions)
-  if (identical(tifs_df_str, sapply(tifs_df, mode))) {
-    df <- df %>%
-      dplyr::left_join(
-        dplyr::select(tifs_df, -dplyr::any_of("agency_name")) %>%
-          dplyr::rename(tif_agency = .data$agency) %>%
-          dplyr::filter(!is.na(.data$tif_share)),
-        by = c("year", "tax_code")
-      )
-  } else {
-    stop(
-      "tifs_df must be in the same format as the agency data ",
-      "returned by lookup_tifs(). Ensure all column names and types ",
-      "are the same"
+  df <- df %>%
+    dplyr::left_join(
+      dplyr::select(tifs_df, -dplyr::any_of("agency_name")) %>%
+        dplyr::rename(tif_agency = .data$agency) %>%
+        dplyr::filter(!is.na(.data$tif_share)),
+      by = c("year", "tax_code")
     )
-  }
 
   # Add an indicator for when the PIN is in the special Red-Purple Modernization
   # TIF, which has different rules than other TIFs
@@ -217,33 +179,17 @@ tax_bill <- function(year_vec,
   # Fetch levy for all agencies of a tax code, this will expand the number of
   # rows from 1 per PIN per year, to N per PIN per year, where N is the number
   # of agencies associated with a PIN's tax code
-  if (identical(levies_df_str, sapply(levies_df, mode))) {
-    df <- df %>%
-      dplyr::left_join(levies_df, by = c("year", "tax_code")) %>%
-      dplyr::filter(!is.na(.data$total_levy))
-  } else {
-    stop(
-      "levies_df must be in the same format as the levy data ",
-      "returned by lookup_levies(). Ensure all column names and types ",
-      "are the same"
-    )
-  }
+  df <- df %>%
+    dplyr::left_join(levies_df, by = c("year", "tax_code")) %>%
+    dplyr::filter(!is.na(.data$total_levy))
 
   # Fetch total EAV for all agencies of a tax code. This should be the same
   # number of agencies as for the levies df
-  if (identical(agency_eavs_df_str, sapply(agency_eavs_df, mode))) {
-    df <- df %>%
-      dplyr::left_join(
-        dplyr::select(agency_eavs_df, -dplyr::any_of("agency_name")),
-        by = c("year", "tax_code", "agency")
-      )
-  } else {
-    stop(
-      "agency_eavs_df must be in the same format as the agency data ",
-      "returned by lookup_agency_eavs(). Ensure all column names and types ",
-      "are the same"
+  df <- df %>%
+    dplyr::left_join(
+      dplyr::select(agency_eavs_df, -dplyr::any_of("agency_name")),
+      by = c("year", "tax_code", "agency")
     )
-  }
 
   # Calculate the tax amount deducted for each exemption, then aggregate and
   # calculate the final taxable amount
