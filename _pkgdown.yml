@@ -13,7 +13,7 @@ reference:
 - subtitle: Test new scenarios
 - contents:
   - starts_with("change_")
-- subtitle: Check compliance
+- subtitle: Check change compliance/validity
 - contents:
   - starts_with("check_")
 

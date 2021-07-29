@@ -2,19 +2,23 @@
 #'
 #' @description The functions in this group take a tax year, PIN, and/or tax
 #'   code as input and return a data frame as an output. The returned data
-#'   frames are in a specific format (in terms of column name/order) and can be
-#'   used directly in \code{\link{tax_bill}}.
+#'   frames are in a specific format (in terms of column name/type/order) and
+#'   can be used directly in \code{\link{tax_bill}} or piped to helper functions
+#'   such as \code{\link{change_levies_avg}}.
 #'
 #'   When calculating tax bills for future years or providing custom/simulated
 #'   data, you'll need to replicate the format returned by these functions.
 #'
-#'   Note: All vector inputs must be either the same length or length 1.
+#' @details Note that all vector inputs (suffixed with \code{_vec}) must be
+#'   either length 1 or the same length as the longest vector (standard
+#'   recycling rules apply).
 #'
 #' @param year A numeric vector of tax years.
 #' @param pin A character vector of 14-digit PINs.
 #' @param tax_code A character vector of 5-digit Cook County tax codes.
 #'
-#' @return A data frame containing the looked-up values.
+#' @return A data frame containing the specified tax data by year and
+#'   PIN/tax code.
 #'
 #' @examples
 #' \donttest{
@@ -37,13 +41,15 @@ NULL
 #'   return a vector as an output. The output vector can be used directly in
 #'   \code{\link{tax_bill}}.
 #'
-#'   Note: All vector inputs must be either the same length or length 1.
+#' @details Note that all vector inputs (suffixed with \code{_vec}) must be
+#'   either length 1 or the same length as the longest vector (standard
+#'   recycling rules apply).
 #'
 #' @param year A numeric vector of tax years.
 #' @param pin A character vector of 14-digit PINs.
 #'
-#' @return A vector containing the looked-up values. Will be the same length as
-#'   the longest vector in the inputs.
+#' @return A vector containing the specified tax data values.
+#'   Will be the same length as the longest vector in the inputs.
 #'
 #' @examples
 #' \donttest{

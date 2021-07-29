@@ -40,7 +40,7 @@
 
 
 # nolint start
-#' Consumer Price Index values for PTELL
+#' Consumer Price Index values for checking PTELL
 #'
 #' @description Cook County and the non-home-rule taxing districts within it are
 #'   subject to the Property Tax Extension Limitation Law (PTELL). PTELL limits
@@ -52,7 +52,7 @@
 #'   of Labor Statistics in January of each year.
 #'
 #'   This data frame contains the CPI values and rate of change used for PTELL
-#'   *in Cook County*.
+#'   in Cook County.
 #'
 #' @format A data frame containing 29 rows and 4 columns:
 #' \describe{

@@ -16,8 +16,9 @@
 #'   following year (2020 data is available in 2021). If needed, users can
 #'   supply current tax year data manually. See vignettes for more information.
 #'
-#' @details Note that all vector inputs (suffixed with \code{_vec}) can be
-#'   either length 1 or the same length as the longest vector.
+#' @details Note that all vector inputs (suffixed with \code{_vec}) must be
+#'   either length 1 or the same length as the longest vector (standard
+#'   recycling rules apply).
 #'
 #'   The district-level tax amounts returned by this function will *not*
 #'   perfectly match the amounts on real tax bills. This is due to rounding
@@ -79,7 +80,8 @@
 #'   (rows) associated with each year.
 #'
 #'   Note that unlike official tax bills, TIFs are not broken out into a
-#'   separate line item and instead are contained in their own column(s).
+#'   separate line item and instead are contained in their own column
+#'   (named \code{tax_amt_total_to_tif}).
 #'
 #' @examples
 #' \donttest{

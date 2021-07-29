@@ -24,18 +24,23 @@ lookup_tifs(year, tax_code)
 \item{pin}{A character vector of 14-digit PINs.}
 }
 \value{
-A data frame containing the looked-up values.
+A data frame containing the specified tax data by year and
+PIN/tax code.
 }
 \description{
 The functions in this group take a tax year, PIN, and/or tax
 code as input and return a data frame as an output. The returned data
-frames are in a specific format (in terms of column name/order) and can be
-used directly in \code{\link{tax_bill}}.
+frames are in a specific format (in terms of column name/type/order) and
+can be used directly in \code{\link{tax_bill}} or piped to helper functions
+such as \code{\link{change_levies_avg}}.
 
 When calculating tax bills for future years or providing custom/simulated
 data, you'll need to replicate the format returned by these functions.
-
-Note: All vector inputs must be either the same length or length 1.
+}
+\details{
+Note that all vector inputs (suffixed with \code{_vec}) must be
+either length 1 or the same length as the longest vector (standard
+recycling rules apply).
 }
 \section{Functions}{
 \itemize{

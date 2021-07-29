@@ -38,8 +38,12 @@ the Clerk (\code{\link{levy_and_total_eav_by_agency}}). Can be altered in
 the case of changed or future (estimated EAVs).}
 }
 \value{
-Returns a warning when any change to levies between
-\code{levies_df_old} and \code{levies_df_new} could violate PTELL.
+Returns an unaltered copy of \code{levies_df_new} by default. If
+\code{keep_ptell_cols = TRUE}, then returns \code{levies_df_new} with
+columns used to check PTELL compliance.
+
+If \code{quiet = FALSE}, also returns a warning when any change to levies
+between \code{levies_df_old} and \code{levies_df_new} could violate PTELL.
 }
 \description{
 The Property Tax Extension Limitation Law (PTELL) limits the

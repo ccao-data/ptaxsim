@@ -45,12 +45,15 @@ returned by \code{\link{lookup_levies}}.
 The functions in this group alter levy data returned by
 \code{\link{lookup_levies}} to simulate counterfactual situations.
 
-For example, \code{change_levy_pct()} can be used to determine how a tax
-bill would be affected if all levies for that bill went up by 2\%.
-
-\strong{NOTE:} Levy changes are subject to Illinois' Property Tax Extension
-Limitation Law (PTELL). By default, these functions will throw a warning
-when one or more levy changes might violate PTELL.
+For example, \code{\link{change_levies_pct}} can be combined with
+\code{\link{tax_bill}} to determine how a tax bill would be affected if
+all levies for that bill went up by 2\%.
+}
+\details{
+Levy changes are subject to Illinois' Property Tax
+Extension Limitation Law (PTELL). By default, these functions will throw a
+warning when one or more levy changes might violate PTELL. Pass the
+argument \code{quiet = TRUE} to disable this behavior.
 
 Note that is is a naive/simple implementation of PTELL. See the underlying
 \code{\link{check_levies_ptell}} function for more details on PTELL and
@@ -75,10 +78,18 @@ previous N years.
 library(magrittr)
 levies <- lookup_levies(2019, "73105")
 
-levies \%>\% change_levies_amt(amount = 10000)
-levies \%>\% change_levies_avg(n_years = 5)
-levies \%>\% change_levies_cpi()
-levies \%>\% change_levies_pct(percent = 0.02)
+levies \%>\%
+  change_levies_amt(amount = 10000)
+levies \%>\%
+  change_levies_avg(n_years = 3)
+levies \%>\%
+  change_levies_cpi()
+levies \%>\%
+  change_levies_pct(percent = 0.02)
 }
+}
+\seealso{
+Other change: 
+\code{\link{change_year}()}
 }
 \concept{change}

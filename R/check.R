@@ -56,8 +56,13 @@
 #'   the Clerk (\code{\link{levy_and_total_eav_by_agency}}). Can be altered in
 #'   the case of changed or future (estimated EAVs).
 #'
-#' @return Returns a warning when any change to levies between
-#'   \code{levies_df_old} and \code{levies_df_new} could violate PTELL.
+#' @return Returns an unaltered copy of \code{levies_df_new} by default. If
+#'   \code{keep_ptell_cols = TRUE}, then returns \code{levies_df_new} with
+#'   columns used to check PTELL compliance.
+#'
+#'   If \code{quiet = FALSE}, also returns a warning when any change to levies
+#'   between \code{levies_df_old} and \code{levies_df_new} could violate PTELL.
+#'
 #'
 #' @md
 #' @importFrom magrittr %>%
@@ -130,7 +135,7 @@ check_levies_ptell <- function(levies_df_old,
       .data$ptell_lim_rate, .data$ptell_fudge_rate, .data$ptell_max_levy
     )
 
-  # Join max levies onto new levies df and create and indicate col for exceeding
+  # Join max levies onto new levies df and create an indicator col for exceeding
   levies_df_new <- levies_df_new %>%
     dplyr::left_join(levies_df_old, by = c("year", "agency")) %>%
     dplyr::mutate(
