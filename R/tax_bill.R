@@ -16,8 +16,9 @@
 #'   following year (2020 data is available in 2021). If needed, users can
 #'   supply current tax year data manually. See vignettes for more information.
 #'
-#' @details Note that all vector inputs (suffixed with \code{_vec}) can be
-#'   either length 1 or the same length as the longest vector.
+#' @details Note that all vector inputs (suffixed with \code{_vec}) must be
+#'   either length 1 or the same length as the longest vector (standard
+#'   recycling rules apply).
 #'
 #'   The district-level tax amounts returned by this function will *not*
 #'   perfectly match the amounts on real tax bills. This is due to rounding
@@ -79,7 +80,8 @@
 #'   (rows) associated with each year.
 #'
 #'   Note that unlike official tax bills, TIFs are not broken out into a
-#'   separate line item and instead are contained in their own column(s).
+#'   separate line item and instead are contained in their own column
+#'   (named \code{tax_amt_total_to_tif}).
 #'
 #' @examples
 #' \donttest{
@@ -114,13 +116,13 @@ tax_bill <- function(year_vec,
                      tifs_df = lookup_tifs(year_vec, tax_code_vec),
                      simplify = TRUE) {
 
-  # Basic type/input checking
+  # Basic type/input checking for vector inputs
   stopifnot(
     is.numeric(year_vec),
     length(year_vec) > 0,
     all(nchar(pin_vec) == 14),
     is.character(pin_vec),
-    all(nchar(tax_code_vec) == 5),
+    all(nchar(tax_code_vec) == 5 | is.na(tax_code_vec)),
     is.character(tax_code_vec),
     is.numeric(eav_vec),
     length(eav_vec) > 0,
@@ -128,6 +130,15 @@ tax_bill <- function(year_vec,
     length(eq_fct_vec) > 0,
     is.logical(simplify),
     length(simplify) == 1
+  )
+
+  # Input checking to ensure data frames have expected structure (col name and
+  # data type)
+  stopifnot(
+    check_agency_eavs_df_str(agency_eavs_df),
+    check_exemptions_df_str(exemptions_df),
+    check_levies_df_str(levies_df),
+    check_tifs_df_str(tifs_df)
   )
 
   # Combine the input vectors in a single tibble. Let tibble() handle errors
@@ -140,50 +151,18 @@ tax_bill <- function(year_vec,
     "eq_factor" = eq_fct_vec
   )
 
-  # Get vector of column names required in each respective input _df data frame
-  exemptions_req_cols <- names(ptaxsim::av_exe_and_tax_code_by_pin)
-  exemptions_req_cols <- exemptions_req_cols[
-    !exemptions_req_cols %in% c("class", "av", "tax_code")
-  ]
-  tifs_req_cols <- c(
-    "year", "tax_code", "tif_share", "agency"
-  )
-  levies_req_cols <- c(
-    "year", "tax_code", "total_levy", "agency", "agency_name"
-  )
-  agency_eavs_req_cols <- c(
-    "year", "tax_code", "agency", "total_eav"
-  )
-
-  # Error checking for exemptions data, make sure all required columns present
-  if (is.data.frame(exemptions_df) &
-    all(exemptions_req_cols %in% names(exemptions_df))) {
-    df <- dplyr::left_join(df, exemptions_df, by = c("year", "pin"))
-  } else {
-    stop(
-      "exemptions_df must be in the same format as the exemptions data ",
-      "returned by lookup_exemptions().\nEnsure there is 1 row per PIN per ",
-      "year and all column names and types are the same"
-    )
-  }
+  # Join exemptions data to the PIN and year
+  df <- dplyr::left_join(df, exemptions_df, by = c("year", "pin"))
 
   # Fetch TIF for a given tax code. There should only be one TIF per tax code (
   # with a few exceptions)
-  if (is.data.frame(tifs_df) & all(tifs_req_cols %in% names(tifs_df))) {
-    df <- df %>%
-      dplyr::left_join(
-        dplyr::select(tifs_df, -dplyr::any_of("agency_name")) %>%
-          dplyr::rename(tif_agency = .data$agency) %>%
-          dplyr::filter(!is.na(.data$tif_share)),
-        by = c("year", "tax_code")
-      )
-  } else {
-    stop(
-      "tifs_df must be in the same format as the agency data ",
-      "returned by lookup_tifs().\nEnsure all column names and types ",
-      "are the same"
+  df <- df %>%
+    dplyr::left_join(
+      dplyr::select(tifs_df, -dplyr::any_of("agency_name")) %>%
+        dplyr::rename(tif_agency = .data$agency) %>%
+        dplyr::filter(!is.na(.data$tif_share)),
+      by = c("year", "tax_code")
     )
-  }
 
   # Add an indicator for when the PIN is in the special Red-Purple Modernization
   # TIF, which has different rules than other TIFs
@@ -202,34 +181,17 @@ tax_bill <- function(year_vec,
   # Fetch levy for all agencies of a tax code, this will expand the number of
   # rows from 1 per PIN per year, to N per PIN per year, where N is the number
   # of agencies associated with a PIN's tax code
-  if (is.data.frame(levies_df) & all(levies_req_cols %in% names(levies_df))) {
-    df <- df %>%
-      dplyr::left_join(levies_df, by = c("year", "tax_code")) %>%
-      dplyr::filter(!is.na(.data$total_levy))
-  } else {
-    stop(
-      "levies_df must be in the same format as the levy data ",
-      "returned by lookup_levies().\nEnsure all column names and types ",
-      "are the same"
-    )
-  }
+  df <- df %>%
+    dplyr::left_join(levies_df, by = c("year", "tax_code")) %>%
+    dplyr::filter(!is.na(.data$total_levy))
 
   # Fetch total EAV for all agencies of a tax code. This should be the same
   # number of agencies as for the levies df
-  if (is.data.frame(agency_eavs_df) &
-    all(agency_eavs_req_cols %in% names(agency_eavs_df))) {
-    df <- df %>%
-      dplyr::left_join(
-        dplyr::select(agency_eavs_df, -dplyr::any_of("agency_name")),
-        by = c("year", "tax_code", "agency")
-      )
-  } else {
-    stop(
-      "agency_eavs_df must be in the same format as the agency data ",
-      "returned by lookup_agency_eavs().\nEnsure all column names and types ",
-      "are the same"
+  df <- df %>%
+    dplyr::left_join(
+      dplyr::select(agency_eavs_df, -dplyr::any_of("agency_name")),
+      by = c("year", "tax_code", "agency")
     )
-  }
 
   # Calculate the tax amount deducted for each exemption, then aggregate and
   # calculate the final taxable amount
@@ -279,25 +241,25 @@ tax_bill <- function(year_vec,
       # Get total amount from TIF sent BACK to jurisdictions. Need to divvy up
       # the amount that would be sent to CPS proportionally among other bodies
       # using each agency's tax rate
-      tax_amt_rpm_tif_jur_total = sum(
+      tax_amt_rpm_tif_back_to_jur_total = sum(
         (.data$tax_amt_total_to_tif -
           .data$tax_amt_rpm_tif_to_cps - .data$tax_amt_rpm_tif_to_rpm)
       ),
-      tax_amt_rpm_tif_jur_dist = ifelse(
+      tax_amt_rpm_tif_back_to_jur_dist = ifelse(
         !.data$is_cps_agency,
         .data$agency_tax_rate /
           (sum(.data$agency_tax_rate * !.data$is_cps_agency)) *
           .data$in_rpm_tif,
         0
       ),
-      tax_amt_rpm_tif_to_jur =
-        (.data$tax_amt_rpm_tif_jur_total *
-          .data$tax_amt_rpm_tif_jur_dist),
+      tax_amt_rpm_tif_back_to_jur =
+        (.data$tax_amt_rpm_tif_back_to_jur_total *
+          .data$tax_amt_rpm_tif_back_to_jur_dist),
       tax_amt_final =
         .data$tax_amt_post_exemptions - .data$tax_amt_total_to_tif +
-          .data$tax_amt_rpm_tif_to_jur,
+          .data$tax_amt_rpm_tif_back_to_jur,
       tax_amt_total_to_tif =
-        .data$tax_amt_total_to_tif - .data$tax_amt_rpm_tif_to_jur
+        .data$tax_amt_total_to_tif - .data$tax_amt_rpm_tif_back_to_jur
     ) %>%
     dplyr::ungroup()
 
@@ -309,13 +271,12 @@ tax_bill <- function(year_vec,
         .data$year,
         .data$pin,
         .data$tax_code,
+        .data$agency,
         .data$agency_name,
         .data$agency_tax_rate,
         .data$eav_before_exemptions,
         .data$tax_amt_post_exemptions,
         .data$tax_amt_total_to_tif,
-        .data$tax_amt_rpm_tif_to_cps,
-        .data$tax_amt_rpm_tif_to_rpm,
         .data$tax_amt_final
       )
   }

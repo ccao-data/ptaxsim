@@ -19,15 +19,18 @@ lookup_tax_code(year, pin)
 \item{pin}{A character vector of 14-digit PINs.}
 }
 \value{
-A vector containing the looked-up values. Will be the same length as
-the longest vector in the inputs.
+A vector containing the specified tax data values.
+Will be the same length as the longest vector in the inputs.
 }
 \description{
 The functions in this group take a tax year and PIN as input and
 return a vector as an output. The output vector can be used directly in
 \code{\link{tax_bill}}.
-
-Note: All vector inputs must be either the same length or length 1.
+}
+\details{
+Note that all vector inputs (suffixed with \code{_vec}) must be
+either length 1 or the same length as the longest vector (standard
+recycling rules apply).
 }
 \section{Functions}{
 \itemize{

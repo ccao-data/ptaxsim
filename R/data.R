@@ -40,7 +40,7 @@
 
 
 # nolint start
-#' Consumer Price Index values for PTELL
+#' Consumer Price Index values for checking PTELL
 #'
 #' @description Cook County and the non-home-rule taxing districts within it are
 #'   subject to the Property Tax Extension Limitation Law (PTELL). PTELL limits
@@ -52,7 +52,7 @@
 #'   of Labor Statistics in January of each year.
 #'
 #'   This data frame contains the CPI values and rate of change used for PTELL
-#'   *in Cook County*.
+#'   in Cook County.
 #'
 #' @format A data frame containing 29 rows and 4 columns:
 #' \describe{
@@ -110,7 +110,8 @@
 #'   \item{year}{Tax year}
 #'   \item{agency}{Tax district/agency ID number}
 #'   \item{agency_name}{Tax district/agency name}
-#'   \item{agency_rate}{Agency tax rate for this year. Equal to levy/base}
+#'   \item{home_rule_ind}{Boolean for whether or not the taxing district
+#'   is home rule. Non-home rule taxing districts are subject to PTELL.}
 #'   \item{total_eav}{Total equalized assessed value (EAV) in the taxing
 #'   district. Also known as the base}
 #'   \item{total_levy}{Total levy amount the taxing district requested}

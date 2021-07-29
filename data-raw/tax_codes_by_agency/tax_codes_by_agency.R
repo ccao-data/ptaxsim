@@ -47,7 +47,7 @@ tax_codes_by_agency <- tax_codes_by_agency %>%
   select(year, tax_code, agency)
 
 # Convert the data to a data.table and use setkey to sort for faster joins
-tax_codes_by_agency <- as.data.table(tax_codes_by_agency)
+setDT(tax_codes_by_agency)
 setkey(tax_codes_by_agency, year, tax_code, agency)
 
 # Save data to package

@@ -4,6 +4,7 @@ library(tabulizer)
 library(miniUI)
 library(stringr)
 library(purrr)
+library(data.table)
 
 # The goal of this script is to create a data frame of the taxing district
 # level tax amounts for each sample tax bill in data-raw/
@@ -95,6 +96,22 @@ bills_df <- bills_df %>%
 bills_df %>%
   readr::write_csv("data-raw/sample_tax_bills/sample_tax_bills_detail.csv")
 
+# Load data from file
+sample_tax_bills_detail <- readr::read_csv(
+  "data-raw/sample_tax_bills/sample_tax_bills_detail.csv"
+)
+
+# Convert columns to expected type
+sample_tax_bills_detail <- sample_tax_bills_detail %>%
+  mutate(
+    year = as.integer(year),
+    class = str_pad(class, 3, "left", "0"),
+    pension = replace_na(pension, 0)
+  )
+
+# Convert the data to a data.table and use setkey to sort for faster joins
+setDT(sample_tax_bills_detail)
+setkey(sample_tax_bills_detail, year, pin)
+
 # Write data to R package
-sample_tax_bills_detail <- bills_df
 usethis::use_data(sample_tax_bills_detail, overwrite = TRUE)

@@ -99,10 +99,11 @@ tifs <- tifs %>%
   # Some TIFs are missing agency/summary data for some years
   group_by(year, tif_name) %>%
   fill(first_year:tif_cancelled_this_year, .direction = "downup") %>%
-  ungroup()
+  ungroup() %>%
+  mutate(across(c(year, first_year), as.integer))
 
 # Convert the data to a data.table and use setkey to sort for faster joins
-tifs <- as.data.table(tifs)
+setDT(tifs)
 setkey(tifs, year, tax_code, agency)
 
 # Save data to package
