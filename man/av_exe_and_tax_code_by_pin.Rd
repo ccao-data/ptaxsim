@@ -5,7 +5,7 @@
 \alias{av_exe_and_tax_code_by_pin}
 \title{Assessed values (AVs), exemptions, and tax codes by PIN and year}
 \format{
-A data frame containing 11233251 rows and 15 columns:
+A data frame containing 13097286 rows and 15 columns:
 \describe{
   \item{year}{Tax year}
   \item{pin}{Property index number identifying a specific parcel or unit}

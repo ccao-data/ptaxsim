@@ -3,7 +3,7 @@
 \docType{data}
 \name{cpis}
 \alias{cpis}
-\title{Consumer Price Index values for checking PTELL}
+\title{Consumer Price Index values for PTELL}
 \format{
 A data frame containing 29 rows and 4 columns:
 \describe{
@@ -34,6 +34,6 @@ Cook County and the non-home-rule taxing districts within it are
   of Labor Statistics in January of each year.
 
   This data frame contains the CPI values and rate of change used for PTELL
-  in Cook County.
+  *in Cook County*.
 }
 \keyword{datasets}

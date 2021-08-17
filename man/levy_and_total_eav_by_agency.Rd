@@ -10,8 +10,7 @@ A data frame containing 5921 rows and 6 columns:
   \item{year}{Tax year}
   \item{agency}{Tax district/agency ID number}
   \item{agency_name}{Tax district/agency name}
-  \item{home_rule_ind}{Boolean for whether or not the taxing district
-  is home rule. Non-home rule taxing districts are subject to PTELL.}
+  \item{agency_rate}{Agency tax rate for this year. Equal to levy/base}
   \item{total_eav}{Total equalized assessed value (EAV) in the taxing
   district. Also known as the base}
   \item{total_levy}{Total levy amount the taxing district requested}
