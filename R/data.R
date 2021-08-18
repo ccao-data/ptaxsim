@@ -15,7 +15,7 @@
 #'   New tax codes are created when new taxing districts (including TIFS and
 #'   SSAs) are established.
 #'
-#' @format A data frame containing 13097286 rows and 15 columns:
+#' @format A data frame containing 13046270 rows and 15 columns:
 #' \describe{
 #'   \item{year}{Tax year}
 #'   \item{pin}{Property index number identifying a specific parcel or unit}
