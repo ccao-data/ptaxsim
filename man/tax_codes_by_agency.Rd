@@ -5,7 +5,7 @@
 \alias{tax_codes_by_agency}
 \title{Cook County taxing agency/district by tax code and year}
 \format{
-A data frame containing 303980 rows and 6 columns:
+A data frame containing 359764 rows and 6 columns:
 \describe{
   \item{year}{Tax year}
   \item{tax_code}{5-digit tax code}

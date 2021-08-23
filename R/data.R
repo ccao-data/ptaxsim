@@ -105,7 +105,7 @@
 #'   Each district's individual tax rate is determined by dividing its levy by
 #'   its base EAV.
 #'
-#' @format A data frame containing 5921 rows and 6 columns:
+#' @format A data frame containing 6874 rows and 6 columns:
 #' \describe{
 #'   \item{year}{Tax year}
 #'   \item{agency}{Tax district/agency ID number}
@@ -198,7 +198,7 @@
 #'   Tax codes and taxing districts can change year-to-year as new agencies are
 #'   created or deprecated.
 #'
-#' @format A data frame containing 303980 rows and 6 columns:
+#' @format A data frame containing 359764 rows and 6 columns:
 #' \describe{
 #'   \item{year}{Tax year}
 #'   \item{tax_code}{5-digit tax code}
