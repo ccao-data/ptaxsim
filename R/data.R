@@ -110,7 +110,8 @@
 #'   \item{year}{Tax year}
 #'   \item{agency}{Tax district/agency ID number}
 #'   \item{agency_name}{Tax district/agency name}
-#'   \item{agency_rate}{Agency tax rate for this year. Equal to levy/base}
+#'   \item{home_rule_ind}{Indicator for home-rule district. Non-home-rule
+#'   districts are subject to PTELL}
 #'   \item{total_eav}{Total equalized assessed value (EAV) in the taxing
 #'   district. Also known as the base}
 #'   \item{total_levy}{Total levy amount the taxing district requested}
