@@ -4,6 +4,7 @@ library(purrr)
 library(stringr)
 library(readxl)
 library(readr)
+library(tidyr)
 library(data.table)
 
 # Mini function to get the mode of a vector

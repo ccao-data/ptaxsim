@@ -5,7 +5,7 @@
 \alias{levy_and_total_eav_by_agency}
 \title{Levy and aggregate (base) equalized assessed value by tax agency by year}
 \format{
-A data frame containing 5921 rows and 6 columns:
+A data frame containing 6874 rows and 6 columns:
 \describe{
   \item{year}{Tax year}
   \item{agency}{Tax district/agency ID number}
