@@ -5,7 +5,7 @@
 \alias{sample_tax_bills_detail}
 \title{Detailed data from real sample tax bills}
 \format{
-A data frame containing 272 rows and 11 columns:
+A data frame containing 323 rows and 11 columns:
 \describe{
   \item{year}{Tax year}
   \item{pin}{Property index number identifying a specific parcel or unit}

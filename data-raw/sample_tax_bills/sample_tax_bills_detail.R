@@ -106,7 +106,8 @@ sample_tax_bills_detail <- sample_tax_bills_detail %>%
   mutate(
     year = as.integer(year),
     class = str_pad(class, 3, "left", "0"),
-    pension = replace_na(pension, 0)
+    pension = replace_na(pension, 0),
+    agency = str_pad(agency, 9, "left", "0")
   )
 
 # Convert the data to a data.table and use setkey to sort for faster joins

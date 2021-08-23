@@ -1,6 +1,7 @@
 library(dplyr)
 library(stringr)
 library(readr)
+library(data.table)
 
 # Load sample tax bills summary data from file
 sample_tax_bills_summary <- readr::read_csv(
