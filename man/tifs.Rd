@@ -5,7 +5,7 @@
 \alias{tifs}
 \title{Tax Increment Financing (TIF) district information by tax code and year}
 \format{
-A data frame containing 7792 rows and 19 columns:
+A data frame containing 9243 rows and 19 columns:
 \describe{
   \item{year}{Tax year}
   \item{tax_code}{5-digit tax code}

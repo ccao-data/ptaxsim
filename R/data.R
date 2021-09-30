@@ -220,7 +220,7 @@
 #'   They work by capping the EAV of an area, then capturing any taxes on value
 #'   above the "frozen" EAV (the increment).
 #'
-#' @format A data frame containing 7792 rows and 19 columns:
+#' @format A data frame containing 9243 rows and 19 columns:
 #' \describe{
 #'   \item{year}{Tax year}
 #'   \item{tax_code}{5-digit tax code}
