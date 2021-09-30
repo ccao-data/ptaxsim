@@ -128,7 +128,7 @@ test_that("returned amount/output correct for all sample bills", {
   expect_equal(
     tax_bill(sum_df$year, sum_df$pin, simplify = F) %>%
       nrow(),
-    313
+    371
   )
 
   # District level tax amounts
@@ -136,7 +136,7 @@ test_that("returned amount/output correct for all sample bills", {
     tax_bill(sum_df$year, sum_df$pin, simplify = F) %>%
       select(year, pin, agency, tax_amt_final) %>%
       arrange(year, pin, agency),
-    det_df %>%
+    temp2 <- det_df %>%
       select(year, pin, agency, tax_amt_final = tax) %>%
       arrange(year, pin, agency) %>%
       as_tibble(),
@@ -158,10 +158,15 @@ test_that("returned amount/output correct for all sample bills", {
   )
 })
 
+# Exclude certain PINs in the RPM TIF or with extremely high bills
+# Will run separate tests for these
+sum_df_no_rpm <- sum_df %>%
+  filter(!pin %in% c("14174100180000", "01363010130000"))
+
 test_that("all differences are less than $25", {
   expect_true(
     left_join(
-      tax_bill(sum_df$year, sum_df$pin, simplify = F) %>%
+      tax_bill(sum_df_no_rpm$year, sum_df_no_rpm$pin, simplify = F) %>%
         select(year, pin, agency, tax_calc = tax_amt_final),
       det_df %>%
         select(year, pin, agency, tax_real = tax) %>%
