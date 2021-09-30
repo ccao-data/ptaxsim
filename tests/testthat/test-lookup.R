@@ -233,11 +233,11 @@ test_that("lookup values/data are correct", {
   )
   expect_known_hash(
     lookup_agency_eavs(2014:2019, "12064"),
-    "2b7347916b"
+    "ece5102d19"
   )
   expect_known_hash(
     lookup_agency_eavs(sum_df$year, sum_df$tax_code),
-    "4abffbaf3c"
+    "0882b7c096"
   )
 })
 
@@ -278,11 +278,11 @@ test_that("lookup values/data are correct", {
   )
   expect_known_hash(
     lookup_levies(2014:2019, "12064"),
-    "d3ae515c92"
+    "6188c96756"
   )
   expect_known_hash(
     lookup_levies(sum_df$year, sum_df$tax_code),
-    "6de973da82"
+    "1f241f6c5a"
   )
   expect_equal(
     nrow(lookup_agency_eavs(sum_df$year, sum_df$tax_code)),
