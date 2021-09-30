@@ -22,7 +22,7 @@ Imports:
     dtplyr,
     magrittr,
     rlang
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 Suggests: 
     covr,
     devtools,
@@ -33,4 +33,3 @@ Suggests:
     testthat
 Depends: 
     R (>= 2.10)
-

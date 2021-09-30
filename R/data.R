@@ -129,7 +129,7 @@
 #'   match the output of \code{\link{tax_bill}}. The line item values are used
 #'   for unit/integration testing.
 #'
-#' @format A data frame containing 323 rows and 11 columns:
+#' @format A data frame containing 381 rows and 11 columns:
 #' \describe{
 #'   \item{year}{Tax year}
 #'   \item{pin}{Property index number identifying a specific parcel or unit}
@@ -161,7 +161,7 @@
 #'   Note: All exemption columns (prefixed with \code{exe_}) are booleans
 #'   for whether or not that exemption was received.
 #'
-#' @format A data frame containing 26 rows and 17 columns:
+#' @format A data frame containing 31 rows and 17 columns:
 #' \describe{
 #'   \item{year}{Tax year}
 #'   \item{pin}{Property index number identifying a specific parcel or unit}
@@ -220,7 +220,7 @@
 #'   They work by capping the EAV of an area, then capturing any taxes on value
 #'   above the "frozen" EAV (the increment).
 #'
-#' @format A data frame containing 7792 rows and 19 columns:
+#' @format A data frame containing 9243 rows and 19 columns:
 #' \describe{
 #'   \item{year}{Tax year}
 #'   \item{tax_code}{5-digit tax code}
