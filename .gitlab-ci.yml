@@ -85,6 +85,7 @@ test:
     - R CMD check $(ls -1t *.tar.gz | head -n 1) --no-manual --no-build-vignettes --no-tests
     - Rscript -e 'devtools::test(reporter = testthat::JunitReporter$new(file = "test-out.xml"))'
     - Rscript -e 'covr::package_coverage()'
+  coverage: '/Coverage: \d+\.\d+/'
   artifacts:
     when: always
     paths:
