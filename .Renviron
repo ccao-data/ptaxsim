@@ -1,0 +1,4 @@
+S3_REMOTE_BUCKET=s3://ccao-data-ptaxsim-us-east-1
+ARROW_WITH_SNAPPY=ON
+ARROW_WITH_ZSTD=ON
+ARROW_S3=ON

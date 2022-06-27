@@ -11,14 +11,14 @@
 
 # Base R image to build the package with
 # Should be version locked to the highest version most CCAO employees are using
-image: rocker/r-ver:4.1.0
+image: rocker/r-ver:4.2.0
 
 # Defining static variables used throughout the CI pipeline
 variables:
   DOCKER_DRIVER: "overlay2" # Docker FS driver, don't change this
   GIT_SUBMODULE_STRATEGY: "recursive" # Set how GitLab handles submodules
   # If a package has a linux dependency that isn't already listed, add it here
-  APT_DEPS: "libcurl4-openssl-dev libssl-dev libxml2-dev libgit2-dev pandoc git libudunits2-dev libgdal-dev libgeos-dev libproj-dev libfontconfig1-dev libharfbuzz-dev libfribidi-dev"
+  APT_DEPS: "libcurl4-openssl-dev libssl-dev libxml2-dev libgit2-dev pandoc git zstd curl zip libfontconfig1-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev"
   # Specify vars to enable caching and dependency management via renv
   RENV_CONFIG_REPOS_OVERRIDE: "https://cloud.r-project.org/"
   RENV_PATHS_CACHE: ${CI_PROJECT_DIR}/cache
@@ -50,8 +50,18 @@ before_script:
   # Install apt dependencies listed in APT_DEPS variable
   - apt-get update && apt-get install --no-install-recommends -y ${APT_DEPS}
   
+  # Install the AWS CLI for retrieving objects from S3
+  - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" &&
+    unzip -qq awscliv2.zip &&
+    ./aws/install
+    
+  # Download and unpack the PTAXSIM DB from S3
+  - aws s3 cp s3://ccao-data-public-us-east-1/ptaxsim/ptaxsim.db.zst ${CI_PROJECT_DIR}/ptaxsim.db.zst
+  - zstd -d ${CI_PROJECT_DIR}/ptaxsim.db.zst -o ${CI_PROJECT_DIR}/ptaxsim.db
+    
   # Install R dependencies listed in DESCRIPTION using renv
   - Rscript -e 'renv::install()'
+
   
 stages:
   - build
@@ -67,7 +77,7 @@ build:
     - R CMD build . --no-build-vignettes --no-manual
   artifacts:
     name: "$CI_JOB_STAGE"
-    expire_in: 6 mos 
+    expire_in: 6 mos
     when: on_success
     paths:
       - ${CI_PROJECT_NAME}*.tar.gz

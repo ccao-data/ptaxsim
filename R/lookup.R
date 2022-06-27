@@ -1,35 +1,32 @@
+globalVariables("ptaxsim_db_conn")
+
 #' Lookup data frames required to calculate property tax bills
 #'
 #' @description The functions in this group take a tax year, PIN, and/or tax
 #'   code as input and return a data frame as an output. The returned data
 #'   frames are in a specific format (in terms of column name/type/order) and
-#'   can be used directly in \code{\link{tax_bill}} or piped to helper functions
-#'   such as \code{\link{change_levies_avg}}.
+#'   can be used directly in \code{\link{tax_bill}} or piped to helper
+#'   functions.
 #'
 #'   When calculating tax bills for future years or providing custom/simulated
 #'   data, you'll need to replicate the format returned by these functions.
 #'
-#' @details Note that all vector inputs (suffixed with \code{_vec}) must be
-#'   either length 1 or the same length as the longest vector (standard
-#'   recycling rules apply).
-#'
 #' @param year A numeric vector of tax years.
 #' @param pin A character vector of 14-digit PINs.
 #' @param tax_code A character vector of 5-digit Cook County tax codes.
+#' @param conn A connection object pointing to the local copy of the
+#'   PTAXSIM database. Usually instantiated on package load.
 #'
 #' @return A data frame containing the specified tax data by year and
 #'   PIN/tax code.
 #'
 #' @examples
-#' \donttest{
-#' lookup_agency_eavs(2019, "73105")
-#' lookup_exemptions(2018:2019, "20304190020000")
-#' lookup_levies(2019, "73105")
-#' lookup_tifs(2019, "73105")
+#' \dontrun{
+#' lookup_agency(2019, "73105")
+#' lookup_pin(2018:2019, "20304190020000")
+#' lookup_tif(2019, "73105")
 #' }
 #' @md
-#' @importFrom magrittr %>%
-#' @importFrom rlang .data
 #' @family lookups
 #' @name lookup_df
 NULL
@@ -41,25 +38,19 @@ NULL
 #'   return a vector as an output. The output vector can be used directly in
 #'   \code{\link{tax_bill}}.
 #'
-#' @details Note that all vector inputs (suffixed with \code{_vec}) must be
-#'   either length 1 or the same length as the longest vector (standard
-#'   recycling rules apply).
-#'
 #' @param year A numeric vector of tax years.
 #' @param pin A character vector of 14-digit PINs.
+#' @param conn A connection object pointing to the local copy of the
+#'   PTAXSIM database. Usually instantiated on package load.
 #'
 #' @return A vector containing the specified tax data values.
-#'   Will be the same length as the longest vector in the inputs.
 #'
 #' @examples
-#' \donttest{
-#' lookup_eav(2017:2019, "20304190020000")
-#' lookup_equalization_factor(2014:2019)
+#' \dontrun{
 #' lookup_tax_code(2019, c("20304190020000", "16152090350000"))
+#' lookup_tax_code(2006:2020, c("20304190020000", "16152090350000"))
 #' }
 #' @md
-#' @importFrom magrittr %>%
-#' @importFrom rlang .data
 #' @family lookups
 #' @name lookup_vec
 NULL
@@ -67,198 +58,165 @@ NULL
 
 #' @describeIn lookup_df Lookup tax agency (CPS, Cook County, forest preserve)
 #'   total equalized assessed values. Such values are known as the "base" and
-#'   are used to calculate per agency tax rates. Returns a data frame with 1 row
-#'   for each agency associated with the input tax code and year.
-#'
-#' @export
-lookup_agency_eavs <- function(year, tax_code) {
-  stopifnot(
-    is.numeric(year),
-    is.character(tax_code),
-    all(year >= 2014),
-    all(nchar(tax_code) == 5 | is.na(tax_code))
-  )
-
-  # Convert input vectors into data frame. Use tibble() first to enforce
-  # comparable sizes
-  df_idx <- data.table::setDT(dplyr::tibble(
-    "year" = year,
-    "tax_code" = tax_code
-  ))
-
-  dtplyr::lazy_dt(df_idx) %>%
-    dplyr::left_join(
-      ptaxsim::tax_codes_by_agency,
-      by = c("year", "tax_code")
-    ) %>%
-    dplyr::left_join(
-      ptaxsim::levy_and_total_eav_by_agency,
-      by = c("year", "agency")
-    ) %>%
-    dplyr::anti_join(
-      ptaxsim::tifs,
-      by = c("year", "agency", "tax_code")
-    ) %>%
-    dplyr::distinct(
-      .data$year, .data$tax_code, .data$agency,
-      .data$agency_name, .data$total_eav
-    ) %>%
-    dplyr::as_tibble() %>%
-    dplyr::filter(!is.na(.data$total_eav))
-}
-
-
-#' @describeIn lookup_vec Lookup the equalized assessed value for a specific PIN
-#'   and year. Returns a numeric vector the same length as the longest input.
-#'
-#' @export
-lookup_eav <- function(year, pin) {
-  stopifnot(
-    is.numeric(year),
-    is.character(pin),
-    all(year >= 2014),
-    all(nchar(pin) == 14)
-  )
-
-  # Convert input vectors into data frame. Use tibble() first to enforce
-  # comparable sizes
-  df_idx <- data.table::setDT(dplyr::tibble(
-    "year" = year,
-    "pin" = pin
-  ))
-
-  dtplyr::lazy_dt(df_idx) %>%
-    dplyr::left_join(
-      ptaxsim::av_exe_and_tax_code_by_pin %>%
-        dplyr::select(.data$year, .data$pin, .data$av),
-      by = c("year", "pin")
-    ) %>%
-    dplyr::left_join(
-      ptaxsim::equalization_factors,
-      by = "year"
-    ) %>%
-    dplyr::mutate(
-      eav_no_exemptions = round(.data$av * .data$equalization_factor)
-    ) %>%
-    dplyr::pull(.data$eav_no_exemptions)
-}
-
-
-#' @describeIn lookup_vec Lookup the state equalization rate for a given year.
-#'   Returns a numeric vector the same length as the input.
-#'
-#' @export
-lookup_equalization_factor <- function(year) {
-  stopifnot(
-    is.numeric(year),
-    is.vector(year)
-  )
-
-  ptaxsim::equalization_factors$equalization_factor[
-    match(year, ptaxsim::equalization_factors$year)
-  ]
-}
-
-
-#' @describeIn lookup_df Lookup exemptions granted to a PIN for the specified
-#'   year. Returns a data frame with 1 row per PIN per year.
-#'
-#' @export
-lookup_exemptions <- function(year, pin) {
-  stopifnot(
-    is.numeric(year),
-    is.character(pin),
-    all(year >= 2014),
-    all(nchar(pin) == 14)
-  )
-
-  # Convert input vectors into data frame. Use tibble() first to enforce
-  # comparable sizes
-  df_idx <- data.table::setDT(dplyr::tibble(
-    "year" = year,
-    "pin" = pin
-  ))
-
-  dtplyr::lazy_dt(df_idx) %>%
-    dplyr::left_join(
-      ptaxsim::av_exe_and_tax_code_by_pin,
-      by = c("year", "pin")
-    ) %>%
-    dplyr::select(.data$year, .data$pin, dplyr::starts_with("exe_")) %>%
-    dplyr::distinct() %>%
-    dplyr::as_tibble()
-}
-
-
-#' @describeIn lookup_df Lookup tax agency (CPS, Cook County, forest preserve)
-#'   total levies. Returns a data frame with 1 row for each agency associated
+#'   are used to calculate per agency tax rates. Also returns each agency's
+#'   levy amount. Returns a data frame with 1 row for each agency associated
 #'   with the input tax code and year.
 #'
 #' @export
-lookup_levies <- function(year, tax_code) {
+lookup_agency <- function(year, tax_code, conn = ptaxsim_db_conn) {
   stopifnot(
     is.numeric(year),
     is.character(tax_code),
-    all(year >= 2014),
-    all(nchar(tax_code) == 5 | is.na(tax_code))
+    all(year >= 2006),
+    all(nchar(tax_code) == 5 | is.na(tax_code)),
+    DBI::dbIsValid(conn)
   )
 
-  # Convert input vectors into data frame. Use tibble() first to enforce
-  # comparable sizes
-  df_idx <- data.table::setDT(dplyr::tibble(
-    "year" = year,
-    "tax_code" = tax_code
-  ))
+  df <- DBI::dbGetQuery(
+    conn,
+    statement = glue::glue_sql(
+      "
+      SELECT
+        tc.year,
+        tc.tax_code_num AS tax_code,
+        tc.agency_num,
+        a.agency_name,
+        a.total_ext,
+        a.total_eav
+      FROM tax_codes tc
+      LEFT JOIN agencies a
+        ON tc.year = a.year
+        AND tc.agency_num = a.agency_num
+      WHERE tc.year IN ({years*})
+      AND tc.tax_code_num IN ({tax_codes*})
+      AND a.total_eav IS NOT NULL
+      ORDER BY tc.year, tc.tax_code_num, tc.agency_num
+    ",
+      years = unique(year),
+      tax_codes = unique(tax_code),
+      .con = conn
+    )
+  )
 
-  dtplyr::lazy_dt(df_idx) %>%
-    dplyr::left_join(
-      ptaxsim::tax_codes_by_agency,
-      by = c("year", "tax_code")
-    ) %>%
-    dplyr::left_join(
-      ptaxsim::levy_and_total_eav_by_agency,
-      by = c("year", "agency")
-    ) %>%
-    dplyr::anti_join(
-      ptaxsim::tifs,
-      by = c("year", "agency", "tax_code")
-    ) %>%
-    dplyr::distinct(
-      .data$year, .data$tax_code, .data$agency,
-      .data$agency_name, .data$total_levy
-    ) %>%
-    dplyr::as_tibble() %>%
-    dplyr::filter(!is.na(.data$total_levy))
+  df <- data.table::setDT(df, key = c("year", "tax_code", "agency_num"))
+
+  return(df)
 }
 
 
-#' @describeIn lookup_vec Lookup 5-digit Cook County tax code by PIN and year.
-#'   Returns a character vector the same length as the longest input.
+#' @describeIn lookup_df Lookup the equalized assessed value and exemptions
+#'   for a specific PIN and year. Returns a numeric vector the same length
+#'   as the longest input.
 #'
 #' @export
-lookup_tax_code <- function(year, pin) {
+lookup_pin <- function(year, pin, conn = ptaxsim_db_conn) {
   stopifnot(
     is.numeric(year),
     is.character(pin),
-    all(year >= 2014),
-    all(nchar(pin) == 14)
+    all(year >= 2006),
+    all(nchar(pin) == 14),
+    DBI::dbIsValid(conn)
   )
 
-  # Convert input vectors into data frame. Use tibble() first to enforce
-  # comparable sizes
-  df_idx <- data.table::setDT(dplyr::tibble(
-    "year" = year,
-    "pin" = pin
-  ))
+  # This lookup uses a temp table since it's faster than putting lots of
+  # values into the WHERE clause for large lookups
+  df_idx <- expand.grid("year" = unique(year), "pin" = unique(pin))
+  DBI::dbWriteTable(
+    conn = conn,
+    name = "lookup_pin",
+    value = df_idx,
+    overwrite = TRUE,
+    temporary = TRUE
+  )
 
-  dtplyr::lazy_dt(df_idx) %>%
-    dplyr::left_join(
-      ptaxsim::av_exe_and_tax_code_by_pin %>%
-        dplyr::select(.data$year, .data$pin, .data$tax_code),
-      by = c("year", "pin")
-    ) %>%
-    dplyr::pull(.data$tax_code) %>%
-    as.character()
+  df <- DBI::dbGetQuery(
+    conn,
+    statement = glue::glue_sql(
+      "
+      SELECT
+        lp.year,
+        lp.pin,
+        p.class,
+        p.av,
+        ROUND(p.av * ef.equalization_factor, 0) AS eav,
+        p.exe_homeowner,
+        p.exe_senior,
+        p.exe_freeze,
+        p.exe_longtime_homeowner,
+        p.exe_disabled,
+        p.exe_vet_returning,
+        p.exe_vet_dis_lt50,
+        p.exe_vet_dis_50_69,
+        p.exe_vet_dis_ge70,
+        p.exe_abate
+      FROM lookup_pin lp
+      INNER JOIN pins p
+        ON lp.year = p.year
+        AND lp.pin = p.pin
+      LEFT JOIN eq_factors ef
+        ON p.year = ef.year
+      ORDER BY lp.year, lp.pin
+    ",
+      pins = pin,
+      years = year,
+      .con = conn
+    )
+  )
+
+  df <- data.table::setDT(df, key = c("year", "pin"))
+
+  return(df)
+}
+
+
+#' @describeIn lookup_vec Lookup Cook County tax code for a specific PIN and
+#'   year. The tax code represents the unique geographic overlap of different
+#'   taxing districts. If the input vectors are both length N, then the output
+#'   will also be length N. If the input vectors are different lengths, the
+#'   Cartesian product is returned.
+#'
+#' @export
+lookup_tax_code <- function(year, pin, conn = ptaxsim_db_conn) {
+  stopifnot(
+    is.numeric(year),
+    is.character(pin),
+    all(year >= 2006),
+    all(nchar(pin) == 14),
+    DBI::dbIsValid(conn)
+  )
+
+  if (length(year) != length(pin)) {
+    df_idx <- expand.grid("year" = year, "pin" = pin)
+  } else {
+    df_idx <- data.frame("year" = year, "pin" = pin)
+  }
+
+  DBI::dbWriteTable(
+    conn = conn,
+    name = "lookup_tax_code",
+    value = df_idx,
+    overwrite = TRUE,
+    temporary = TRUE
+  )
+
+  df <- DBI::dbGetQuery(
+    conn,
+    statement = glue::glue_sql(
+      "
+      SELECT
+        p.tax_code_num
+      FROM lookup_tax_code ltc
+      LEFT JOIN pins p
+        ON p.year = ltc.year
+        AND p.pin = ltc.pin
+    ",
+      pins = pin,
+      years = year,
+      .con = conn
+    )
+  )
+
+  return(df$tax_code_num)
 }
 
 
@@ -267,40 +225,41 @@ lookup_tax_code <- function(year, pin) {
 #'   if the tax code is not within a TIF.
 #'
 #' @export
-lookup_tifs <- function(year, tax_code) {
+lookup_tif <- function(year, tax_code, conn = ptaxsim_db_conn) {
   stopifnot(
     is.numeric(year),
     is.character(tax_code),
-    all(year >= 2014),
-    all(nchar(tax_code) == 5 | is.na(tax_code))
+    all(year >= 2006),
+    all(nchar(tax_code) == 5 | is.na(tax_code)),
+    DBI::dbIsValid(conn)
   )
 
-  # Convert input vectors into data frame. Use tibble() first to enforce
-  # comparable sizes
-  df_idx <- data.table::setDT(dplyr::tibble(
-    "year" = year,
-    "tax_code" = tax_code
-  ))
+  tif_share <- NULL
+  df <- DBI::dbGetQuery(
+    conn,
+    statement = glue::glue_sql("
+      SELECT
+        td.year,
+        td.tax_code_num AS tax_code,
+        td.agency_num,
+        ts.tif_name AS agency_name,
+        td.tax_code_distribution_percent / 100 AS tif_share
+      FROM tif_distributions td
+      LEFT JOIN tif_summaries ts
+        ON td.year = ts.year
+        AND td.agency_num = ts.agency_num
+      WHERE td.year IN ({years*})
+      AND td.tax_code_num IN ({tax_codes*})
+      ORDER BY td.year, td.tax_code_num, td.agency_num
+    ",
+      years = unique(year),
+      tax_codes = unique(tax_code),
+      .con = conn
+    )
+  )
 
-  dtplyr::lazy_dt(df_idx) %>%
-    dplyr::left_join(
-      ptaxsim::tax_codes_by_agency,
-      by = c("year", "tax_code")
-    ) %>%
-    dplyr::left_join(
-      ptaxsim::tifs,
-      by = c("year", "agency", "tax_code")
-    ) %>%
-    dplyr::anti_join(
-      ptaxsim::levy_and_total_eav_by_agency,
-      by = c("year", "agency")
-    ) %>%
-    dplyr::distinct(
-      .data$year, .data$tax_code, .data$agency,
-      agency_name = .data$tif_name,
-      tif_share = .data$tax_code_distribution_percent
-    ) %>%
-    dplyr::mutate(tif_share = .data$tif_share / 100) %>%
-    dplyr::as_tibble() %>%
-    dplyr::filter(!is.na(.data$tif_share))
+  df <- data.table::setDT(df, key = c("year", "tax_code", "agency_num"))
+  df[, tif_share := as.numeric(tif_share)]
+
+  return(df)
 }

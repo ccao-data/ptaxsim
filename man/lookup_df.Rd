@@ -2,24 +2,24 @@
 % Please edit documentation in R/lookup.R
 \name{lookup_df}
 \alias{lookup_df}
-\alias{lookup_agency_eavs}
-\alias{lookup_exemptions}
-\alias{lookup_levies}
-\alias{lookup_tifs}
+\alias{lookup_agency}
+\alias{lookup_pin}
+\alias{lookup_tif}
 \title{Lookup data frames required to calculate property tax bills}
 \usage{
-lookup_agency_eavs(year, tax_code)
+lookup_agency(year, tax_code, conn = ptaxsim_db_conn)
 
-lookup_exemptions(year, pin)
+lookup_pin(year, pin, conn = ptaxsim_db_conn)
 
-lookup_levies(year, tax_code)
-
-lookup_tifs(year, tax_code)
+lookup_tif(year, tax_code, conn = ptaxsim_db_conn)
 }
 \arguments{
 \item{year}{A numeric vector of tax years.}
 
 \item{tax_code}{A character vector of 5-digit Cook County tax codes.}
+
+\item{conn}{A connection object pointing to the local copy of the
+PTAXSIM database. Usually instantiated on package load.}
 
 \item{pin}{A character vector of 14-digit PINs.}
 }
@@ -31,42 +31,34 @@ PIN/tax code.
 The functions in this group take a tax year, PIN, and/or tax
 code as input and return a data frame as an output. The returned data
 frames are in a specific format (in terms of column name/type/order) and
-can be used directly in \code{\link{tax_bill}} or piped to helper functions
-such as \code{\link{change_levies_avg}}.
+can be used directly in \code{\link{tax_bill}} or piped to helper
+functions.
 
 When calculating tax bills for future years or providing custom/simulated
 data, you'll need to replicate the format returned by these functions.
 }
-\details{
-Note that all vector inputs (suffixed with \code{_vec}) must be
-either length 1 or the same length as the longest vector (standard
-recycling rules apply).
-}
 \section{Functions}{
 \itemize{
-\item \code{lookup_agency_eavs}: Lookup tax agency (CPS, Cook County, forest preserve)
+\item \code{lookup_agency}: Lookup tax agency (CPS, Cook County, forest preserve)
 total equalized assessed values. Such values are known as the "base" and
-are used to calculate per agency tax rates. Returns a data frame with 1 row
-for each agency associated with the input tax code and year.
-
-\item \code{lookup_exemptions}: Lookup exemptions granted to a PIN for the specified
-year. Returns a data frame with 1 row per PIN per year.
-
-\item \code{lookup_levies}: Lookup tax agency (CPS, Cook County, forest preserve)
-total levies. Returns a data frame with 1 row for each agency associated
+are used to calculate per agency tax rates. Also returns each agency's
+levy amount. Returns a data frame with 1 row for each agency associated
 with the input tax code and year.
 
-\item \code{lookup_tifs}: Lookup any TIFs that apply to a given tax code and
+\item \code{lookup_pin}: Lookup the equalized assessed value and exemptions
+for a specific PIN and year. Returns a numeric vector the same length
+as the longest input.
+
+\item \code{lookup_tif}: Lookup any TIFs that apply to a given tax code and
 year. Returns a data frame with only 1 row per tax code and year, or 0 rows
 if the tax code is not within a TIF.
 }}
 
 \examples{
-\donttest{
-lookup_agency_eavs(2019, "73105")
-lookup_exemptions(2018:2019, "20304190020000")
-lookup_levies(2019, "73105")
-lookup_tifs(2019, "73105")
+\dontrun{
+lookup_agency(2019, "73105")
+lookup_pin(2018:2019, "20304190020000")
+lookup_tif(2019, "73105")
 }
 }
 \seealso{

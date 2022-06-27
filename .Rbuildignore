@@ -30,3 +30,9 @@
 \.Rcheck$
 .*\.tar\.gz$
 .*\.tgz$
+.*\.pdf$
+.*\.xls$
+.*\.xlsx$
+.*\.db$
+.*\.zst$
+^aws$

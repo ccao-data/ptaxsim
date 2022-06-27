@@ -3,6 +3,12 @@ context("test tax_bill()")
 ##### TEST tax_bill() #####
 
 library(dplyr)
+ptaxsim_db_conn <- DBI::dbConnect(
+  RSQLite::SQLite(),
+  Sys.getenv("PTAXSIM_DB_PATH")
+)
+assign("ptaxsim_db_conn", ptaxsim_db_conn, envir = .GlobalEnv)
+
 sum_df <- sample_tax_bills_summary
 det_df <- sample_tax_bills_detail
 
@@ -20,35 +26,25 @@ test_that("bad/incorrect vector inputs throw errors", {
   expect_error(tax_bill(2019, c("1408102019000", pins[2])))
   expect_error(tax_bill(2019, pins[1], tax_code_vec = 73105))
   expect_error(tax_bill(2019, pins[1], tax_code_vec = "5454"))
-  expect_error(tax_bill(2019, pins[1], eav_vec = "20000"))
-  expect_error(tax_bill(2019, pins[1], eav_vec = numeric(0)))
-  expect_error(tax_bill(2019, pins[1], eq_fct_vec = "0.055"))
-  expect_error(tax_bill(2019, pins[1], eq_fct_vec = numeric(0)))
   expect_error(tax_bill(2019, pins[2], simplify = "yes"))
   expect_error(tax_bill(2018:2019, pins[2:3], simplify = c(TRUE, FALSE)))
 })
 
 test_that("bad/incorrect data frame inputs throw errors", {
-  expect_error(tax_bill(2019, pins[1], exemptions_df = c(23000, 959051)))
-  expect_error(tax_bill(2019, pins[1], levies_df = c("3232", "TIF")))
-  expect_error(tax_bill(2019, pins[1], tifs_df = c(23000, 959051)))
-  expect_error(tax_bill(2019, pins[1], agency_eavs_df = c(23000, 959051)))
+  expect_error(tax_bill(2019, pins[1], pin_df = c(23000, 959051)))
+  expect_error(tax_bill(2019, pins[1], agency_df = c("3232", "TIF")))
+  expect_error(tax_bill(2019, pins[1], tif_df = c(23000, 959051)))
 })
 
 test_that("incorrect size inputs throw errors", {
-  expect_error(tax_bill(c(2018, 2019), pins))
-  expect_error(tax_bill(c(2018, 2018, 2019), c(pins[1], pins[2])))
   expect_error(tax_bill(years, pins, tax_code_vec = c("73105", "73105")))
   expect_error(tax_bill(years, pins, tax_code_vec = c("73105", "73105")))
-  expect_error(tax_bill(years, pins, eav_vec = c(200000, 130000)))
-  expect_error(tax_bill(years, pins, eq_fct_vec = c(0.3, 0.3, 0.3, 0.4)))
 })
 
 test_that("data frame inputs throw errors when required cols missing", {
-  expect_error(tax_bill(2019, pins[1], exemptions_df = data.frame()))
-  expect_error(tax_bill(2019, pins[1], agency_eavs_df = data.frame()))
-  expect_error(tax_bill(2019, pins[1], tifs_df = data.frame()))
-  expect_error(tax_bill(2019, pins[1], levies_df = data.frame()))
+  expect_error(tax_bill(2019, pins[1], pin_df = data.frame()))
+  expect_error(tax_bill(2019, pins[1], agency_df = data.frame()))
+  expect_error(tax_bill(2019, pins[1], tif_df = data.frame()))
 })
 
 test_that("function returns expect data type/structure", {
@@ -56,8 +52,8 @@ test_that("function returns expect data type/structure", {
   expect_named(
     tax_bill(2018:2019, pins[1:2]),
     c(
-      "year", "pin", "tax_code", "agency", "agency_name", "agency_tax_rate",
-      "eav_before_exemptions", "tax_amt_post_exemptions",
+      "year", "pin", "tax_code", "av", "eav", "agency_num", "agency_name",
+      "agency_tax_rate", "tax_amt_post_exemptions",
       "tax_amt_total_to_tif", "tax_amt_final"
     )
   )
@@ -68,11 +64,11 @@ test_that("function returns expect data type/structure", {
   expect_named(
     tax_bill(2018:2019, pins[1:2], simplify = FALSE),
     c(
-      "year", "pin", "tax_code", "eav_before_exemptions", "eq_factor",
+      "year", "pin", "tax_code", "class", "av", "eav",
       "exe_homeowner", "exe_senior", "exe_freeze", "exe_longtime_homeowner",
       "exe_disabled", "exe_vet_returning", "exe_vet_dis_lt50",
       "exe_vet_dis_50_69", "exe_vet_dis_ge70", "exe_abate", "tif_agency",
-      "tif_share", "in_rpm_tif", "agency", "agency_name", "total_levy",
+      "tif_share", "in_rpm_tif", "agency_num", "agency_name", "total_ext",
       "total_eav", "agency_tax_rate", "tax_amt_exempt",
       "tax_amt_pre_exemptions", "tax_amt_post_exemptions",
       "tax_amt_total_to_tif", "is_cps_agency", "tax_rate_for_cps",
@@ -89,10 +85,11 @@ test_that("function returns expect data type/structure", {
 
 test_that("returned amount/output correct for single PIN", {
   # District level tax amounts
-  expect_equal(
+  expect_equivalent(
     tax_bill(2019, pins[1], simplify = FALSE) %>%
-      select(year, pin, agency, tax = tax_amt_final) %>%
-      arrange(agency),
+      select(year, pin, agency = agency_num, tax = tax_amt_final) %>%
+      arrange(agency) %>%
+      as_tibble(),
     det_df %>%
       filter(pin == pins[1]) %>%
       select(year, pin, agency, tax) %>%
@@ -113,6 +110,20 @@ test_that("returned amount/output correct for single PIN", {
   )
 })
 
+test_that("grid expansion works correctly", {
+  expect_equal(
+    tax_bill(2006:2020, pins[1:3]) %>%
+      group_by(pin) %>%
+      summarize(n_year = length(unique(year))),
+    tribble(
+      ~ "pin", ~ "n_year",
+      "07101010391078", 13,
+      "09274240240000", 15,
+      "14081020190000", 15
+    )
+  )
+})
+
 # Remove certain PINs from the test because they are anomalies/have VERY unique
 # situations
 exclude_pins <- c("20031180060000")
@@ -126,17 +137,17 @@ det_df <- det_df %>%
 test_that("returned amount/output correct for all sample bills", {
   # Output is correct number of rows
   expect_equal(
-    tax_bill(sum_df$year, sum_df$pin, simplify = F) %>%
+    tax_bill(sum_df$year, sum_df$pin, simplify = FALSE) %>%
       nrow(),
     371
   )
 
   # District level tax amounts
   expect_equivalent(
-    tax_bill(sum_df$year, sum_df$pin, simplify = F) %>%
-      select(year, pin, agency, tax_amt_final) %>%
+    tax_bill(sum_df$year, sum_df$pin, simplify = FALSE) %>%
+      select(year, pin, agency = agency_num, tax_amt_final) %>%
       arrange(year, pin, agency),
-    temp2 <- det_df %>%
+    det_df %>%
       select(year, pin, agency, tax_amt_final = tax) %>%
       arrange(year, pin, agency) %>%
       as_tibble(),
@@ -166,8 +177,8 @@ sum_df_no_rpm <- sum_df %>%
 test_that("all differences are less than $25", {
   expect_true(
     left_join(
-      tax_bill(sum_df_no_rpm$year, sum_df_no_rpm$pin, simplify = F) %>%
-        select(year, pin, agency, tax_calc = tax_amt_final),
+      tax_bill(sum_df_no_rpm$year, sum_df_no_rpm$pin, simplify = FALSE) %>%
+        select(year, pin, agency = agency_num, tax_calc = tax_amt_final),
       det_df %>%
         select(year, pin, agency, tax_real = tax) %>%
         as_tibble(),
@@ -178,3 +189,5 @@ test_that("all differences are less than $25", {
       all()
   )
 })
+
+DBI::dbDisconnect(ptaxsim_db_conn)
