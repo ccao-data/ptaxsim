@@ -234,6 +234,9 @@ tax_bill <- function(year_vec,
   by = c("year", "pin")
   ]
 
+  # Set key columns for final table
+  data.table::setkeyv(dt, cols = c("year", "pin", "agency_num"))
+
   # Remove extraneous columns if simplify is TRUE
   if (simplify) {
     return(dt[, c(
