@@ -39,6 +39,7 @@ cache:
     - .apt
     - ${RENV_PATHS_CACHE}
     - ${RENV_PATHS_LIBRARY}
+    - ptaxsim.db.zst
 
 # Run all of these commands before starting any jobs
 before_script:
@@ -55,9 +56,10 @@ before_script:
     unzip -qq awscliv2.zip &&
     ./aws/install
     
-  # Download and unpack the PTAXSIM DB from S3
-  - aws s3 cp s3://ccao-data-public-us-east-1/ptaxsim/ptaxsim.db.zst ${CI_PROJECT_DIR}/ptaxsim.db.zst
-  - zstd -d ${CI_PROJECT_DIR}/ptaxsim.db.zst -o ${CI_PROJECT_DIR}/ptaxsim.db
+  # Download and unpack the PTAXSIM DB from S3 if it doesn't already exist
+  # If it does, use the cached version
+  - if [ ! -f ptaxsim.db.zst ]; then aws s3 cp s3://ccao-data-public-us-east-1/ptaxsim/ptaxsim.db.zst ${CI_PROJECT_DIR}/ptaxsim.db.zst; fi
+  - zstd -k -d ${CI_PROJECT_DIR}/ptaxsim.db.zst -o ${CI_PROJECT_DIR}/ptaxsim.db
     
   # Install R dependencies listed in DESCRIPTION using renv
   - Rscript -e 'renv::install()'
