@@ -10,23 +10,8 @@ reference:
 - subtitle: Lookup tax data
 - contents:
   - starts_with("lookup_")
-- subtitle: Test new scenarios
-- contents:
-  - starts_with("change_")
-- subtitle: Check change compliance/validity
-- contents:
-  - starts_with("check_")
 
-- title: Data
-- subtitle: Tax data components
-  desc: Data used by lookup functions to populate missing arguments
-- contents:
-  - av_exe_and_tax_code_by_pin
-  - cpis
-  - equalization_factors
-  - levy_and_total_eav_by_agency
-  - tax_codes_by_agency
-  - tifs
+- title: Data 
 - subtitle: Sample tax bills
   desc: Real Cook County tax bill data used for testing and examples
 - contents:

@@ -2,53 +2,40 @@
 % Please edit documentation in R/lookup.R
 \name{lookup_vec}
 \alias{lookup_vec}
-\alias{lookup_eav}
-\alias{lookup_equalization_factor}
 \alias{lookup_tax_code}
 \title{Lookup values required to calculate property tax bills}
 \usage{
-lookup_eav(year, pin)
-
-lookup_equalization_factor(year)
-
-lookup_tax_code(year, pin)
+lookup_tax_code(year, pin, conn = ptaxsim_db_conn)
 }
 \arguments{
 \item{year}{A numeric vector of tax years.}
 
 \item{pin}{A character vector of 14-digit PINs.}
+
+\item{conn}{A connection object pointing to the local copy of the
+PTAXSIM database. Usually instantiated on package load.}
 }
 \value{
 A vector containing the specified tax data values.
-Will be the same length as the longest vector in the inputs.
 }
 \description{
 The functions in this group take a tax year and PIN as input and
 return a vector as an output. The output vector can be used directly in
 \code{\link{tax_bill}}.
 }
-\details{
-Note that all vector inputs (suffixed with \code{_vec}) must be
-either length 1 or the same length as the longest vector (standard
-recycling rules apply).
-}
 \section{Functions}{
 \itemize{
-\item \code{lookup_eav}: Lookup the equalized assessed value for a specific PIN
-and year. Returns a numeric vector the same length as the longest input.
-
-\item \code{lookup_equalization_factor}: Lookup the state equalization rate for a given year.
-Returns a numeric vector the same length as the input.
-
-\item \code{lookup_tax_code}: Lookup 5-digit Cook County tax code by PIN and year.
-Returns a character vector the same length as the longest input.
+\item \code{lookup_tax_code}: Lookup Cook County tax code for a specific PIN and
+year. The tax code represents the unique geographic overlap of different
+taxing districts. If the input vectors are both length N, then the output
+will also be length N. If the input vectors are different lengths, the
+Cartesian product is returned.
 }}
 
 \examples{
-\donttest{
-lookup_eav(2017:2019, "20304190020000")
-lookup_equalization_factor(2014:2019)
+\dontrun{
 lookup_tax_code(2019, c("20304190020000", "16152090350000"))
+lookup_tax_code(2006:2020, c("20304190020000", "16152090350000"))
 }
 }
 \seealso{

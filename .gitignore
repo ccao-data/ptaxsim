@@ -36,3 +36,11 @@ pkgdown
 # Any temp files for windows
 ~*
 
+# Any PDF files or conversions
+*.pdf
+*.png
+
+# Data files
+*.parquet
+*.db
+*.zst

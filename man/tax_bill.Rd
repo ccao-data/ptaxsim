@@ -8,12 +8,9 @@ tax_bill(
   year_vec,
   pin_vec,
   tax_code_vec = lookup_tax_code(year_vec, pin_vec),
-  eav_vec = lookup_eav(year_vec, pin_vec),
-  eq_fct_vec = lookup_equalization_factor(year_vec),
-  exemptions_df = lookup_exemptions(year_vec, pin_vec),
-  levies_df = lookup_levies(year_vec, tax_code_vec),
-  agency_eavs_df = lookup_agency_eavs(year_vec, tax_code_vec),
-  tifs_df = lookup_tifs(year_vec, tax_code_vec),
+  pin_df = lookup_pin(year_vec, pin_vec),
+  agency_df = lookup_agency(year_vec, tax_code_vec),
+  tif_df = lookup_tif(year_vec, tax_code_vec),
   simplify = TRUE
 )
 }
@@ -28,37 +25,22 @@ codes are included on individual property tax bills. If missing, the
 \code{\link{lookup_tax_code}} function will be used to retrieve tax codes
 based on \code{year_vec} and \code{pin_vec}.}
 
-\item{eav_vec}{Numeric vector of Equalized Assessed Values (EAVs) for each
-combination of year and PIN. If missing, the \code{\link{lookup_eav}}
-function will be used to retrieve each PIN's EAV based on \code{year_vec}
+\item{pin_df}{Data frame containing the exemptions and assessed value
+specific to each PIN and year. Data \emph{must} be identical to the format
+returned by \code{\link{lookup_pin}}. If missing, \code{\link{lookup_pin}}
+will be used to retrieve each PIN's information based on \code{year_vec}
 and \code{pin_vec}.}
 
-\item{eq_fct_vec}{Numeric vector of Cook County equalization factors for each
-year. If missing \code{\link{lookup_equalization_factor}} will be used to
-retrieve the equalization factor specific to \code{year_vec}.}
-
-\item{exemptions_df}{Data frame containing the exemptions specific to each
-PIN and year. Data \emph{must} be identical to the format returned by
-\code{\link{lookup_exemptions}}. If missing,
-\code{\link{lookup_exemptions}} will be used to retrieve each PIN's
-exemptions based on \code{year_vec} and \code{pin_vec}.}
-
-\item{levies_df}{Data frame containing levies for each taxing district in
-the specified tax code. Data \emph{must} be identical to the format returned by
-\code{\link{lookup_levies}}. If missing,
-\code{\link{lookup_levies}} will be used to retrieve each taxing
+\item{agency_df}{Data frame containing the levy and base amount for each
+taxing district in the specified tax code. Data \emph{must} be identical to the
+format returned by \code{\link{lookup_agency}}. If missing,
+\code{\link{lookup_agency}} will be used to retrieve each taxing
 jurisdiction's levies based on \code{year_vec} and \code{tax_code_vec}.}
 
-\item{agency_eavs_df}{Data frame containing total EAVs (the base) for each
-taxing district in the specified tax code. Data \emph{must} be identical to the
-format returned by \code{\link{lookup_agency_eavs}}. If missing,
-\code{\link{lookup_agency_eavs}} will be used to retrieve each taxing
-jurisdiction's base based on \code{year_vec} and \code{tax_code_vec}.}
-
-\item{tifs_df}{Data frame containing any TIF applicable to the specified
+\item{tif_df}{Data frame containing any TIF applicable to the specified
 tax code. Will be an empty data frame if no TIF exists for the property.
 Data \emph{must} be identical to the format returned by
-\code{\link{lookup_tifs}}. If missing, \code{\link{lookup_tifs}} will be
+\code{\link{lookup_tif}}. If missing, \code{\link{lookup_tif}} will be
 used to retrieve the tax code's TIF share based on \code{year_vec}
 and \code{tax_code_vec}.}
 
@@ -78,12 +60,12 @@ separate line item and instead are contained in their own column
 }
 \description{
 This function calculates a Cook County property tax bill using
-levy, base, and TIF information from the Cook County Clerk. It allows users
-to simulate different tax scenarios by changing the input data. For
-example, this function can answer the following questions:
+levy, base, and TIF information from the Cook County Clerk and Assessor.
+It allows users to simulate different tax scenarios by changing the input
+data. For example, this function can answer the following questions:
 \itemize{
 \item What would my tax bill be if my assessed value was $10K lower?
-\item What would my tax bill be if Chicago increased its levy by 1\%?
+\item What would my tax bill be if Chicago increased its levy by 10\%?
 \item What would my tax bill be if my property was in a different neighborhood?
 \item What would my tax bill be if a large new development was added to
 my neighborhood?
@@ -95,9 +77,15 @@ following year (2020 data is available in 2021). If needed, users can
 supply current tax year data manually. See vignettes for more information.
 }
 \details{
-Note that all vector inputs (suffixed with \code{_vec}) must be
-either length 1 or the same length as the longest vector (standard
-recycling rules apply).
+Note that all vector inputs (suffixed with \code{_vec}) have two
+input modes:
+\enumerate{
+\item If the input vectors are the same length, pairwise tax bills are
+returned (each PIN, year, and tax code combination returns 1 bill).
+\item If the input vectors are different lengths, the Cartesian product of
+the vectors is returned (5 years and 10 PINs will return all 5 years' of
+bills for each PIN).
+}
 
 The district-level tax amounts returned by this function will \emph{not}
 perfectly match the amounts on real tax bills. This is due to rounding
@@ -116,7 +104,7 @@ features. The Assessor's office expressly disclaims any liability for
 any entity's reliance on this package.
 }
 \examples{
-\donttest{
+\dontrun{
 # Get a single tax bill
 tax_bill(2019, "14081020210000")
 
@@ -125,9 +113,6 @@ tax_bill(2017:2019, "14081020210000")
 
 # Get multiple tax bills for different PINs and years
 tax_bill(c(2014, 2019), c("14081020210000", "07133020190000"))
-
-# Get a tax bill with a new EAV
-tax_bill(2019, "14081020210000", eav_vec = 200000)
 
 # Get a tax bill for a new location
 tax_bill(2019, "14081020210000", tax_code_vec = "35011")
