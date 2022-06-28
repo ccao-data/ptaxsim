@@ -65,7 +65,7 @@ It allows users to simulate different tax scenarios by changing the input
 data. For example, this function can answer the following questions:
 \itemize{
 \item What would my tax bill be if my assessed value was $10K lower?
-\item What would my tax bill be if Chicago increased its levy by 10\%?
+\item What would my tax bill be if Chicago increased its levy by 5\%?
 \item What would my tax bill be if my property was in a different neighborhood?
 \item What would my tax bill be if a large new development was added to
 my neighborhood?
@@ -91,17 +91,6 @@ The district-level tax amounts returned by this function will \emph{not}
 perfectly match the amounts on real tax bills. This is due to rounding
 and truncating that occurs in the real system. Most estimated amounts will
 still be within a few dollars of the amounts on real bills.
-}
-\note{
-This package is for educational purposes only.
-The Assessor's office releases the package without any representations or
-warranties of any kind, whether express or implied. Any data, figures, or
-amounts contained within the package, used by the package, or produced by
-the package are solely for illustrative purposes. Any results produced by
-this package as distributed are official and should not be relied upon for
-any business or commercial purpose. They merely demonstrate the package's
-features. The Assessor's office expressly disclaims any liability for
-any entity's reliance on this package.
 }
 \examples{
 \dontrun{
