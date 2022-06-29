@@ -117,7 +117,7 @@ tax_bill <- function(year_vec,
   tax_code <- NULL
   if (length(year_vec) != length(pin_vec)) {
     dt <- data.table::as.data.table(
-      expand.grid("year" = year_vec, "pin" = pin_vec)
+      expand.grid("year" = year_vec, "pin" = pin_vec, stringsAsFactors = FALSE)
     )
   } else {
     dt <- data.table::data.table("year" = year_vec, "pin" = pin_vec)
@@ -134,18 +134,20 @@ tax_bill <- function(year_vec,
   pin_df[, (exe_cols) := NULL]
 
   # Join PIN-level data (exemptions, eav) to the input data
+  year <- pin <- i.av <- i.eav <- i.class <- i.exe_total <- NULL
   dt[pin_df, on = .(year, pin), c("av", "eav", "class", "exe_total") :=
     .(i.av, i.eav, i.class, i.exe_total)]
 
   # Fetch TIF for a given tax code. There should only be one TIF per tax code (
   # with a few exceptions)
+  i.agency_num <- i.tif_share <- NULL
   dt[tif_df, on = .(year, tax_code), c("tif_agency_num", "tif_share") :=
     .(i.agency_num, i.tif_share)]
 
   # Add an indicator for when the PIN is in the special Red-Purple Modernization
   # TIF, which has different rules than other TIFs
-  in_rpm_tif <- tif_agency <- tif_share <- NULL
-  dt[, in_rpm_tif := any(tif_agency == "030210900"), by = c("year", "pin")]
+  in_rpm_tif <- tif_agency_num <- tif_share <- NULL
+  dt[, in_rpm_tif := any(tif_agency_num == "030210900"), by = .(year, pin)]
   dt[is.na(in_rpm_tif), in_rpm_tif := FALSE]
   dt[is.na(tif_share), tif_share := 0]
 
@@ -153,8 +155,6 @@ tax_bill <- function(year_vec,
   # rows from 1 per PIN per year, to N per PIN per year, where N is the number
   # of agencies associated with a PIN's tax code
   dt <- merge(dt, agency_df, by = c("year", "tax_code"), allow.cartesian = TRUE)
-
-  # agency_df[dt, on = .(year, tax_code), allow.cartesian = TRUE]
 
   # Calculate the exemption results by subtracting the exempt amount from
   # the total taxable EAV
@@ -178,21 +178,21 @@ tax_bill <- function(year_vec,
     tax_amt_rpm_tif_back_to_jur_total <- tax_amt_rpm_tif_back_to_jur_dist <-
     tax_amt_rpm_tif_back_to_jur <- tax_amt_final <- tax_amt_total_to_tif <- NULL
   dt[, tax_rate_for_cps :=
-    sum((agency_num == "044060000") * agency_tax_rate), by = c("year", "pin")]
+    sum((agency_num == "044060000") * agency_tax_rate), by = .(year, pin)]
   dt[, tax_prop_for_cps :=
-    tax_rate_for_cps / sum(agency_tax_rate), by = c("year", "pin")]
+    tax_rate_for_cps / sum(agency_tax_rate), by = .(year, pin)]
 
   # Get total amount from TIF held for CPS. Will be 0 if not in RPM TIF
   dt[, tax_amt_rpm_tif_to_cps :=
     tax_amt_total_to_tif * tax_prop_for_cps * in_rpm_tif,
-  by = c("year", "pin")
+  by = .(year, pin)
   ]
 
   # Get total amount from TIF held for the RPM project, which is 80% of the
   # funds remaining after the CPS cut
   dt[, tax_amt_rpm_tif_to_rpm :=
     (tax_amt_total_to_tif - tax_amt_rpm_tif_to_cps) * 0.8 * in_rpm_tif,
-  by = c("year", "pin")
+  by = .(year, pin)
   ]
 
   # Get total amount from TIF sent BACK to jurisdictions. Need to divvy up
@@ -201,17 +201,17 @@ tax_bill <- function(year_vec,
   dt[, tax_amt_rpm_tif_back_to_jur_total :=
     sum((tax_amt_total_to_tif - tax_amt_rpm_tif_to_cps
       - tax_amt_rpm_tif_to_rpm)),
-  by = c("year", "pin")
+  by = .(year, pin)
   ]
   dt[!(agency_num == "044060000"), tax_amt_rpm_tif_back_to_jur_dist :=
     agency_tax_rate /
       (sum(agency_tax_rate * !(agency_num == "044060000"))) * in_rpm_tif,
-  by = c("year", "pin")
+  by = .(year, pin)
   ]
   dt[(agency_num == "044060000"), tax_amt_rpm_tif_back_to_jur_dist := 0]
   dt[, tax_amt_rpm_tif_back_to_jur :=
     tax_amt_rpm_tif_back_to_jur_total * tax_amt_rpm_tif_back_to_jur_dist,
-  by = c("year", "pin")
+  by = .(year, pin)
   ]
   dt[, tax_amt_final :=
     round(
@@ -219,11 +219,11 @@ tax_bill <- function(year_vec,
         tax_amt_rpm_tif_back_to_jur,
       2
     ),
-  by = c("year", "pin")
+  by = .(year, pin)
   ]
   dt[, tax_amt_total_to_tif :=
     round(tax_amt_total_to_tif - tax_amt_rpm_tif_back_to_jur, 2),
-  by = c("year", "pin")
+  by = .(year, pin)
   ]
   dt[, in_rpm_tif := NULL]
 

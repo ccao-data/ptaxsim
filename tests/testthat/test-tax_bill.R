@@ -111,7 +111,8 @@ test_that("grid expansion works correctly", {
   expect_equal(
     tax_bill(2006:2020, pins[1:3]) %>%
       group_by(pin) %>%
-      summarize(n_year = length(unique(year))),
+      summarize(n_year = length(unique(year))) %>%
+      arrange(pin),
     tribble(
       ~"pin", ~"n_year",
       "07101010391078", 13,

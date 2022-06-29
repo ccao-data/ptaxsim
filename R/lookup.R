@@ -1,4 +1,4 @@
-globalVariables("ptaxsim_db_conn")
+globalVariables(c("ptaxsim_db_conn", "."))
 
 #' Lookup data frames required to calculate property tax bills
 #'
