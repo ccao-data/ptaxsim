@@ -52,8 +52,8 @@ test_that("function returns expect data type/structure", {
   expect_named(
     tax_bill(2018:2019, pins[1:2]),
     c(
-      "year", "pin", "tax_code", "av", "eav", "agency_num", "agency_name",
-      "agency_tax_rate", "tax_amt_post_exemptions",
+      "year", "pin", "class", "tax_code", "av", "eav",
+      "agency_num", "agency_name", "agency_tax_rate", "tax_amt_post_exemptions",
       "tax_amt_total_to_tif", "tax_amt_final"
     )
   )
@@ -64,17 +64,14 @@ test_that("function returns expect data type/structure", {
   expect_named(
     tax_bill(2018:2019, pins[1:2], simplify = FALSE),
     c(
-      "year", "pin", "tax_code", "class", "av", "eav",
-      "exe_homeowner", "exe_senior", "exe_freeze", "exe_longtime_homeowner",
-      "exe_disabled", "exe_vet_returning", "exe_vet_dis_lt50",
-      "exe_vet_dis_50_69", "exe_vet_dis_ge70", "exe_abate", "tif_agency",
-      "tif_share", "in_rpm_tif", "agency_num", "agency_name", "total_ext",
-      "total_eav", "agency_tax_rate", "tax_amt_exempt",
-      "tax_amt_pre_exemptions", "tax_amt_post_exemptions",
-      "tax_amt_total_to_tif", "is_cps_agency", "tax_rate_for_cps",
-      "tax_prop_for_cps", "tax_amt_rpm_tif_to_cps", "tax_amt_rpm_tif_to_rpm",
-      "tax_amt_rpm_tif_back_to_jur_total", "tax_amt_rpm_tif_back_to_jur_dist",
-      "tax_amt_rpm_tif_back_to_jur", "tax_amt_final"
+      "year", "pin", "class", "tax_code", "av", "eav", "exe_total",
+      "agency_num", "agency_name", "agency_total_ext", "agency_total_eav",
+      "agency_tax_rate", "tax_amt_exempt", "tax_amt_pre_exemptions",
+      "tax_amt_post_exemptions", "tif_agency_num", "tif_share",
+      "tax_rate_for_cps", "tax_prop_for_cps", "tax_amt_rpm_tif_to_cps",
+      "tax_amt_rpm_tif_to_rpm", "tax_amt_rpm_tif_back_to_jur_total",
+      "tax_amt_rpm_tif_back_to_jur_dist", "tax_amt_rpm_tif_back_to_jur",
+      "tax_amt_total_to_tif", "tax_amt_final"
     )
   )
   expect_equal(
@@ -116,7 +113,7 @@ test_that("grid expansion works correctly", {
       group_by(pin) %>%
       summarize(n_year = length(unique(year))),
     tribble(
-      ~ "pin", ~ "n_year",
+      ~"pin", ~"n_year",
       "07101010391078", 13,
       "09274240240000", 15,
       "14081020190000", 15

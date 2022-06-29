@@ -125,17 +125,22 @@ tax_bill <- function(year_vec,
   dt[, tax_code := tax_code_vec]
   dt <- data.table::setDT(dt, key = c("year", "pin"))
 
-  # Merge PIN-level data (exemptions, eav) to the input data
-  dt <- merge(dt, pin_df, all.x = TRUE)
+  # Shink the PIN data prior to join by collapsing exemptions into a total
+  # exempt amount
+  exe_total <- .SD <- class <- av <- eav <- NULL
+  exe_cols <- names(pin_df)[startsWith(names(pin_df), "exe_")]
+  pin_df[, exe_total := rowSums(.SD), .SDcols = exe_cols]
+  pin_df[class == "239", eav := av] # farmland is taxed on AV, not EAV
+  pin_df[, (exe_cols) := NULL]
+
+  # Join PIN-level data (exemptions, eav) to the input data
+  dt[pin_df, on = .(year, pin), c("av", "eav", "class", "exe_total") :=
+    .(i.av, i.eav, i.class, i.exe_total)]
 
   # Fetch TIF for a given tax code. There should only be one TIF per tax code (
   # with a few exceptions)
-  dt <- merge(
-    dt,
-    data.table::setnames(tif_df[, !"agency_name"], "agency_num", "tif_agency"),
-    by = c("year", "tax_code"),
-    all.x = TRUE
-  )
+  dt[tif_df, on = .(year, tax_code), c("tif_agency_num", "tif_share") :=
+    .(i.agency_num, i.tif_share)]
 
   # Add an indicator for when the PIN is in the special Red-Purple Modernization
   # TIF, which has different rules than other TIFs
@@ -149,21 +154,15 @@ tax_bill <- function(year_vec,
   # of agencies associated with a PIN's tax code
   dt <- merge(dt, agency_df, by = c("year", "tax_code"), allow.cartesian = TRUE)
 
-  # Calculate the tax amount deducted for each exemption, then aggregate and
-  # calculate the final taxable amount
-  agency_tax_rate <- tax_amt_exempt <- tax_amt_pre_exemptions <- total_ext <-
-    total_eav <- .SD <- eav <- is_cps_agency <- tax_amt_post_exemptions <-
-    tax_amt_total_to_tif <- agency_num <- tax_amt_rpm_tif_back_to_jur_dist <-
-    tax_rate_for_cps <- tax_prop_for_cps <- tax_amt_rpm_tif_to_cps <-
-    tax_amt_rpm_tif_to_cps <- tax_amt_final <- tax_amt_rpm_tif_back_to_jur <-
-    tax_amt_rpm_tif_back_to_jur_total <- tax_amt_rpm_tif_to_rpm <- av <-
-    class <- NULL
+  # agency_df[dt, on = .(year, tax_code), allow.cartesian = TRUE]
 
-  exe_cols <- names(dt)[startsWith(names(dt), "exe_")]
-  dt[, agency_tax_rate := total_ext / total_eav]
-  dt[, (exe_cols) := lapply(.SD, "*", agency_tax_rate), .SDcols = exe_cols]
-  dt[, tax_amt_exempt := rowSums(.SD), .SDcols = exe_cols]
-  dt[, eav := ifelse(class == "239", av, eav)] # farmland taxed with AV, not EAV
+  # Calculate the exemption results by subtracting the exempt amount from
+  # the total taxable EAV
+  agency_tax_rate <- agency_total_ext <- agency_total_eav <-
+    tax_amt_exempt <- tax_amt_pre_exemptions <- tax_amt_post_exemptions <-
+    tax_amt_total_to_tif <- NULL
+  dt[, agency_tax_rate := agency_total_ext / agency_total_eav]
+  dt[, tax_amt_exempt := exe_total * agency_tax_rate]
   dt[, tax_amt_pre_exemptions := eav * agency_tax_rate]
   dt[, tax_amt_post_exemptions := tax_amt_pre_exemptions - tax_amt_exempt]
   dt[tax_amt_post_exemptions < 0, tax_amt_post_exemptions := 0]
@@ -174,9 +173,12 @@ tax_bill <- function(year_vec,
   # 1. CPS receives their proportionate share of revenue (they ignore the TIF)
   # 2. 80% of the remaining revenue goes to the RPM TIF
   # 3. 20% of the remaining revenue goes to all taxing districts besides CPS
-  dt[, is_cps_agency := agency_num == "044060000"]
+  tax_rate_for_cps <- agency_num <- tax_prop_for_cps <-
+    tax_amt_rpm_tif_to_cps <- tax_amt_rpm_tif_to_rpm <-
+    tax_amt_rpm_tif_back_to_jur_total <- tax_amt_rpm_tif_back_to_jur_dist <-
+    tax_amt_rpm_tif_back_to_jur <- tax_amt_final <- tax_amt_total_to_tif <- NULL
   dt[, tax_rate_for_cps :=
-    sum(is_cps_agency * agency_tax_rate), by = c("year", "pin")]
+    sum((agency_num == "044060000") * agency_tax_rate), by = c("year", "pin")]
   dt[, tax_prop_for_cps :=
     tax_rate_for_cps / sum(agency_tax_rate), by = c("year", "pin")]
 
@@ -193,7 +195,6 @@ tax_bill <- function(year_vec,
   by = c("year", "pin")
   ]
 
-
   # Get total amount from TIF sent BACK to jurisdictions. Need to divvy up
   # the amount that would be sent to CPS proportionally among other bodies
   # using each agency's tax rate
@@ -202,11 +203,12 @@ tax_bill <- function(year_vec,
       - tax_amt_rpm_tif_to_rpm)),
   by = c("year", "pin")
   ]
-  dt[!(is_cps_agency), tax_amt_rpm_tif_back_to_jur_dist :=
-    agency_tax_rate / (sum(agency_tax_rate * !is_cps_agency)) * in_rpm_tif,
+  dt[!(agency_num == "044060000"), tax_amt_rpm_tif_back_to_jur_dist :=
+    agency_tax_rate /
+      (sum(agency_tax_rate * !(agency_num == "044060000"))) * in_rpm_tif,
   by = c("year", "pin")
   ]
-  dt[(is_cps_agency), tax_amt_rpm_tif_back_to_jur_dist := 0]
+  dt[(agency_num == "044060000"), tax_amt_rpm_tif_back_to_jur_dist := 0]
   dt[, tax_amt_rpm_tif_back_to_jur :=
     tax_amt_rpm_tif_back_to_jur_total * tax_amt_rpm_tif_back_to_jur_dist,
   by = c("year", "pin")
@@ -223,6 +225,7 @@ tax_bill <- function(year_vec,
     round(tax_amt_total_to_tif - tax_amt_rpm_tif_back_to_jur, 2),
   by = c("year", "pin")
   ]
+  dt[, in_rpm_tif := NULL]
 
   # Set key columns for final table
   data.table::setkeyv(dt, cols = c("year", "pin", "agency_num"))
@@ -230,7 +233,7 @@ tax_bill <- function(year_vec,
   # Remove extraneous columns if simplify is TRUE
   if (simplify) {
     return(dt[, c(
-      "year", "pin", "tax_code", "av", "eav",
+      "year", "pin", "class", "tax_code", "av", "eav",
       "agency_num", "agency_name", "agency_tax_rate",
       "tax_amt_post_exemptions", "tax_amt_total_to_tif",
       "tax_amt_final"
@@ -239,17 +242,14 @@ tax_bill <- function(year_vec,
     data.table::setcolorder(
       dt,
       neworder = c(
-        "year", "pin", "tax_code", "class", "av", "eav",
-        "exe_homeowner", "exe_senior", "exe_freeze", "exe_longtime_homeowner",
-        "exe_disabled", "exe_vet_returning", "exe_vet_dis_lt50",
-        "exe_vet_dis_50_69", "exe_vet_dis_ge70", "exe_abate", "tif_agency",
-        "tif_share", "in_rpm_tif", "agency_num", "agency_name", "total_ext",
-        "total_eav", "agency_tax_rate", "tax_amt_exempt",
-        "tax_amt_pre_exemptions", "tax_amt_post_exemptions",
-        "tax_amt_total_to_tif", "is_cps_agency", "tax_rate_for_cps",
-        "tax_prop_for_cps", "tax_amt_rpm_tif_to_cps", "tax_amt_rpm_tif_to_rpm",
-        "tax_amt_rpm_tif_back_to_jur_total", "tax_amt_rpm_tif_back_to_jur_dist",
-        "tax_amt_rpm_tif_back_to_jur", "tax_amt_final"
+        "year", "pin", "class", "tax_code", "av", "eav", "exe_total",
+        "agency_num", "agency_name", "agency_total_ext", "agency_total_eav",
+        "agency_tax_rate", "tax_amt_exempt", "tax_amt_pre_exemptions",
+        "tax_amt_post_exemptions", "tif_agency_num", "tif_share",
+        "tax_rate_for_cps", "tax_prop_for_cps", "tax_amt_rpm_tif_to_cps",
+        "tax_amt_rpm_tif_to_rpm", "tax_amt_rpm_tif_back_to_jur_total",
+        "tax_amt_rpm_tif_back_to_jur_dist", "tax_amt_rpm_tif_back_to_jur",
+        "tax_amt_total_to_tif", "tax_amt_final"
       )
     )
     return(dt)

@@ -81,8 +81,8 @@ lookup_agency <- function(year, tax_code, conn = ptaxsim_db_conn) {
         tc.tax_code_num AS tax_code,
         tc.agency_num,
         a.agency_name,
-        a.total_ext,
-        a.total_eav
+        a.total_ext AS agency_total_ext,
+        a.total_eav AS agency_total_eav
       FROM tax_codes tc
       LEFT JOIN agencies a
         ON tc.year = a.year
@@ -138,7 +138,7 @@ lookup_pin <- function(year, pin, conn = ptaxsim_db_conn) {
         lp.pin,
         p.class,
         p.av,
-        ROUND(p.av * ef.equalization_factor, 0) AS eav,
+        CAST(ROUND(p.av * ef.equalization_factor, 0) AS int) AS eav,
         p.exe_homeowner,
         p.exe_senior,
         p.exe_freeze,

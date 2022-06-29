@@ -178,7 +178,7 @@ context("test lookup_agency()")
 
 test_that("lookup values/data are correct", {
   expect_equal(
-    lookup_agency(2019, "73105")$total_eav,
+    lookup_agency(2019, "73105")$agency_total_eav,
     c(
       rep(166917611547, 2),
       rep(87816177317, 3),
@@ -188,7 +188,7 @@ test_that("lookup values/data are correct", {
     )
   )
   expect_equal(
-    lookup_agency(2019, "73105")$total_ext,
+    lookup_agency(2019, "73105")$agency_total_ext,
     c(
       757805956, 98481391, 1407693322, 106257575, 148409340, 130772179,
       3178945619, 286280738, 0, 638172798
@@ -196,11 +196,11 @@ test_that("lookup values/data are correct", {
   )
   expect_known_hash(
     lookup_agency(2014:2019, "12064"),
-    "8b1045fbf1"
+    "4c6e048bc7"
   )
   expect_known_hash(
     lookup_agency(sum_df$year, sum_df$tax_code),
-    "5f4a429c68"
+    "e724d0cedc"
   )
 })
 
@@ -213,7 +213,7 @@ test_that("function returns expect data type/structure", {
     lookup_agency(2018:2019, "73105"),
     c(
       "year", "tax_code", "agency_num",
-      "agency_name", "total_ext", "total_eav"
+      "agency_name", "agency_total_ext", "agency_total_eav"
     )
   )
   expect_equal(

@@ -5,8 +5,8 @@ check_agency_df_str <- function(agency_df) {
 
   agency_df_str <- c(
     "year" = "numeric", "tax_code" = "character", "agency_num" = "character",
-    "agency_name" = "character", "total_ext" = "numeric",
-    "total_eav" = "numeric"
+    "agency_name" = "character", "agency_total_ext" = "numeric",
+    "agency_total_eav" = "numeric"
   )
 
   if (!identical(agency_df_str, sapply(agency_df, mode))) {
