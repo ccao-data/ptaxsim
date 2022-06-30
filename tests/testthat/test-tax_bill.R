@@ -53,8 +53,8 @@ test_that("function returns expect data type/structure", {
     tax_bill(2018:2019, pins[1:2]),
     c(
       "year", "pin", "class", "tax_code", "av", "eav",
-      "agency_num", "agency_name", "agency_tax_rate", "tax_amt_post_exemptions",
-      "tax_amt_total_to_tif", "tax_amt_final"
+      "agency_num", "agency_name", "agency_tax_rate",
+      "tax_amt_post_exe", "final_tax_to_tif", "final_tax_to_dist"
     )
   )
   expect_equal(
@@ -66,25 +66,23 @@ test_that("function returns expect data type/structure", {
     c(
       "year", "pin", "class", "tax_code", "av", "eav", "exe_total",
       "agency_num", "agency_name", "agency_total_ext", "agency_total_eav",
-      "agency_tax_rate", "tax_amt_exempt", "tax_amt_pre_exemptions",
-      "tax_amt_post_exemptions", "tif_agency_num", "tif_share",
-      "tax_rate_for_cps", "tax_prop_for_cps", "tax_amt_rpm_tif_to_cps",
-      "tax_amt_rpm_tif_to_rpm", "tax_amt_rpm_tif_back_to_jur_total",
-      "tax_amt_rpm_tif_back_to_jur_dist", "tax_amt_rpm_tif_back_to_jur",
-      "tax_amt_total_to_tif", "tax_amt_final"
+      "agency_tax_rate", "tax_amt_exe", "tax_amt_pre_exe", "tax_amt_post_exe",
+      "tif_agency_num", "tif_share","rpm_tif_to_cps", "rpm_tif_to_rpm",
+      "rpm_tif_to_dist", "final_tax_to_tif", "final_tax_to_dist"
     )
   )
   expect_equal(
     sum(is.na(tax_bill(years[1], pins[1], simplify = FALSE))),
     0
   )
+  expect_equal(dim(tax_bill(years[1], pins[1], simplify = FALSE)), c(10, 22)) 
 })
 
 test_that("returned amount/output correct for single PIN", {
   # District level tax amounts
   expect_equivalent(
     tax_bill(2019, pins[1], simplify = FALSE) %>%
-      select(year, pin, agency = agency_num, tax = tax_amt_final) %>%
+      select(year, pin, agency = agency_num, tax = final_tax_to_dist) %>%
       arrange(agency) %>%
       as_tibble(),
     det_df %>%
@@ -97,7 +95,7 @@ test_that("returned amount/output correct for single PIN", {
   # TIF total amounts
   expect_equal(
     tax_bill(2019, pins[1]) %>%
-      pull(tax_amt_total_to_tif) %>%
+      pull(final_tax_to_tif) %>%
       sum(),
     det_df %>%
       filter(pin == pins[1]) %>%
@@ -143,10 +141,10 @@ test_that("returned amount/output correct for all sample bills", {
   # District level tax amounts
   expect_equivalent(
     tax_bill(sum_df$year, sum_df$pin, simplify = FALSE) %>%
-      select(year, pin, agency = agency_num, tax_amt_final) %>%
+      select(year, pin, agency = agency_num, tax = final_tax_to_dist) %>%
       arrange(year, pin, agency),
     det_df %>%
-      select(year, pin, agency, tax_amt_final = tax) %>%
+      select(year, pin, agency, tax) %>%
       arrange(year, pin, agency) %>%
       as_tibble(),
     tolerance = 0.005
@@ -156,7 +154,7 @@ test_that("returned amount/output correct for all sample bills", {
   expect_equivalent(
     tax_bill(sum_df$year, sum_df$pin) %>%
       group_by(year, pin) %>%
-      summarize(tif_total = sum(tax_amt_total_to_tif)) %>%
+      summarize(tif_total = sum(final_tax_to_tif)) %>%
       arrange(pin),
     det_df %>%
       group_by(year, pin) %>%
@@ -176,7 +174,7 @@ test_that("all differences are less than $25", {
   expect_true(
     left_join(
       tax_bill(sum_df_no_rpm$year, sum_df_no_rpm$pin, simplify = FALSE) %>%
-        select(year, pin, agency = agency_num, tax_calc = tax_amt_final),
+        select(year, pin, agency = agency_num, tax_calc = final_tax_to_dist),
       det_df %>%
         select(year, pin, agency, tax_real = tax) %>%
         as_tibble(),
