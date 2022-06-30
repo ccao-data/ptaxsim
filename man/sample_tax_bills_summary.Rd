@@ -11,7 +11,7 @@ A data frame containing 31 rows and 17 columns:
   \item{pin}{Property index number identifying a specific parcel or unit}
   \item{tax_code}{5-digit tax code}
   \item{class}{Property class}
-  \item{township}{Township name}
+  \item{township_name}{Township name}
   \item{in_tif}{Boolean for whether the PIN/tax code is in a Tax Increment
   Finance (TIF) district}
   \item{in_ssa}{Boolean for whether the PIN/tax code is in a Special Service
@@ -23,9 +23,9 @@ A data frame containing 31 rows and 17 columns:
   \item{exe_disabled}{Persons with disabilities exemption}
   \item{exe_vet_returning}{Veterans exemption}
   \item{exe_vet_disabled}{Veterans disability exemption}
-  \item{eav_total}{Total EAV before exemptions}
-  \item{tax_before_exemptions}{Total tax amount before exemptions}
-  \item{tax_after_exemptions}{Total tax amount after exemptions}
+  \item{eav}{Total EAV before exemptions}
+  \item{tax_amt_pre_exe}{Total tax amount before exemptions}
+  \item{tax_amt_post_exe}{Total tax amount after exemptions}
 }
 }
 \source{

@@ -30,7 +30,7 @@ pins <- DBI::dbGetQuery(
 
 bills <- tax_bill(pins$year, pins$pin) %>%
   group_by(year, pin) %>%
-  summarize(calced_bill = sum(tax_amt_total_to_tif) + sum(tax_amt_final)) %>%
+  summarize(calced_bill = sum(final_tax_to_tif) + sum(final_tax_to_dist)) %>%
   left_join(pins, on = c("year", "pin")) %>%
   rename(real_bill = tax_bill_total) %>%
   mutate(bill_diff = real_bill - calced_bill)

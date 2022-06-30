@@ -56,7 +56,7 @@ row for each district relevant to each PIN. Most PINs have 10-15 districts
 
 Note that unlike official tax bills, TIFs are not broken out into a
 separate line item and instead are contained in their own column
-(named \code{tax_amt_total_to_tif}).
+(named \code{final_tax_to_tif}).
 }
 \description{
 This function calculates a Cook County property tax bill using

@@ -71,7 +71,7 @@ agency_match <- readr::read_csv(
 # Join agency ID numbers to bills table
 bills_df <- bills_df %>%
   left_join(agency_match, by = "agency_name") %>%
-  relocate(agency, .before = "agency_name")
+  relocate(agency_num, .before = "agency_name")
 
 # Consolidate Cook County breakouts into single line-item
 bills_df <- bills_df %>%
@@ -90,7 +90,7 @@ bills_df <- bills_df %>%
   mutate(tif_total = sum(tax * str_detect(agency_name, "TIF"))) %>%
   filter(!str_detect(agency_name, "TIF")) %>%
   ungroup() %>%
-  filter(!is.na(agency))
+  filter(!is.na(agency_num))
 
 # Write detail results to file for safekeeping
 bills_df %>%
@@ -107,7 +107,7 @@ sample_tax_bills_detail <- sample_tax_bills_detail %>%
     year = as.integer(year),
     class = str_pad(class, 3, "left", "0"),
     pension = replace_na(pension, 0),
-    agency = str_pad(agency, 9, "left", "0")
+    agency_num = str_pad(agency_num, 9, "left", "0")
   )
 
 # Convert the data to a data.table and use setkey to sort for faster joins

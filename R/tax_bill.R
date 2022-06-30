@@ -200,8 +200,8 @@ tax_bill <- function(year_vec,
     (in_rpm_tif),
     rpm_tif_to_dist := (final_tax_to_tif - rpm_tif_to_cps) * 0.2
   ][
-    (in_rpm_tif), 
-    rpm_tif_to_dist := 
+    (in_rpm_tif),
+    rpm_tif_to_dist :=
       rpm_tif_to_dist + rpm_tif_to_dist[agency_num == "044060000"] *
       (agency_tax_rate / sum(agency_tax_rate[agency_num != "044060000"])),
     by = .(year, pin)
@@ -241,7 +241,7 @@ tax_bill <- function(year_vec,
         "year", "pin", "class", "tax_code", "av", "eav", "exe_total",
         "agency_num", "agency_name", "agency_total_ext", "agency_total_eav",
         "agency_tax_rate", "tax_amt_exe", "tax_amt_pre_exe", "tax_amt_post_exe",
-        "tif_agency_num", "tif_share","rpm_tif_to_cps", "rpm_tif_to_rpm",
+        "tif_agency_num", "tif_share", "rpm_tif_to_cps", "rpm_tif_to_rpm",
         "rpm_tif_to_dist", "final_tax_to_tif", "final_tax_to_dist"
       )
     )
