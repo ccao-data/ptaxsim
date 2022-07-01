@@ -69,6 +69,7 @@ CREATE TABLE pins (
 );
 CREATE INDEX ix_pins_pin ON pins(pin);
 CREATE INDEX ix_pins_tax_code_num ON pins(tax_code_num);
+CREATE INDEX ix_pins_township_code ON pins(substr(tax_code_num, 1, 2));
 CREATE INDEX ix_pins_class ON pins(class);
 
 
