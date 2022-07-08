@@ -113,7 +113,7 @@ agency_fund <- map_dfr(file_names, function(file) {
     ),
     loss_pct = replace_na(loss_pct, 0),
     loss_pct = loss_pct / 100,
-    
+
     # Backout original levy if missing based on levy + loss
     levy = ifelse(
       is.na(levy),
@@ -238,10 +238,10 @@ agency <- map_dfr(file_names, function(file) {
       "total_non_cap_ext", "final_non_cap_ext"
     ))) %>%
     rename_with(~"total_ext", any_of(c("total_ext", "final_ext"))) %>%
-    
     # Select, order, and rename columns
     select(
-      year, agency_num = agency, agency_name, home_rule_ind, agg_ext_base_year,
+      year,
+      agency_num = agency, agency_name, home_rule_ind, agg_ext_base_year,
       lim_numerator, lim_denominator, lim_rate, prior_eav, curr_new_prop,
       ends_with("_eav"), percent_burden,
       starts_with("grand_total_"),
@@ -298,13 +298,17 @@ agency <- map_dfr(file_names, function(file) {
   mutate(
     across(c(year), as.character),
     across(
-      c(lim_numerator, lim_denominator, prior_eav:cty_total_eav,
-        total_levy, total_max_levy, total_reduced_levy, total_final_levy),
+      c(
+        lim_numerator, lim_denominator, prior_eav:cty_total_eav,
+        total_levy, total_max_levy, total_reduced_levy, total_final_levy
+      ),
       as.integer64
     ),
     across(
-      c(lim_rate, pct_burden, total_prelim_rate, total_final_rate,
-        reduction_pct, total_non_cap_ext, total_ext),
+      c(
+        lim_rate, pct_burden, total_prelim_rate, total_final_rate,
+        reduction_pct, total_non_cap_ext, total_ext
+      ),
       as.double
     )
   )
@@ -409,7 +413,6 @@ agency_info <- bind_rows(agency_name, tif_name) %>%
     an = str_replace_all(an, "SERVAREA\\s", "SERVICE AREA "),
     an = str_replace_all(an, "\\sCOLL\\s", " COLLEGE "),
     an = str_replace_all(an, "(?<=[0-9])(\\s/\\s)(?=[0-9]*$)", " - "),
-    
     an = ifelse(str_count(an, "[\\)\\(]") == 1, str_remove_all(an, "[\\)\\(]"), an),
     an = str_trim(str_squish(toupper(an)))
   ) %>%
@@ -469,7 +472,7 @@ agency_info <- bind_rows(agency_name, tif_name) %>%
       mit == "COOK" ~ "COOK COUNTY",
       mit == "SCHOOL" ~ "SCHOOL",
       mit %in% c(
-        "WATER", "BOND", "PARK", "MOSQUITO", "SANITARY","FIRE", "POLICE", "MISC"
+        "WATER", "BOND", "PARK", "MOSQUITO", "SANITARY", "FIRE", "POLICE", "MISC"
       ) ~ "MISCELLANEOUS",
       mit %in% c("MUNI", "TIF", "SSA", "GEN ASST", "INFRA") ~ "MUNICIPALITY/TOWNSHIP",
       mit == "LIBRARY" & str_detect(an, "FUND") ~ "MUNICIPALITY/TOWNSHIP",
@@ -480,7 +483,8 @@ agency_info <- bind_rows(agency_name, tif_name) %>%
     agency_name_original = toupper(agency_name)
   ) %>%
   select(
-    agency_num, agency_name = an, agency_name_short = anl, agency_name_original,
+    agency_num,
+    agency_name = an, agency_name_short = anl, agency_name_original,
     major_type = mat, minor_type = mit
   ) %>%
   arrange(agency_num)
