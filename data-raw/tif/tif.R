@@ -355,16 +355,7 @@ dist_file_names_pdf_corrected <- list.files(
 )
 
 tif_distribution_pdf <- map_dfr(dist_file_names_pdf_corrected, read_xlsx)
-
-# Checks for manually corrected TIF data
-lapply(tif_distribution_pdf, function(x) table(str_detect(x, "\\.")))
-lapply(tif_distribution_pdf, function(x) table(x < 100 & x != 0))
-lapply(tif_distribution_pdf, function(x) table(nchar(x)))
-
-tif_distribution <- bind_rows(
-  tif_distribution_xls,
-  tif_distribution_pdf
-) %>%
+tif_distribution <- bind_rows(tif_distribution_xls, tif_distribution_pdf) %>%
   mutate(
     across(c(tax_code_eav, tax_code_frozen_eav, tax_code_revenue), as.integer64)
   ) %>%
