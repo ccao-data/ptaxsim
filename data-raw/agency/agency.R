@@ -342,44 +342,157 @@ agency <- agency %>%
 # agency_info ------------------------------------------------------------------
 
 # Create a separate table containing only agency names and types
-agency_info <- agency %>%
+agency_name <- agency %>%
   group_by(agency_num) %>%
-  summarise(agency_name_original = calc_mode(agency_name)) %>%
-  ungroup() %>%
+  summarise(agency_name = calc_mode(agency_name)) %>%
+  ungroup()
+
+# Load TIF names from file since they aren't included in rate reports
+tif_name <- readr::read_csv("data-raw/agency/tif_agency_names.csv")
+
+# Combine TIF and district names, clean up, and add types
+agency_info <- bind_rows(agency_name, tif_name) %>%
+  # Clean up, standardize, and length district names
   mutate(
-    # Clean up, standardize, and length district names
-    an = str_remove_all(agency_name_original, "#|NO\\.|\\."),
+    an = toupper(agency_name),
+    an = str_remove_all(an, "#|NO\\.|\\.|NO\\s(?=[0-9])|'$"),
+    an = str_replace_all(an, "(?<=[A-Z0-9])(&)(?=[A-Z0-9])", " & "),
+    an = str_replace_all(an, "(?<=[A-Z0-9])(/)(?=[A-Z0-9])", " / "),
+    an = str_replace_all(an, "(?<=\\s[0-9]{1})(\\s/\\s)(?=[0-9]{1})", "/"),
+    an = str_replace_all(an, "(?<=[A-Z0-9])(-)(?=[\\s])", " - "),
+    an = str_replace_all(an, "(?<=[A-Z])(-)(?=[A-Z])", " - "),
+    an = str_replace_all(an, "(?<=I)(\\s)(?=[0-9])", "-"),
+    an = str_replace_all(an, "(?<=[0-9])(-)(?=[0-9]{4})", " - "),
+    an = str_replace_all(an, "'\\s|\\s'", " "),
     an = str_replace_all(an, "SPEC\\s", "SPECIAL "),
-    an = str_replace_all(an, "DIST\\s", "DISTRICT "),
-    an = str_replace_all(an, "DIST$|DST$", "DISTRICT"),
-    an = str_replace_all(an, "SERV\\s", "SERVICE "),
+    an = str_replace_all(an, "DIST\\s|DISTR\\s", "DISTRICT "),
+    an = str_replace_all(an, "DIST$|DST$|DISTR$", "DISTRICT"),
+    an = str_replace_all(an, "\\sSERV\\s|\\sSER\\s|\\sSVC\\s|\\sSERVIDE\\s", " SERVICE "),
+    an = str_replace_all(an, "(?<=SPECIAL\\s)(SERVICES)(?=\\sAREA)", "SERVICE"),
+    an = str_replace_all(an, "(?<=\\s)(SSA)(?=[0-9])", "SPECIAL SERVICE AREA "),
+    an = str_replace_all(an, "(?<=SERVICE\\s)(AREA)(?=[0-9])", "AREA "),
+    an = str_replace_all(an, "(?<=AREA)(-)(?=[0-9])", " "),
     an = str_replace_all(an, "SSA\\s", "SPECIAL SERVICE AREA "),
+    an = str_replace_all(an, "SPECIAL SERV/", "SPECIAL SERVICE AREA/"),
     an = str_replace_all(an, "COMM\\s", "COMMUNITY "),
     an = str_replace_all(an, "FD$", "FUND"),
-    an = str_replace_all(an, "(?<=[A-Z0-9])(&)(?=[A-Z0-9])", " & "),
-    an = str_replace_all(an, "(?<=[A-Z0-9])(\\/)(?=[A-Z0-9])", " / "),
-    an = str_replace_all(an, "(?<=[A-Z0-9])(-)(?=[A-Z0-9])", " - "),
+    an = str_replace_all(an, "(INTERSTATE\\s)(?=[0-9])", "I-"),
     an = str_replace_all(an, "HLTH\\s", "HEALTH "),
     an = str_replace_all(an, "FAC\\s", "FACILITIES "),
     an = str_replace_all(an, "TWP\\s|TWNSHP\\s", "TOWNSHIP "),
     an = str_replace_all(an, "MOSQ\\s", "MOSQUITO "),
     an = str_replace_all(an, "GR CHGO", "GREATER CHICAGO"),
-    an = str_replace_all(an, "VIL\\s", "VILLAGE "),
-    an = str_replace_all(an, "MENT\\s", "MENTAL "),
-    an = str_replace_all(an, "HTS\\s", "HEIGHTS "),
-    an = str_replace_all(an, "SCH\\s", "SCHOOL "),
+    an = str_replace_all(an, "VIL\\s|VILL\\s", "VILLAGE "),
+    an = str_replace_all(an, "\\sMENT\\s", " MENTAL "),
+    an = str_replace_all(an, "\\sROAD$", " RD"),
+    an = str_replace_all(an, "\\sHTS\\s", " HEIGHTS "),
+    an = str_replace_all(an, "\\sLIB\\s|\\sLIBR\\s", " LIBRARY "),
+    an = str_replace_all(an, "^SCH\\s", " SCHOOL "),
     an = str_replace_all(an, "H\\sS\\s|HS\\s", "HIGH SCHOOL "),
-    an = str_replace_all(an, "C\\C\\s", "CC "),
-    an = str_replace_all(
-      an, "(SPECIAL SERVICE)(?=\\s[0-9])", "SPECIAL SERVICE AREA"
-    ),
+    an = str_replace_all(an, "C\\sC\\s", "CC "),
+    an = str_replace_all(an, "(\\sPUB|PUB$)(?=\\s)", " PUBLIC"),
+    an = str_replace_all(an, "(?<=FIRE\\s)(PROT)(?=\\s)", " PROTECTION"),
+    an = str_replace_all(an, "(?<=SPECIAL SERVICE AREA [0-9]{1,2})( - | / )(?=[A-Z]*)", " / "),
+    an = str_replace_all(an, "(SPECIAL SERVICE)(?=\\s[0-9])", "SPECIAL SERVICE AREA"),
+    an = str_replace_all(an, "(?<=SPECIAL SERVICE AREA [0-9])(\\s)(?=OAK)", " / "),
+    an = str_replace_all(an, "SPECIAL SERVICE(?!\\sAREA)", "SPECIAL SERVICE AREA"),
+    an = str_replace_all(an, "EXP MENTAL HEALTH S", "EXPANDED MENTAL HEALTH SERVICE DISTRICT"),
+    an = str_replace_all(an, "LAKE - COOK", "LAKE-COOK"),
+    an = str_replace_all(an, "TRI - STATE", "TRI-STATE"),
+    an = str_replace_all(an, "(?<=[0-9]{2,4})(-)(?=[0-9])", " - "),
+    an = str_replace_all(an, "(?<=\\s)(0)(?=[0-9])", ""),
+    an = str_replace_all(an, "(?<=\\s)(\\()(?=[0-9]*\\))", " "),
+    an = str_replace_all(an, "(?<=\\s-\\s)(\\()(?=[A-Z0-9]*)", " "),
+    an = str_replace_all(an, "(?<=-\\s[0-9]{1}\\s)(\\()(?=[A-Z0-9]*)", " "),
+    an = str_replace_all(an, "(?<=AREA\\s[0-9]{1,2})(\\s)(?=[0-9])", " - "),
+    an = str_replace_all(an, "(?<=[0-9]{4})DISC$", " DISC"),
+    an = str_replace_all(an, "SERVAREA\\s", "SERVICE AREA "),
+    an = str_replace_all(an, "\\sCOLL\\s", " COLLEGE "),
+    an = str_replace_all(an, "(?<=[0-9])(\\s/\\s)(?=[0-9]*$)", " - "),
+    
+    an = ifelse(str_count(an, "[\\)\\(]") == 1, str_remove_all(an, "[\\)\\(]"), an),
     an = str_trim(str_squish(toupper(an)))
-  )
-
+  ) %>%
+  # Compress long name into abbreviated version
+  mutate(
+    anl = str_replace_all(an, "SPECIAL SERVICE AREA", "SSA"),
+    anl = str_replace_all(anl, "DISTRICT", "DIST"),
+    anl = str_replace_all(anl, "PUBLIC", "PUB"),
+    anl = str_replace_all(anl, "LIBRARY", "LIB"),
+    anl = str_replace_all(anl, "COLLEGE", "COLL"),
+    anl = str_replace_all(anl, "COMMUNITY", "COMM"),
+    anl = str_replace_all(anl, "TOWNSHIP", "TWP"),
+    anl = str_replace_all(anl, "GENERAL ASSISTANCE", "GEN ASST"),
+    anl = str_replace_all(anl, "MENTAL", "MNTL"),
+    anl = str_replace_all(anl, "HEALTH", "HLTH"),
+    anl = str_replace_all(anl, "FUND", "FD"),
+    anl = str_replace_all(anl, "SERVICE", "SVC"),
+    anl = str_replace_all(anl, "HIGH SCHOOL", "HS"),
+    anl = str_replace_all(anl, "SCHOOL", "SCH"),
+    anl = str_replace_all(anl, "EXPANDED", "EXP"),
+    anl = str_replace_all(anl, "SPECIAL", "SPEC"),
+    anl = str_replace_all(anl, "VILLAGE", "VIL"),
+    anl = str_replace_all(anl, "\\sHEIGHTS\\s", " HTS "),
+    anl = str_replace_all(anl, "\\sHEIGHTS$", " HTS"),
+    anl = str_replace_all(anl, "PROTECTION", "PROT"),
+    anl = str_replace_all(anl, "SANITARY", "SANI"),
+    anl = str_replace_all(anl, "GREATER CHICAGO", "GR CHGO"),
+    anl = str_replace_all(anl, "MOSQUITO ABATEMENT", "MOSQ ABATE"),
+  ) %>%
+  # Assign each district a major and minor type
+  mutate(
+    mit = case_when(
+      !is.na(agency_type) ~ "TIF",
+      agency_num == "030210002" ~ "MUNI",
+      agency_num == "044030010" ~ "SCHOOL",
+      agency_num %in% c("010010000", "010010001", "010020000") ~ "COOK",
+      str_detect(an, "\\sSPECIAL SERVICE AREA|SPECIAL SERVICE AREA\\s") ~ "SSA",
+      str_detect(an, "DEFICIENCY") ~ "MISC",
+      str_detect(an, "\\sBOND\\s|\\sBOND$|\\sBONDS$") ~ "BOND",
+      str_detect(an, "\\sPARK\\sDISTRICT|PARK DISTRICT$|^PARK DISTRICT") ~ "PARK",
+      str_detect(an, "\\sHEALTH\\s|\\sMENTAL\\s") ~ "HEALTH",
+      str_detect(an, "\\sWATER\\s|WATER$") ~ "WATER",
+      str_detect(an, "\\sFIRE\\s") ~ "FIRE",
+      str_detect(an, "\\sPOLICE\\s") ~ "POLICE",
+      str_detect(an, "\\sLIBRARY\\s|\\sLIBRARY$") ~ "LIBRARY",
+      str_detect(an, "^SCHOOL\\s|\\sSCHOOL\\s|SCHOOL DISTRICT$") ~ "SCHOOL",
+      str_detect(an, "^TOWN\\s|^CITY\\s|^VILL") ~ "MUNI",
+      str_detect(an, "BOARD OF EDUCATION") ~ "SCHOOL",
+      str_detect(an, "\\sCOLLEGE\\s") ~ "SCHOOL",
+      str_detect(an, "\\sSANITARY\\s|SANITARY$") ~ "SANITARY",
+      str_detect(an, "GENERAL ASSISTANCE\\s") ~ "GEN ASST",
+      str_detect(an, "ROAD|BRIDGE") ~ "INFRA",
+      str_detect(an, "MOSQUITO") ~ "MOSQUITO",
+      TRUE ~ "MISC"
+    ),
+    mat = case_when(
+      mit == "COOK" ~ "COOK COUNTY",
+      mit == "SCHOOL" ~ "SCHOOL",
+      mit %in% c(
+        "WATER", "BOND", "PARK", "MOSQUITO", "SANITARY","FIRE", "POLICE", "MISC"
+      ) ~ "MISCELLANEOUS",
+      mit %in% c("MUNI", "TIF", "SSA", "GEN ASST", "INFRA") ~ "MUNICIPALITY/TOWNSHIP",
+      mit == "LIBRARY" & str_detect(an, "FUND") ~ "MUNICIPALITY/TOWNSHIP",
+      mit == "HEALTH" & str_detect(an, "EXPANDED") ~ "MISCELLANEOUS",
+      mit == "HEALTH" ~ "MUNICIPALITY/TOWNSHIP",
+      mit == "LIBRARY" ~ "MISCELLANEOUS"
+    ),
+    agency_name_original = toupper(agency_name)
+  ) %>%
+  select(
+    agency_num, agency_name = an, agency_name_short = anl, agency_name_original,
+    major_type = mat, minor_type = mit
+  ) %>%
+  arrange(agency_num)
 
 # Write both data sets to S3
 arrow::write_parquet(
   x = agency,
   sink = remote_path_agency,
+  compression = "zstd"
+)
+arrow::write_parquet(
+  x = agency_info,
+  sink = remote_path_agency_info,
   compression = "zstd"
 )
