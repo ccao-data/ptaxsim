@@ -71,6 +71,7 @@ for (dataset in datasets) {
 
 # Vacuum to save space and compress a bit
 dbExecute(conn, "VACUUM;")
+dbDisconnect(conn)
 
 # Compress with zstd, since SQLite db files are uncompressed
 system(paste("zstd", "-7", db_path))
