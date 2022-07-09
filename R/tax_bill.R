@@ -12,8 +12,8 @@
 #'     my neighborhood?
 #'
 #'   Most of the data necessary to answer these questions is built into the
-#'   package. Data for the most current tax year is usually available the
-#'   following year (2020 data is available in 2021). If needed, users can
+#'   included database. Data for the most current tax year is usually available
+#'   the following year (2020 data is available in 2021). If needed, users can
 #'   supply current tax year data manually. See vignettes for more information.
 #'
 #' @details Note that all vector inputs (suffixed with \code{_vec}) have two
@@ -37,34 +37,31 @@
 #'   codes are included on individual property tax bills. If missing, the
 #'   \code{\link{lookup_tax_code}} function will be used to retrieve tax codes
 #'   based on \code{year_vec} and \code{pin_vec}.
-#' @param pin_df Data frame containing the exemptions and assessed value
+#' @param agency_dt \code{data.table} containing the levy and base amount for
+#'   each taxing district in the specified tax code. Data *must* be identical
+#'   to the format returned by \code{\link{lookup_agency}}. If missing,
+#'   \code{\link{lookup_agency}} will be used to retrieve each tax district's
+#'   levy and base based on \code{year_vec} and \code{tax_code_vec}.
+#' @param pin_dt \code{data.table} containing the exemptions and assessed value
 #'   specific to each PIN and year. Data *must* be identical to the format
 #'   returned by \code{\link{lookup_pin}}. If missing, \code{\link{lookup_pin}}
 #'   will be used to retrieve each PIN's information based on \code{year_vec}
 #'   and \code{pin_vec}.
-#' @param agency_df Data frame containing the levy and base amount for each
-#'   taxing district in the specified tax code. Data *must* be identical to the
-#'   format returned by \code{\link{lookup_agency}}. If missing,
-#'   \code{\link{lookup_agency}} will be used to retrieve each taxing
-#'   jurisdiction's levies based on \code{year_vec} and \code{tax_code_vec}.
-#' @param tif_df Data frame containing any TIF applicable to the specified
-#'   tax code. Will be an empty data frame if no TIF exists for the property.
-#'   Data *must* be identical to the format returned by
+#' @param tif_dt \code{data.table} containing any TIF applicable to the
+#'   specified tax code. Will be an empty \code{data.table} if no TIF exists for
+#'   the property. Data *must* be identical to the format returned by
 #'   \code{\link{lookup_tif}}. If missing, \code{\link{lookup_tif}} will be
 #'   used to retrieve the tax code's TIF share based on \code{year_vec}
 #'   and \code{tax_code_vec}.
-#' @param simplify Default TRUE. Boolean for whether or not to keep only the
-#'   the most vital columns in the final output, including tax amounts, rates,
-#'   and amounts to TIFs.
+#' @param simplify Default \code{TRUE}. Boolean to keep only the columns that
+#'   appear on a real tax bill. Additionally, collapses the TIF output column
+#'   \code{final_tax_to_tif} to a line-item, similar to the format on a real
+#'   tax bill.
 #'
-#' @return A data frame which contains a tax bill for each specified PIN and
-#'   year. Each tax bill is broken out by taxing district, meaning there is a
-#'   row for each district relevant to each PIN. Most PINs have 10-15 districts
-#'   (rows) associated with each year.
-#'
-#'   Note that unlike official tax bills, TIFs are not broken out into a
-#'   separate line item and instead are contained in their own column
-#'   (named \code{final_tax_to_tif}).
+#' @return A \code{data.table} which contains a tax bill for each specified PIN
+#'   and year. Each tax bill is broken out by taxing district, meaning there is
+#'   a row for each district relevant to each PIN. Most PINs have 10-15
+#'   districts (rows) associated with each year.
 #'
 #' @importFrom data.table :=
 #' @examples
@@ -87,9 +84,9 @@
 tax_bill <- function(year_vec,
                      pin_vec,
                      tax_code_vec = lookup_tax_code(year_vec, pin_vec),
-                     pin_df = lookup_pin(year_vec, pin_vec),
-                     agency_df = lookup_agency(year_vec, tax_code_vec),
-                     tif_df = lookup_tif(year_vec, tax_code_vec),
+                     agency_dt = lookup_agency(year_vec, tax_code_vec),
+                     pin_dt = lookup_pin(year_vec, pin_vec),
+                     tif_dt = lookup_tif(year_vec, tax_code_vec),
                      simplify = TRUE) {
 
   # Basic type/input checking for vector inputs
@@ -104,15 +101,15 @@ tax_bill <- function(year_vec,
     length(simplify) == 1
   )
 
-  # Input checking to ensure data frames have expected structure (col name and
+  # Input checking to ensure data.tables have expected structure (col name and
   # data type)
   stopifnot(
-    check_agency_df_str(agency_df),
-    check_pin_df_str(pin_df),
-    check_tif_df_str(tif_df)
+    check_agency_dt_str(agency_dt),
+    check_pin_dt_str(pin_dt),
+    check_tif_dt_str(tif_dt)
   )
 
-  # Create data.table from inputs. Use the cartesian product if the inputs are
+  # Create data.table from inputs. Use the Cartesian product if the inputs are
   # different lengths
   tax_code <- NULL
   if (length(year_vec) != length(pin_vec)) {
@@ -125,24 +122,28 @@ tax_bill <- function(year_vec,
   dt[, tax_code := tax_code_vec]
   data.table::setDT(dt, key = c("year", "pin"))
 
-  # Shink the PIN data prior to join by collapsing exemptions into a total
+  # Shrink the PIN data prior to join by collapsing exemptions into a total
   # exempt amount
   exe_total <- .SD <- class <- av <- eav <- NULL
-  exe_cols <- names(pin_df)[startsWith(names(pin_df), "exe_")]
-  pin_df[, exe_total := rowSums(.SD), .SDcols = exe_cols]
-  pin_df[class == "239", eav := av] # farmland is taxed on AV, not EAV
-  pin_df[, (exe_cols) := NULL]
+  exe_cols <- names(pin_dt)[startsWith(names(pin_dt), "exe_")]
+  pin_dt[, exe_total := rowSums(.SD), .SDcols = exe_cols]
+  pin_dt[class == "239", eav := av] # farmland is taxed on AV, not EAV
+  pin_dt[, (exe_cols) := NULL]
 
   # Join PIN-level data (exemptions, eav) to the input data
   year <- pin <- i.av <- i.eav <- i.class <- i.exe_total <- NULL
-  dt[pin_df, on = .(year, pin), c("av", "eav", "class", "exe_total") :=
+  dt[pin_dt, on = .(year, pin), c("av", "eav", "class", "exe_total") :=
     .(i.av, i.eav, i.class, i.exe_total)]
 
   # Fetch TIF for a given tax code. There should only be one TIF per tax code (
   # with a few exceptions)
-  i.agency_num <- i.tif_share <- NULL
-  dt[tif_df, on = .(year, tax_code), c("tif_agency_num", "tif_share") :=
-    .(i.agency_num, i.tif_share)]
+  i.agency_num <- i.agency_name <- i.tif_share <- NULL
+  dt[
+    tif_dt,
+    on = .(year, tax_code),
+    c("tif_agency_num", "tif_agency_name", "tif_share") :=
+    .(i.agency_num, i.agency_name, i.tif_share)
+  ]
 
   # Add an indicator for when the PIN is in the special Red-Purple Modernization
   # TIF, which has different rules than other TIFs
@@ -154,7 +155,7 @@ tax_bill <- function(year_vec,
   # Fetch levy for all agencies of a tax code, this will expand the number of
   # rows from 1 per PIN per year, to N per PIN per year, where N is the number
   # of agencies associated with a PIN's tax code
-  dt <- merge(dt, agency_df, by = c("year", "tax_code"), allow.cartesian = TRUE)
+  dt <- merge(dt, agency_dt, by = c("year", "tax_code"), allow.cartesian = TRUE)
 
   # Calculate the exemption effect by subtracting the exempt amount from
   # the total taxable EAV
@@ -225,26 +226,54 @@ tax_bill <- function(year_vec,
     round(tax_amt_post_exe - final_tax_to_tif + rpm_tif_to_dist, 2)]
   dt[, final_tax_to_tif := round(final_tax_to_tif - rpm_tif_to_dist, 2)]
   dt[, in_rpm_tif := NULL]
-  data.table::setkey(dt, year, pin, agency_num)
 
-  # Remove extraneous columns if simplify is TRUE
   if (simplify) {
-    return(dt[, c(
-      "year", "pin", "class", "tax_code", "av", "eav",
-      "agency_num", "agency_name", "agency_tax_rate",
-      "tax_amt_post_exe", "final_tax_to_tif", "final_tax_to_dist"
-    )])
+    
+    # Collapse per-district TIF amounts into a single row, just like on a
+    # real tax bill
+    tif_row <- dt[
+      !is.na(tif_agency_num),
+      .(final_tax = sum(final_tax_to_tif)),
+      by = .(
+        year, pin, class, tax_code, av, eav,
+        tif_agency_num, tif_agency_name
+      )
+    ]
+    data.table::setnames(
+      tif_row,
+      c("tif_agency_num", "tif_agency_name"),
+      c("agency_num", "agency_name")
+    )
+    tif_row[,
+      c("agency_major_type", "agency_minor_type", "agency_tax_rate") :=
+        list("MUNICIPALITY/TOWNSHIP", "TIF", 0.0)
+    ]
+    
+    # Keep only necessary columns, then merge with the TIF row(s)
+    drop_cols <- c(
+      "exe_total", "agency_total_ext", "agency_total_eav", "tax_amt_exe",
+      "tax_amt_pre_exe","tax_amt_post_exe", "tif_agency_num",
+      "tif_agency_name", "tif_share", "rpm_tif_to_cps", "rpm_tif_to_rpm",
+      "rpm_tif_to_dist", "final_tax_to_tif"
+    )
+    dt[, (drop_cols) := NULL]
+    data.table::setnames(dt, "final_tax_to_dist", "final_tax")
+    dt <- rbind(dt, tif_row)
+    
   } else {
     data.table::setcolorder(
       dt,
       neworder = c(
         "year", "pin", "class", "tax_code", "av", "eav", "exe_total",
-        "agency_num", "agency_name", "agency_total_ext", "agency_total_eav",
-        "agency_tax_rate", "tax_amt_exe", "tax_amt_pre_exe", "tax_amt_post_exe",
-        "tif_agency_num", "tif_share", "rpm_tif_to_cps", "rpm_tif_to_rpm",
+        "agency_num", "agency_name", "agency_major_type", "agency_minor_type",
+        "agency_total_ext", "agency_total_eav", "agency_tax_rate",
+        "tax_amt_exe", "tax_amt_pre_exe", "tax_amt_post_exe", "tif_agency_num",
+        "tif_agency_name", "tif_share", "rpm_tif_to_cps", "rpm_tif_to_rpm",
         "rpm_tif_to_dist", "final_tax_to_tif", "final_tax_to_dist"
       )
     )
-    return(dt)
   }
+  
+  data.table::setkey(dt, year, pin, agency_num)
+  return(dt)
 }
