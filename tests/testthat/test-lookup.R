@@ -96,7 +96,10 @@ test_that("function returns expect data type/structure", {
   )
   expect_named(
     lookup_tif(2018, c("70069", "73105")),
-    c("year", "tax_code", "agency_num", "agency_name", "tif_share")
+    c(
+      "year", "tax_code", "agency_num", "agency_name",
+      "agency_major_type", "agency_minor_type", "tif_share"
+    )
   )
   expect_equal(
     sum(is.na(lookup_tif(sum_df$year, sum_df$tax_code))),
@@ -196,11 +199,11 @@ test_that("lookup values/data are correct", {
   )
   expect_known_hash(
     lookup_agency(2014:2019, "12064"),
-    "4c6e048bc7"
+    "402da52fce"
   )
   expect_known_hash(
     lookup_agency(sum_df$year, sum_df$tax_code),
-    "e724d0cedc"
+    "5b583e7300"
   )
 })
 
@@ -212,8 +215,8 @@ test_that("function returns expect data type/structure", {
   expect_named(
     lookup_agency(2018:2019, "73105"),
     c(
-      "year", "tax_code", "agency_num",
-      "agency_name", "agency_total_ext", "agency_total_eav"
+      "year", "tax_code", "agency_num", "agency_name", "agency_major_type",
+      "agency_minor_type", "agency_total_eav", "agency_total_ext"
     )
   )
   expect_equal(
