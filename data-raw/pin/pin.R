@@ -6,9 +6,9 @@ library(tidyr)
 
 # Paths for local raw data storage and remote storage on S3. Local storage is
 # tracked via Git LFS
-local_path <- "data-raw/pins/pins.parquet"
+local_path <- "data-raw/pin/pin.parquet"
 remote_bucket <- Sys.getenv("S3_REMOTE_BUCKET")
-remote_path <- file.path(remote_bucket, "pins")
+remote_path <- file.path(remote_bucket, "pin")
 
 # Get data frame of all AVs, tax codes, and exemptions per PIN since 2006. These
 # values come from the legacy CCAO database, which mirrors the county mainframe
@@ -19,7 +19,7 @@ ccaodata <- dbConnect(
 
 # Pull AV and class from the Clerk and HEAD tables, giving preference to values
 # from the Clerk table in case of mismatch (except for property class)
-pins <- dbGetQuery(
+pin <- dbGetQuery(
   ccaodata, "
   SELECT
       C.TAX_YEAR AS year,
@@ -28,9 +28,9 @@ pins <- dbGetQuery(
           WHEN H.HD_CLASS IS NOT NULL THEN H.HD_CLASS
           ELSE C.CL_CLS
       END AS class,
-      C.CL_ASSD_VAL AS av,
-      BILLS.TB_TOT_TAX_AMT AS tax_bill_total,
       C.CL_TXCD AS tax_code_num,
+      BILLS.TB_TOT_TAX_AMT AS tax_bill_total,
+      C.CL_ASSD_VAL AS av,
       C.CL_HOMOWN_EXE_AMT AS exe_homeowner,
       C.CL_HOMSTD_EXE_AMT AS exe_senior,
       C.CL_FREEZE_EXE_AMT AS exe_freeze,
@@ -67,7 +67,7 @@ pins <- dbGetQuery(
 
 # Write to S3
 arrow::write_dataset(
-  dataset = pins,
+  dataset = pin,
   path = remote_path,
   format = "parquet",
   partitioning = "year",

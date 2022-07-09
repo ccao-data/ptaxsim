@@ -491,7 +491,7 @@ agency_info <- bind_rows(agency_name, tif_name) %>%
 
 # Write both data sets to S3
 arrow::write_parquet(
-  x = agency,
+  x = agency %>% select(-agency_name),
   sink = remote_path_agency,
   compression = "zstd"
 )

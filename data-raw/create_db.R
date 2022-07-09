@@ -35,7 +35,7 @@ db_send_queries <- function(conn, sql) {
 
 
 
-# Create Tables ----------------------------------------------------------------
+# Create tables ----------------------------------------------------------------
 
 # Create the table definitions from file
 db_send_queries(conn, sql_from_file("data-raw/create_db.sql"))
@@ -43,10 +43,13 @@ db_send_queries(conn, sql_from_file("data-raw/create_db.sql"))
 
 
 
-# Load Data --------------------------------------------------------------------
+# Load data --------------------------------------------------------------------
 
 # Load tables contained in a single file
-files <- c("cpis", "eq_factors", "tif_summaries", "tif_distributions")
+files <- c(
+  "agency", "agency_info", "agency_fund", "agency_fund_info",
+  "cpi", "eq_factor", "tif", "tif_distribution"
+)
 for (file in files) {
   message("Now loading: ", file)
   df <- read_parquet(file.path(remote_bucket, file, "part-0.parquet"))
@@ -54,7 +57,7 @@ for (file in files) {
 }
 
 # Load tables spread over multiple files
-datasets <- c("agencies", "agencies_detail", "pins", "tax_codes")
+datasets <- c("pin", "tax_code")
 for (dataset in datasets) {
   message("Now loading: ", dataset)
   df <- collect(arrow::open_dataset(file.path(remote_bucket, dataset)))
@@ -64,7 +67,7 @@ for (dataset in datasets) {
 
 
 
-# Clean Up ---------------------------------------------------------------------
+# Clean up ---------------------------------------------------------------------
 
 # Vacuum to save space and compress a bit
 dbExecute(conn, "VACUUM;")
