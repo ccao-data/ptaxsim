@@ -359,7 +359,7 @@ agency_info <- bind_rows(agency_name, tif_name) %>%
   # Clean up, standardize, and length district names
   mutate(
     an = toupper(agency_name),
-    an = str_remove_all(an, "#|NO\\.|\\.|NO\\s(?=[0-9])|'$"),
+    an = str_remove_all(an, "#|NO\\.|\\.|NO\\s(?=[0-9])|'$|\\^"),
     an = str_replace_all(an, "(?<=[A-Z0-9])(&)(?=[A-Z0-9])", " & "),
     an = str_replace_all(an, "(?<=[A-Z0-9])(/)(?=[A-Z0-9])", " / "),
     an = str_replace_all(an, "(?<=\\s[0-9]{1})(\\s/\\s)(?=[0-9]{1})", "/"),
@@ -486,6 +486,18 @@ agency_info <- bind_rows(agency_name, tif_name) %>%
     agency_num,
     agency_name = an, agency_name_short = anl, agency_name_original,
     major_type = mat, minor_type = mit
+  ) %>%
+  mutate(
+    agency_name = ifelse(
+      minor_type == "TIF",
+      paste0("TIF - ", agency_name),
+      agency_name
+    ),
+    agency_name_short = ifelse(
+      minor_type == "TIF",
+      paste0("TIF - ", agency_name_short),
+      agency_name_short
+    )
   ) %>%
   arrange(agency_num)
 
