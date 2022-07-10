@@ -113,9 +113,7 @@ tax_bill <- function(year_vec,
   # different lengths
   tax_code <- NULL
   if (length(year_vec) != length(pin_vec)) {
-    dt <- data.table::as.data.table(
-      expand.grid("year" = year_vec, "pin" = pin_vec, stringsAsFactors = FALSE)
-    )
+    dt <- data.table::CJ("year" = year_vec, "pin" = pin_vec, sorted = FALSE)
   } else {
     dt <- data.table::data.table("year" = year_vec, "pin" = pin_vec)
   }

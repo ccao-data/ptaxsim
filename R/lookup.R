@@ -1,11 +1,11 @@
 globalVariables(c("ptaxsim_db_conn", "."))
 
-#' Lookup data frames required to calculate property tax bills
+#' Lookup data sets required to calculate property tax bills
 #'
 #' @description The functions in this group take a tax year, PIN, and/or tax
-#'   code as input and return a data frame as an output. The returned data
-#'   frames are in a specific format (in terms of column name/type/order) and
-#'   can be used directly in \code{\link{tax_bill}} or piped to helper
+#'   code as input and return a \code{data.table} as an output. The returned
+#'   data sets are in a specific format (in terms of column name/type/order)
+#'   and can be used directly in \code{\link{tax_bill}} or piped to helper
 #'   functions.
 #'
 #'   When calculating tax bills for future years or providing custom/simulated
@@ -17,7 +17,7 @@ globalVariables(c("ptaxsim_db_conn", "."))
 #' @param conn A connection object pointing to the local copy of the
 #'   PTAXSIM database. Usually instantiated on package load.
 #'
-#' @return A data frame containing the specified tax data by year and
+#' @return A \code{data.table} containing the specified tax data by year and
 #'   PIN/tax code.
 #'
 #' @examples
@@ -59,8 +59,8 @@ NULL
 #' @describeIn lookup_dt Lookup tax agency (CPS, Cook County, forest preserve)
 #'   total equalized assessed values. Such values are known as the "base" and
 #'   are used to calculate per agency tax rates. Also returns each agency's
-#'   levy amount. Returns a data frame with 1 row for each agency associated
-#'   with the input tax code and year.
+#'   levy amount. Returns a \code{data.table} with 1 row for each agency
+#'   associated with the input tax code and year.
 #'
 #' @export
 lookup_agency <- function(year, tax_code, conn = ptaxsim_db_conn) {
@@ -124,7 +124,7 @@ lookup_pin <- function(year, pin, conn = ptaxsim_db_conn) {
 
   # This lookup uses a temp table since it's faster than putting lots of
   # values into the WHERE clause for large lookups
-  dt_idx <- expand.grid("year" = unique(year), "pin" = unique(pin))
+  dt_idx <- data.table::CJ("year" = year, "pin" = pin, unique = TRUE)
   DBI::dbWriteTable(
     conn = conn,
     name = "lookup_pin",
@@ -186,9 +186,9 @@ lookup_tax_code <- function(year, pin, conn = ptaxsim_db_conn) {
   )
 
   if (length(year) != length(pin)) {
-    dt_idx <- expand.grid("year" = year, "pin" = pin)
+    dt_idx <- data.table::CJ("year" = year, "pin" = pin, sorted = FALSE)
   } else {
-    dt_idx <- data.frame("year" = year, "pin" = pin)
+    dt_idx <- data.table::data.table("year" = year, "pin" = pin)
   }
 
   DBI::dbWriteTable(
@@ -216,8 +216,8 @@ lookup_tax_code <- function(year, pin, conn = ptaxsim_db_conn) {
 
 
 #' @describeIn lookup_dt Lookup any TIFs that apply to a given tax code and
-#'   year. Returns a data frame with only 1 row per tax code and year, or 0 rows
-#'   if the tax code is not within a TIF.
+#'   year. Returns a \code{data.table} with only 1 row per tax code and year,
+#'   or 0 rows if the tax code is not within a TIF.
 #'
 #' @export
 lookup_tif <- function(year, tax_code, conn = ptaxsim_db_conn) {
