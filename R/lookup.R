@@ -135,8 +135,8 @@ lookup_pin <- function(year, pin, conn = ptaxsim_db_conn) {
 
   dt <- DBI::dbGetQuery(
     conn,
-    statement = glue::glue_sql(
-      "
+    statement =
+    "
       SELECT
           lp.year,
           lp.pin,
@@ -158,17 +158,13 @@ lookup_pin <- function(year, pin, conn = ptaxsim_db_conn) {
           ON lp.year = p.year
           AND lp.pin = p.pin
       LEFT JOIN eq_factor ef
-          ON p.year = ef.year
+          ON lp.year = ef.year
       ORDER BY lp.year, lp.pin
-    ",
-      pins = pin,
-      years = year,
-      .con = conn
-    )
+    "
   )
 
   dt <- data.table::setDT(dt, key = c("year", "pin"))
-
+  
   return(dt)
 }
 
@@ -205,18 +201,14 @@ lookup_tax_code <- function(year, pin, conn = ptaxsim_db_conn) {
 
   dt <- DBI::dbGetQuery(
     conn,
-    statement = glue::glue_sql(
-      "
+    statement =
+    "
       SELECT p.tax_code_num
       FROM lookup_tax_code ltc
       LEFT JOIN pin p
           ON p.year = ltc.year
           AND p.pin = ltc.pin
-    ",
-      pins = pin,
-      years = year,
-      .con = conn
-    )
+    "
   )
 
   return(dt$tax_code_num)
