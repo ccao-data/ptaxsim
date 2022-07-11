@@ -3,7 +3,8 @@
 #' @description This function calculates a Cook County property tax bill using
 #'   levy, base, and TIF information from the Cook County Clerk and Assessor.
 #'   It allows users to simulate different tax scenarios by changing the input
-#'   data. For example, this function can answer the following questions:
+#'   data. For example, this function can be used to answer the following
+#'   questions:
 #'
 #'   - What would my tax bill be if my assessed value was $10K lower?
 #'   - What would my tax bill be if Chicago increased its levy by 5%?
@@ -13,8 +14,9 @@
 #'
 #'   Most of the data necessary to answer these questions is built into the
 #'   included database. Data for the most current tax year is usually available
-#'   the following year (2020 data is available in 2021). If needed, users can
-#'   supply current tax year data manually. See vignettes for more information.
+#'   the following year (i.e. 2020 data is available in 2021). If needed, users
+#'   can supply current tax year data manually. See vignettes for more
+#'   information.
 #'
 #' @details Note that all vector inputs (suffixed with \code{_vec}) have two
 #'   input modes:
@@ -22,35 +24,38 @@
 #'   1. If the input vectors are the same length, pairwise tax bills are
 #'   returned (each PIN, year, and tax code combination returns 1 bill).
 #'   2. If the input vectors are different lengths, the Cartesian product of
-#'   the vectors is returned (5 years and 10 PINs will return all 5 years' of
+#'   the vectors is returned (5 years and 10 PINs will return all 5 years of
 #'   bills for each PIN).
 #'
 #'   The district-level tax amounts returned by this function will *not*
 #'   perfectly match the amounts on real tax bills. This is due to rounding
 #'   and truncating that occurs in the real system. Most estimated amounts will
 #'   still be within a few dollars of the amounts on real bills.
+#'   
+#'   PIN and year combinations not found in the database will be silently
+#'   dropped from the output.
 #'
 #' @param year_vec Numeric vector of tax years for which to return bills.
 #' @param pin_vec Character vector of 14-digit Property Index Numbers (PINs)
 #'   with no dashes or spaces.
 #' @param tax_code_vec Character vector of 5-digit Cook County tax codes. These
 #'   codes are included on individual property tax bills. If missing, the
-#'   \code{\link{lookup_tax_code}} function will be used to retrieve tax codes
+#'   \code{\link{lookup_tax_code}} function is used to retrieve tax codes
 #'   based on \code{year_vec} and \code{pin_vec}.
 #' @param agency_dt \code{data.table} containing the levy and base amount for
 #'   each taxing district in the specified tax code. Data *must* be identical
 #'   to the format returned by \code{\link{lookup_agency}}. If missing,
-#'   \code{\link{lookup_agency}} will be used to retrieve each tax district's
+#'   \code{\link{lookup_agency}} is used to retrieve each tax district's
 #'   levy and base based on \code{year_vec} and \code{tax_code_vec}.
 #' @param pin_dt \code{data.table} containing the exemptions and assessed value
 #'   specific to each PIN and year. Data *must* be identical to the format
 #'   returned by \code{\link{lookup_pin}}. If missing, \code{\link{lookup_pin}}
-#'   will be used to retrieve each PIN's information based on \code{year_vec}
+#'   is used to retrieve each PIN's information based on \code{year_vec}
 #'   and \code{pin_vec}.
 #' @param tif_dt \code{data.table} containing any TIF applicable to the
-#'   specified tax code. Will be an empty \code{data.table} if no TIF exists for
+#'   specified tax code. Is an empty \code{data.table} if no TIF exists for
 #'   the property. Data *must* be identical to the format returned by
-#'   \code{\link{lookup_tif}}. If missing, \code{\link{lookup_tif}} will be
+#'   \code{\link{lookup_tif}}. If missing, \code{\link{lookup_tif}} is
 #'   used to retrieve the tax code's TIF share based on \code{year_vec}
 #'   and \code{tax_code_vec}.
 #' @param simplify Default \code{TRUE}. Boolean to keep only the columns that
