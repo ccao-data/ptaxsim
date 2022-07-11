@@ -118,7 +118,7 @@ tax_bill <- function(year_vec,
     dt <- data.table::data.table("year" = year_vec, "pin" = pin_vec)
   }
   dt[, tax_code := tax_code_vec]
-  data.table::setDT(dt, key = c("year", "pin"))
+  data.table::setDT(dt, key = c("year", "pin", "tax_code"))
 
   # Shrink the PIN data prior to join by collapsing exemptions into a total
   # exempt amount
