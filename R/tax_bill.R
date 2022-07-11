@@ -108,7 +108,7 @@ tax_bill <- function(year_vec,
     length(year_vec) == length(pin_vec) &
       length(pin_vec) == length(tax_code_vec)
   )
-  if (!(vecs_len_exp | vecs_len_eq)) {
+  if (!(vecs_len_exp || vecs_len_eq)) {
     stop(
       "Input vectors must be the same length OR tax_code_vec must be the ",
       "Cartesian product of year_vec and pin_vec"

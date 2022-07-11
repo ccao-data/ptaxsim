@@ -371,7 +371,9 @@ agency_info <- bind_rows(agency_name, tif_name) %>%
     an = str_replace_all(an, "SPEC\\s", "SPECIAL "),
     an = str_replace_all(an, "DIST\\s|DISTR\\s", "DISTRICT "),
     an = str_replace_all(an, "DIST$|DST$|DISTR$", "DISTRICT"),
-    an = str_replace_all(an, "\\sSERV\\s|\\sSER\\s|\\sSVC\\s|\\sSERVIDE\\s", " SERVICE "),
+    an = str_replace_all(
+      an, "\\sSERV\\s|\\sSER\\s|\\sSVC\\s|\\sSERVIDE\\s", " SERVICE "
+    ),
     an = str_replace_all(an, "(?<=SPECIAL\\s)(SERVICES)(?=\\sAREA)", "SERVICE"),
     an = str_replace_all(an, "(?<=\\s)(SSA)(?=[0-9])", "SPECIAL SERVICE AREA "),
     an = str_replace_all(an, "(?<=SERVICE\\s)(AREA)(?=[0-9])", "AREA "),
@@ -396,11 +398,21 @@ agency_info <- bind_rows(agency_name, tif_name) %>%
     an = str_replace_all(an, "C\\sC\\s", "CC "),
     an = str_replace_all(an, "(\\sPUB|PUB$)(?=\\s)", " PUBLIC"),
     an = str_replace_all(an, "(?<=FIRE\\s)(PROT)(?=\\s)", " PROTECTION"),
-    an = str_replace_all(an, "(?<=SPECIAL SERVICE AREA [0-9]{1,2})( - | / )(?=[A-Z]*)", " / "),
-    an = str_replace_all(an, "(SPECIAL SERVICE)(?=\\s[0-9])", "SPECIAL SERVICE AREA"),
-    an = str_replace_all(an, "(?<=SPECIAL SERVICE AREA [0-9])(\\s)(?=OAK)", " / "),
-    an = str_replace_all(an, "SPECIAL SERVICE(?!\\sAREA)", "SPECIAL SERVICE AREA"),
-    an = str_replace_all(an, "EXP MENTAL HEALTH S", "EXPANDED MENTAL HEALTH SERVICE DISTRICT"),
+    an = str_replace_all(
+      an, "(?<=SPECIAL SERVICE AREA [0-9]{1,2})( - | / )(?=[A-Z]*)", " / "
+    ),
+    an = str_replace_all(
+      an, "(SPECIAL SERVICE)(?=\\s[0-9])", "SPECIAL SERVICE AREA"
+    ),
+    an = str_replace_all(
+      an, "(?<=SPECIAL SERVICE AREA [0-9])(\\s)(?=OAK)", " / "
+    ),
+    an = str_replace_all(
+      an, "SPECIAL SERVICE(?!\\sAREA)", "SPECIAL SERVICE AREA"
+    ),
+    an = str_replace_all(
+      an, "EXP MENTAL HEALTH S", "EXPANDED MENTAL HEALTH SERVICE DISTRICT"
+    ),
     an = str_replace_all(an, "LAKE - COOK", "LAKE-COOK"),
     an = str_replace_all(an, "TRI - STATE", "TRI-STATE"),
     an = str_replace_all(an, "(?<=[0-9]{2,4})(-)(?=[0-9])", " - "),
@@ -413,7 +425,11 @@ agency_info <- bind_rows(agency_name, tif_name) %>%
     an = str_replace_all(an, "SERVAREA\\s", "SERVICE AREA "),
     an = str_replace_all(an, "\\sCOLL\\s", " COLLEGE "),
     an = str_replace_all(an, "(?<=[0-9])(\\s/\\s)(?=[0-9]*$)", " - "),
-    an = ifelse(str_count(an, "[\\)\\(]") == 1, str_remove_all(an, "[\\)\\(]"), an),
+    an = ifelse(
+      str_count(an, "[\\)\\(]") == 1,
+      str_remove_all(an, "[\\)\\(]"),
+      an
+    ),
     an = str_trim(str_squish(toupper(an)))
   ) %>%
   # Compress long name into abbreviated version
@@ -449,10 +465,14 @@ agency_info <- bind_rows(agency_name, tif_name) %>%
       agency_num == "030210002" ~ "MUNI",
       agency_num == "044030010" ~ "SCHOOL",
       agency_num %in% c("010010000", "010010001", "010020000") ~ "COOK",
-      str_detect(an, "\\sSPECIAL SERVICE AREA|SPECIAL SERVICE AREA\\s") ~ "SSA",
+      str_detect(
+        an, "\\sSPECIAL SERVICE AREA|SPECIAL SERVICE AREA\\s"
+      ) ~ "SSA",
       str_detect(an, "DEFICIENCY") ~ "MISC",
       str_detect(an, "\\sBOND\\s|\\sBOND$|\\sBONDS$") ~ "BOND",
-      str_detect(an, "\\sPARK\\sDISTRICT|PARK DISTRICT$|^PARK DISTRICT") ~ "PARK",
+      str_detect(
+        an, "\\sPARK\\sDISTRICT|PARK DISTRICT$|^PARK DISTRICT"
+      ) ~ "PARK",
       str_detect(an, "\\sHEALTH\\s|\\sMENTAL\\s") ~ "HEALTH",
       str_detect(an, "\\sWATER\\s|WATER$") ~ "WATER",
       str_detect(an, "\\sFIRE\\s") ~ "FIRE",
@@ -472,9 +492,12 @@ agency_info <- bind_rows(agency_name, tif_name) %>%
       mit == "COOK" ~ "COOK COUNTY",
       mit == "SCHOOL" ~ "SCHOOL",
       mit %in% c(
-        "WATER", "BOND", "PARK", "MOSQUITO", "SANITARY", "FIRE", "POLICE", "MISC"
+        "WATER", "BOND", "PARK", "MOSQUITO",
+        "SANITARY", "FIRE", "POLICE", "MISC"
       ) ~ "MISCELLANEOUS",
-      mit %in% c("MUNI", "TIF", "SSA", "GEN ASST", "INFRA") ~ "MUNICIPALITY/TOWNSHIP",
+      mit %in% c(
+        "MUNI", "TIF", "SSA", "GEN ASST", "INFRA"
+      ) ~ "MUNICIPALITY/TOWNSHIP",
       mit == "LIBRARY" & str_detect(an, "FUND") ~ "MUNICIPALITY/TOWNSHIP",
       mit == "HEALTH" & str_detect(an, "EXPANDED") ~ "MISCELLANEOUS",
       mit == "HEALTH" ~ "MUNICIPALITY/TOWNSHIP",

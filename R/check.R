@@ -1,4 +1,4 @@
-# Checks to ensure data frames input to tax_bill() are the same as those
+# Checks to ensure data.tables input to tax_bill() are the same as those
 # returned by the lookup_ functions
 check_agency_dt_str <- function(agency_dt) {
   stopifnot(

@@ -10,9 +10,7 @@ ptaxsim_db_conn <- DBI::dbConnect(
 assign("ptaxsim_db_conn", ptaxsim_db_conn, envir = .GlobalEnv)
 
 # Create a vector of PINs with known, correct lookup values
-pins <- c(
-  "14081020190000", "09274240240000", "07101010391078"
-)
+pins <- c("14081020190000", "09274240240000", "07101010391078")
 years <- c(2019, 2019, 2018)
 
 test_that("test that lookup values are correct", {
