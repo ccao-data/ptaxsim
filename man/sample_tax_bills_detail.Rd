@@ -14,7 +14,8 @@ A data frame containing 396 rows and 10 columns:
   \item{agency_name}{Tax district/agency name. NOTE: This may be different
   from the name produced by \code{\link{tax_bill}}, since it is copied
   directly from the PDF tax bill}
-  \item{final_tax}{Total tax amount after exemptions for the specified agency}
+  \item{final_tax}{Total tax amount after exemptions for the specified
+  agency}
   \item{rate}{Total tax rate for the specified agency in this tax code}
   \item{percent}{Percent of the total tax bill for this line item}
   \item{pension}{Dollar amount from this line item dedicated to pensions}
