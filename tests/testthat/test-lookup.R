@@ -26,7 +26,7 @@ test_that("test that lookup values are correct", {
   )
   expect_equal(
     lookup_tax_code(c(2018, 2019), pins),
-    c("73105", "73105", "22031", "22031", "35011", "35011")
+    c("73105", "22031", "35011", "73105", "22031", "35011")
   )
 })
 
