@@ -13,7 +13,7 @@ library(data.table)
 
 # Get a list of all PDFs in sample_tax_bills/
 list_pdf_inputs <- list.files(
-  path = "data-raw/sample_tax_bills/",
+  path = "data-raw/sample_tax_bills",
   pattern = "*.pdf",
   full.names = TRUE
 )
@@ -35,7 +35,7 @@ extract_tax_bill <- function(file) {
     as_tibble() %>%
     row_to_names() %>%
     set_names(
-      c("agency_name", "tax", "rate", "percent", "pension", "prev_tax")
+      c("agency_name", "final_tax", "rate", "percent", "pension", "prev_tax")
     )
 
   # Create a list with metadata for output
@@ -58,10 +58,10 @@ bills_df <- bills_df %>%
   do.call(data.frame, .) %>%
   rename_at(vars(starts_with("tbl.")), ~ str_remove(.x, "tbl.")) %>%
   as_tibble() %>%
-  mutate(tax = na_if(tax, "")) %>%
-  filter(!is.na(tax)) %>%
+  mutate(final_tax = na_if(final_tax, "")) %>%
+  filter(!is.na(final_tax)) %>%
   filter(!stringr::str_detect(agency_name, " Total")) %>%
-  mutate(across(c(year, tax:prev_tax), readr::parse_number))
+  mutate(across(c(year, final_tax:prev_tax), readr::parse_number))
 
 # Load agency name lookup from file
 agency_match <- readr::read_csv(
@@ -73,24 +73,20 @@ bills_df <- bills_df %>%
   left_join(agency_match, by = "agency_name") %>%
   relocate(agency_num, .before = "agency_name")
 
-# Consolidate Cook County breakouts into single line-item
+# Consolidate Cook County and TIF breakouts into single line-item
 bills_df <- bills_df %>%
   mutate(cook = str_detect(
     agency_name,
     "Cook County Public Safety|Cook County Health Facilities|County of Cook"
   )) %>%
   group_by(pin, year, cook) %>%
-  mutate(across(tax:prev_tax, ~ ifelse(cook, sum(.x), .x))) %>%
+  mutate(across(final_tax:prev_tax, ~ ifelse(cook, sum(.x), .x))) %>%
   ungroup() %>%
-  select(-cook)
-
-# Separate TIF amounts into their own column
-bills_df <- bills_df %>%
-  group_by(pin, year) %>%
-  mutate(tif_total = sum(tax * str_detect(agency_name, "TIF"))) %>%
-  filter(!str_detect(agency_name, "TIF")) %>%
-  ungroup() %>%
-  filter(!is.na(agency_num))
+  group_by(pin, year, agency_num) %>%
+  mutate(across(final_tax:prev_tax, sum)) %>%
+  select(-cook) %>%
+  filter(!is.na(agency_num), row_number() == 1) %>%
+  ungroup()
 
 # Write detail results to file for safekeeping
 bills_df %>%

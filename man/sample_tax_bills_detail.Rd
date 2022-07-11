@@ -5,7 +5,7 @@
 \alias{sample_tax_bills_detail}
 \title{Detailed data from real sample tax bills}
 \format{
-A data frame containing 381 rows and 11 columns:
+A data frame containing 396 rows and 10 columns:
 \describe{
   \item{year}{Tax year}
   \item{pin}{Property index number identifying a specific parcel or unit}
@@ -14,13 +14,12 @@ A data frame containing 381 rows and 11 columns:
   \item{agency_name}{Tax district/agency name. NOTE: This may be different
   from the name produced by \code{\link{tax_bill}}, since it is copied
   directly from the PDF tax bill}
-  \item{tax}{Total tax amount after exemptions for the specified agency}
+  \item{final_tax}{Total tax amount after exemptions for the specified agency}
   \item{rate}{Total tax rate for the specified agency in this tax code}
   \item{percent}{Percent of the total tax bill for this line item}
   \item{pension}{Dollar amount from this line item dedicated to pensions}
   \item{prev_tax}{Total tax amount after exemptions for the specified agency
   from the previous year}
-  \item{tif_total}{Total amount sent to TIFs for this tax bill}
 }
 }
 \source{
