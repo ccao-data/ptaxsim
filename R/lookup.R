@@ -136,7 +136,7 @@ lookup_pin <- function(year, pin, conn = ptaxsim_db_conn) {
   dt <- DBI::dbGetQuery(
     conn,
     statement =
-    "
+      "
       SELECT
           lp.year,
           lp.pin,
@@ -164,7 +164,7 @@ lookup_pin <- function(year, pin, conn = ptaxsim_db_conn) {
   )
 
   dt <- data.table::setDT(dt, key = c("year", "pin"))
-  
+
   return(dt)
 }
 
@@ -202,7 +202,7 @@ lookup_tax_code <- function(year, pin, conn = ptaxsim_db_conn) {
   dt <- DBI::dbGetQuery(
     conn,
     statement =
-    "
+      "
       SELECT p.tax_code_num
       FROM lookup_tax_code ltc
       LEFT JOIN pin p

@@ -20,7 +20,7 @@ check_agency_dt_str <- function(agency_dt) {
       "are the same"
     )
   }
-  
+
   keys <- c("year", "tax_code", "agency_num")
   if (!all(keys %in% data.table::key(agency_dt))) {
     stop(
@@ -57,7 +57,7 @@ check_pin_dt_str <- function(pin_dt) {
       "year and all column names and types are the same"
     )
   }
-  
+
   keys <- c("year", "pin")
   if (!all(keys %in% data.table::key(pin_dt))) {
     stop(
@@ -76,7 +76,7 @@ check_tif_dt_str <- function(tif_dt) {
     is.data.frame(tif_dt),
     data.table::is.data.table(tif_dt)
   )
-  
+
   tif_dt_str <- c(
     "year" = "numeric", "tax_code" = "character",
     "agency_num" = "character", "agency_name" = "character",
@@ -100,6 +100,6 @@ check_tif_dt_str <- function(tif_dt) {
       "and agency_num columns are set as data.table keys"
     )
   }
-  
+
   return(TRUE)
 }

@@ -140,12 +140,12 @@ tax_bill <- function(year_vec,
     tif_dt,
     on = .(year, tax_code),
     c("tif_agency_num", "tif_agency_name", "tif_share") :=
-    .(i.agency_num, i.agency_name, i.tif_share)
+      .(i.agency_num, i.agency_name, i.tif_share)
   ]
 
   # Add an indicator for when the PIN is in the special Red-Purple Modernization
   # TIF, which has different rules than other TIFs
-  in_rpm_tif <- tif_agency_num <- tif_share <- NULL
+  in_rpm_tif <- tif_agency_num <- tif_agency_name <- tif_share <- NULL
   dt[, in_rpm_tif := any(tif_agency_num == "030210900"), by = .(year, pin)]
   dt[is.na(in_rpm_tif), in_rpm_tif := FALSE]
   data.table::setnafill(dt, "const", 0, cols = "tif_share")
@@ -202,7 +202,7 @@ tax_bill <- function(year_vec,
     (in_rpm_tif),
     rpm_tif_to_dist :=
       rpm_tif_to_dist + rpm_tif_to_dist[agency_num == "044060000"] *
-      (agency_tax_rate / sum(agency_tax_rate[agency_num != "044060000"])),
+        (agency_tax_rate / sum(agency_tax_rate[agency_num != "044060000"])),
     by = .(year, pin)
   ]
 
@@ -226,7 +226,7 @@ tax_bill <- function(year_vec,
   dt[, in_rpm_tif := NULL]
 
   if (simplify) {
-    
+
     # Collapse per-district TIF amounts into a single row, just like on a
     # real tax bill
     tif_row <- dt[
@@ -242,22 +242,22 @@ tax_bill <- function(year_vec,
       c("tif_agency_num", "tif_agency_name"),
       c("agency_num", "agency_name")
     )
-    tif_row[,
+    tif_row[
+      ,
       c("agency_major_type", "agency_minor_type", "agency_tax_rate") :=
         list("MUNICIPALITY/TOWNSHIP", "TIF", 0.0)
     ]
-    
+
     # Keep only necessary columns, then merge with the TIF row(s)
     drop_cols <- c(
       "exe_total", "agency_total_ext", "agency_total_eav", "tax_amt_exe",
-      "tax_amt_pre_exe","tax_amt_post_exe", "tif_agency_num",
+      "tax_amt_pre_exe", "tax_amt_post_exe", "tif_agency_num",
       "tif_agency_name", "tif_share", "rpm_tif_to_cps", "rpm_tif_to_rpm",
       "rpm_tif_to_dist", "final_tax_to_tif"
     )
     dt[, (drop_cols) := NULL]
     data.table::setnames(dt, "final_tax_to_dist", "final_tax")
     dt <- rbind(dt, tif_row)
-    
   } else {
     data.table::setcolorder(
       dt,
@@ -271,7 +271,7 @@ tax_bill <- function(year_vec,
       )
     )
   }
-  
+
   data.table::setkey(dt, year, pin, agency_num)
   return(dt)
 }
