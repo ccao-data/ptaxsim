@@ -101,6 +101,20 @@ tax_bill <- function(year_vec,
     length(simplify) == 1
   )
 
+  # Check input lengths are either Cartesian product OR all equal to each other
+  vecs_len_exp <- length(year_vec) != length(pin_vec) &
+    (length(unique(year_vec)) * length(unique(pin_vec)) == length(tax_code_vec))
+  vecs_len_eq <- (
+    length(year_vec) == length(pin_vec) &
+      length(pin_vec) == length(tax_code_vec)
+  )
+  if (!(vecs_len_exp | vecs_len_eq)) {
+    stop(
+      "Input vectors must be the same length OR tax_code_vec must be the ",
+      "Cartesian product of year_vec and pin_vec"
+    )
+  }
+
   # Input checking to ensure data.tables have expected structure (col name and
   # data type)
   stopifnot(
@@ -258,6 +272,14 @@ tax_bill <- function(year_vec,
     dt[, (drop_cols) := NULL]
     data.table::setnames(dt, "final_tax_to_dist", "final_tax")
     dt <- rbind(dt, tif_row)
+    data.table::setcolorder(
+      dt,
+      neworder = c(
+        "year", "pin", "class", "tax_code", "av", "eav", "agency_num",
+        "agency_name", "agency_major_type", "agency_minor_type",
+        "agency_tax_rate", "final_tax"
+      )
+    )
   } else {
     data.table::setcolorder(
       dt,
