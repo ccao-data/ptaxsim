@@ -23,14 +23,14 @@ pins <- DBI::dbGetQuery(
       pin,
       tax_bill_total,
       row_number() OVER (PARTITION BY year ORDER BY random()) AS row_num
-    FROM pins)
+    FROM pin)
   WHERE row_num <= 10000
   "
 )
 
 bills <- tax_bill(pins$year, pins$pin) %>%
   group_by(year, pin) %>%
-  summarize(calced_bill = sum(final_tax_to_tif) + sum(final_tax_to_dist)) %>%
+  summarize(calced_bill = sum(final_tax)) %>%
   left_join(pins, on = c("year", "pin")) %>%
   rename(real_bill = tax_bill_total) %>%
   mutate(bill_diff = real_bill - calced_bill)
