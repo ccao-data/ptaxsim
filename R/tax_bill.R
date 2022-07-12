@@ -107,15 +107,23 @@ tax_bill <- function(year_vec,
   )
 
   # Check input lengths are either Cartesian product OR all equal to each other
-  vecs_len_exp <- length(year_vec) != length(pin_vec) &
-    (length(unique(year_vec)) * length(unique(pin_vec)) == length(tax_code_vec))
+  vecs_len_diff <- length(year_vec) != length(pin_vec)
+  vecs_len_exp <- length(unique(year_vec)) *
+    length(unique(pin_vec)) == length(tax_code_vec)
   vecs_len_eq <- (
     length(year_vec) == length(pin_vec) &
       length(pin_vec) == length(tax_code_vec)
   )
-  if (!(vecs_len_exp || vecs_len_eq)) {
+  if (vecs_len_diff) {
+    if (anyDuplicated(year_vec) || anyDuplicated(pin_vec)) {
+      stop(
+        "Input vectors year_vec and pin_vec must contain only unique values ",
+        "if they are not equal length"
+      )
+    }
+  } else if (!((vecs_len_diff && vecs_len_exp) || vecs_len_eq)) {
     stop(
-      "Input vectors must be the same length OR tax_code_vec must be the ",
+      "Input vectors must be equal length OR tax_code_vec must be the ",
       "Cartesian product of year_vec and pin_vec"
     )
   }
