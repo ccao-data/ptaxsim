@@ -369,9 +369,10 @@ multiple_years
 #> 115:             WATER         0.00378    602.41
 ```
 
-The result is a tax amount per taxing district, per PIN, per year. We
-can collapse these amounts and then plot them to see how a single PIN
-has changed over time:
+The `tax_bill()` function will automatically combine the years and PIN
+into their Cartesian product. The result is a tax amount per taxing
+district, per PIN, per year. We can collapse these amounts and then plot
+them to see how a single PIN has changed over time:
 
 ``` r
 multiple_years_summ <- multiple_years %>%
@@ -698,6 +699,12 @@ erDiagram
     district line-item for every tax bill for the last 15 years (roughly
     350 million rows). However, the memory requirements for this
     calculation are substantial (around 100 GB).
+-   PTAXSIM’s accuracy is measured automatically with an [integration
+    test](tests/testthat/test-accuracy.R). The test takes a random
+    sample of 10,000 PINs from each year, calculates the total bill for
+    each PIN, and compares it to the real total bill. The most common
+    source of inaccuracy is tax refunds (e.g. overpaying a previous
+    bill).
 
 # Disclaimer
 
