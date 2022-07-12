@@ -11,17 +11,17 @@ library(stringr)
 # This script combines the Tax Code Agency Rate Reports from 2006 onward
 
 remote_bucket <- Sys.getenv("S3_REMOTE_BUCKET")
-remote_path <- file.path(remote_bucket, "tax_codes")
+remote_path <- file.path(remote_bucket, "tax_code")
 
 # Get a list of all agency rate report spreadsheets
 file_names <- list.files(
-  path = "data-raw/tax_codes/",
+  path = "data-raw/tax_code",
   pattern = "*.xls*",
   full.names = TRUE
 )
 
 # Load each file and cleanup columns, then combine into single df
-tax_codes <- map_dfr(file_names, function(file) {
+tax_code <- map_dfr(file_names, function(file) {
 
   # Extract year from file name
   year_ext <- str_extract(file, "\\d{4}")
@@ -48,7 +48,7 @@ tax_codes <- map_dfr(file_names, function(file) {
 })
 
 # Clean up resulting combined data frame
-tax_codes <- tax_codes %>%
+tax_code <- tax_code %>%
   select(
     year,
     agency_num = agency, agency_rate,
@@ -57,7 +57,7 @@ tax_codes <- tax_codes %>%
   arrange(year, agency_num, tax_code_num)
 
 arrow::write_dataset(
-  dataset = tax_codes,
+  dataset = tax_code,
   path = remote_path,
   format = "parquet",
   partitioning = "year",

@@ -5,22 +5,22 @@
 #'   match the output of \code{\link{tax_bill}}. The line item values are used
 #'   for unit/integration testing.
 #'
-#' @format A data frame containing 381 rows and 11 columns:
+#' @format A data frame containing 396 rows and 10 columns:
 #' \describe{
 #'   \item{year}{Tax year}
 #'   \item{pin}{Property index number identifying a specific parcel or unit}
 #'   \item{class}{Property class}
-#'   \item{agency}{Tax district/agency ID number}
+#'   \item{agency_num}{Tax district/agency ID number}
 #'   \item{agency_name}{Tax district/agency name. NOTE: This may be different
 #'   from the name produced by \code{\link{tax_bill}}, since it is copied
 #'   directly from the PDF tax bill}
-#'   \item{tax}{Total tax amount after exemptions for the specified agency}
+#'   \item{final_tax}{Total tax amount after exemptions for the specified
+#'   agency}
 #'   \item{rate}{Total tax rate for the specified agency in this tax code}
 #'   \item{percent}{Percent of the total tax bill for this line item}
 #'   \item{pension}{Dollar amount from this line item dedicated to pensions}
 #'   \item{prev_tax}{Total tax amount after exemptions for the specified agency
 #'   from the previous year}
-#'   \item{tif_total}{Total amount sent to TIFs for this tax bill}
 #' }
 #'
 #' @source \url{https://www.cookcountytreasurer.com/setsearchparameters.aspx}
@@ -43,7 +43,7 @@
 #'   \item{pin}{Property index number identifying a specific parcel or unit}
 #'   \item{tax_code}{5-digit tax code}
 #'   \item{class}{Property class}
-#'   \item{township}{Township name}
+#'   \item{township_name}{Township name}
 #'   \item{in_tif}{Boolean for whether the PIN/tax code is in a Tax Increment
 #'   Finance (TIF) district}
 #'   \item{in_ssa}{Boolean for whether the PIN/tax code is in a Special Service
@@ -55,9 +55,9 @@
 #'   \item{exe_disabled}{Persons with disabilities exemption}
 #'   \item{exe_vet_returning}{Veterans exemption}
 #'   \item{exe_vet_disabled}{Veterans disability exemption}
-#'   \item{eav_total}{Total EAV before exemptions}
-#'   \item{tax_before_exemptions}{Total tax amount before exemptions}
-#'   \item{tax_after_exemptions}{Total tax amount after exemptions}
+#'   \item{eav}{Total EAV before exemptions}
+#'   \item{tax_amt_pre_exe}{Total tax amount before exemptions}
+#'   \item{tax_amt_post_exe}{Total tax amount after exemptions}
 #' }
 #'
 #' @source \url{https://www.cookcountytreasurer.com/setsearchparameters.aspx}

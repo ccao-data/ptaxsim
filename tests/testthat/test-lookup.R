@@ -10,9 +10,7 @@ ptaxsim_db_conn <- DBI::dbConnect(
 assign("ptaxsim_db_conn", ptaxsim_db_conn, envir = .GlobalEnv)
 
 # Create a vector of PINs with known, correct lookup values
-pins <- c(
-  "14081020190000", "09274240240000", "07101010391078"
-)
+pins <- c("14081020190000", "09274240240000", "07101010391078")
 years <- c(2019, 2019, 2018)
 
 test_that("test that lookup values are correct", {
@@ -26,7 +24,7 @@ test_that("test that lookup values are correct", {
   )
   expect_equal(
     lookup_tax_code(c(2018, 2019), pins),
-    c("73105", "73105", "22031", "22031", "35011", "35011")
+    c("73105", "22031", "35011", "73105", "22031", "35011")
   )
 })
 
@@ -96,7 +94,10 @@ test_that("function returns expect data type/structure", {
   )
   expect_named(
     lookup_tif(2018, c("70069", "73105")),
-    c("year", "tax_code", "agency_num", "agency_name", "tif_share")
+    c(
+      "year", "tax_code", "agency_num", "agency_name",
+      "agency_major_type", "agency_minor_type", "tif_share"
+    )
   )
   expect_equal(
     sum(is.na(lookup_tif(sum_df$year, sum_df$tax_code))),
@@ -178,7 +179,7 @@ context("test lookup_agency()")
 
 test_that("lookup values/data are correct", {
   expect_equal(
-    lookup_agency(2019, "73105")$total_eav,
+    lookup_agency(2019, "73105")$agency_total_eav,
     c(
       rep(166917611547, 2),
       rep(87816177317, 3),
@@ -188,7 +189,7 @@ test_that("lookup values/data are correct", {
     )
   )
   expect_equal(
-    lookup_agency(2019, "73105")$total_ext,
+    lookup_agency(2019, "73105")$agency_total_ext,
     c(
       757805956, 98481391, 1407693322, 106257575, 148409340, 130772179,
       3178945619, 286280738, 0, 638172798
@@ -196,11 +197,11 @@ test_that("lookup values/data are correct", {
   )
   expect_known_hash(
     lookup_agency(2014:2019, "12064"),
-    "8b1045fbf1"
+    "402da52fce"
   )
   expect_known_hash(
     lookup_agency(sum_df$year, sum_df$tax_code),
-    "5f4a429c68"
+    "5b583e7300"
   )
 })
 
@@ -212,8 +213,8 @@ test_that("function returns expect data type/structure", {
   expect_named(
     lookup_agency(2018:2019, "73105"),
     c(
-      "year", "tax_code", "agency_num",
-      "agency_name", "total_ext", "total_eav"
+      "year", "tax_code", "agency_num", "agency_name", "agency_major_type",
+      "agency_minor_type", "agency_total_eav", "agency_total_ext"
     )
   )
   expect_equal(

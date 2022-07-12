@@ -8,9 +8,9 @@ tax_bill(
   year_vec,
   pin_vec,
   tax_code_vec = lookup_tax_code(year_vec, pin_vec),
-  pin_df = lookup_pin(year_vec, pin_vec),
-  agency_df = lookup_agency(year_vec, tax_code_vec),
-  tif_df = lookup_tif(year_vec, tax_code_vec),
+  agency_dt = lookup_agency(year_vec, tax_code_vec),
+  pin_dt = lookup_pin(year_vec, pin_vec),
+  tif_dt = lookup_tif(year_vec, tax_code_vec),
   simplify = TRUE
 )
 }
@@ -22,59 +22,58 @@ with no dashes or spaces.}
 
 \item{tax_code_vec}{Character vector of 5-digit Cook County tax codes. These
 codes are included on individual property tax bills. If missing, the
-\code{\link{lookup_tax_code}} function will be used to retrieve tax codes
+\code{\link{lookup_tax_code}} function is used to retrieve tax codes
 based on \code{year_vec} and \code{pin_vec}.}
 
-\item{pin_df}{Data frame containing the exemptions and assessed value
+\item{agency_dt}{\code{data.table} containing the levy and base amount for
+each taxing district in the specified tax code. Data \emph{must} be identical
+to the format returned by \code{\link{lookup_agency}}. If missing,
+\code{\link{lookup_agency}} is used to retrieve each tax district's
+levy and base based on \code{year_vec} and \code{tax_code_vec}.}
+
+\item{pin_dt}{\code{data.table} containing the exemptions and assessed value
 specific to each PIN and year. Data \emph{must} be identical to the format
 returned by \code{\link{lookup_pin}}. If missing, \code{\link{lookup_pin}}
-will be used to retrieve each PIN's information based on \code{year_vec}
+is used to retrieve each PIN's information based on \code{year_vec}
 and \code{pin_vec}.}
 
-\item{agency_df}{Data frame containing the levy and base amount for each
-taxing district in the specified tax code. Data \emph{must} be identical to the
-format returned by \code{\link{lookup_agency}}. If missing,
-\code{\link{lookup_agency}} will be used to retrieve each taxing
-jurisdiction's levies based on \code{year_vec} and \code{tax_code_vec}.}
-
-\item{tif_df}{Data frame containing any TIF applicable to the specified
-tax code. Will be an empty data frame if no TIF exists for the property.
-Data \emph{must} be identical to the format returned by
-\code{\link{lookup_tif}}. If missing, \code{\link{lookup_tif}} will be
+\item{tif_dt}{\code{data.table} containing any TIF applicable to the
+specified tax code. Is an empty \code{data.table} if no TIF exists for
+the property. Data \emph{must} be identical to the format returned by
+\code{\link{lookup_tif}}. If missing, \code{\link{lookup_tif}} is
 used to retrieve the tax code's TIF share based on \code{year_vec}
 and \code{tax_code_vec}.}
 
-\item{simplify}{Default TRUE. Boolean for whether or not to keep only the
-the most vital columns in the final output, including tax amounts, rates,
-and amounts to TIFs.}
+\item{simplify}{Default \code{TRUE}. Boolean to keep only the columns that
+appear on a real tax bill. Additionally, collapses the TIF output column
+\code{final_tax_to_tif} to a line-item, similar to the format on a real
+tax bill.}
 }
 \value{
-A data frame which contains a tax bill for each specified PIN and
-year. Each tax bill is broken out by taxing district, meaning there is a
-row for each district relevant to each PIN. Most PINs have 10-15 districts
-(rows) associated with each year.
-
-Note that unlike official tax bills, TIFs are not broken out into a
-separate line item and instead are contained in their own column
-(named \code{tax_amt_total_to_tif}).
+A \code{data.table} which contains a tax bill for each specified PIN
+and year. Each tax bill is broken out by taxing district, meaning there is
+a row for each district relevant to each PIN. Most PINs have 10-15
+districts (rows) associated with each year.
 }
 \description{
 This function calculates a Cook County property tax bill using
 levy, base, and TIF information from the Cook County Clerk and Assessor.
 It allows users to simulate different tax scenarios by changing the input
-data. For example, this function can answer the following questions:
+data. For example, this function can be used to answer the following
+questions:
 \itemize{
 \item What would my tax bill be if my assessed value was $10K lower?
-\item What would my tax bill be if Chicago increased its levy by 10\%?
+\item What would my tax bill be if Chicago increased its levy by 5\%?
 \item What would my tax bill be if my property was in a different neighborhood?
 \item What would my tax bill be if a large new development was added to
 my neighborhood?
 }
 
 Most of the data necessary to answer these questions is built into the
-package. Data for the most current tax year is usually available the
-following year (2020 data is available in 2021). If needed, users can
-supply current tax year data manually. See vignettes for more information.
+included database. Data for the most current tax year is usually available
+the following year (i.e. 2020 data is available in 2021). If needed, users
+can supply current tax year data manually. See vignettes for more
+information.
 }
 \details{
 Note that all vector inputs (suffixed with \code{_vec}) have two
@@ -83,7 +82,7 @@ input modes:
 \item If the input vectors are the same length, pairwise tax bills are
 returned (each PIN, year, and tax code combination returns 1 bill).
 \item If the input vectors are different lengths, the Cartesian product of
-the vectors is returned (5 years and 10 PINs will return all 5 years' of
+the vectors is returned (5 years and 10 PINs will return all 5 years of
 bills for each PIN).
 }
 
@@ -91,17 +90,9 @@ The district-level tax amounts returned by this function will \emph{not}
 perfectly match the amounts on real tax bills. This is due to rounding
 and truncating that occurs in the real system. Most estimated amounts will
 still be within a few dollars of the amounts on real bills.
-}
-\note{
-This package is for educational purposes only.
-The Assessor's office releases the package without any representations or
-warranties of any kind, whether express or implied. Any data, figures, or
-amounts contained within the package, used by the package, or produced by
-the package are solely for illustrative purposes. Any results produced by
-this package as distributed are official and should not be relied upon for
-any business or commercial purpose. They merely demonstrate the package's
-features. The Assessor's office expressly disclaims any liability for
-any entity's reliance on this package.
+
+PIN and year combinations not found in the database will be silently
+dropped from the output.
 }
 \examples{
 \dontrun{

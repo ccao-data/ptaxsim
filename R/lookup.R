@@ -1,11 +1,11 @@
-globalVariables("ptaxsim_db_conn")
+globalVariables(c("ptaxsim_db_conn", "."))
 
-#' Lookup data frames required to calculate property tax bills
+#' Lookup data sets required to calculate property tax bills
 #'
 #' @description The functions in this group take a tax year, PIN, and/or tax
-#'   code as input and return a data frame as an output. The returned data
-#'   frames are in a specific format (in terms of column name/type/order) and
-#'   can be used directly in \code{\link{tax_bill}} or piped to helper
+#'   code as input and return a \code{data.table} as an output. The returned
+#'   data sets are in a specific format (in terms of column name/type/order)
+#'   and can be used directly in \code{\link{tax_bill}} or piped to helper
 #'   functions.
 #'
 #'   When calculating tax bills for future years or providing custom/simulated
@@ -17,7 +17,7 @@ globalVariables("ptaxsim_db_conn")
 #' @param conn A connection object pointing to the local copy of the
 #'   PTAXSIM database. Usually instantiated on package load.
 #'
-#' @return A data frame containing the specified tax data by year and
+#' @return A \code{data.table} containing the specified tax data by year and
 #'   PIN/tax code.
 #'
 #' @examples
@@ -28,7 +28,7 @@ globalVariables("ptaxsim_db_conn")
 #' }
 #' @md
 #' @family lookups
-#' @name lookup_df
+#' @name lookup_dt
 NULL
 
 
@@ -56,11 +56,11 @@ NULL
 NULL
 
 
-#' @describeIn lookup_df Lookup tax agency (CPS, Cook County, forest preserve)
+#' @describeIn lookup_dt Lookup tax agency (CPS, Cook County, forest preserve)
 #'   total equalized assessed values. Such values are known as the "base" and
 #'   are used to calculate per agency tax rates. Also returns each agency's
-#'   levy amount. Returns a data frame with 1 row for each agency associated
-#'   with the input tax code and year.
+#'   levy amount. Returns a \code{data.table} with 1 row for each agency
+#'   associated with the input tax code and year.
 #'
 #' @export
 lookup_agency <- function(year, tax_code, conn = ptaxsim_db_conn) {
@@ -72,24 +72,28 @@ lookup_agency <- function(year, tax_code, conn = ptaxsim_db_conn) {
     DBI::dbIsValid(conn)
   )
 
-  df <- DBI::dbGetQuery(
+  dt <- DBI::dbGetQuery(
     conn,
     statement = glue::glue_sql(
       "
       SELECT
-        tc.year,
-        tc.tax_code_num AS tax_code,
-        tc.agency_num,
-        a.agency_name,
-        a.total_ext,
-        a.total_eav
-      FROM tax_codes tc
-      LEFT JOIN agencies a
-        ON tc.year = a.year
-        AND tc.agency_num = a.agency_num
+          tc.year,
+          tc.tax_code_num AS tax_code,
+          tc.agency_num,
+          ai.agency_name,
+          ai.major_type AS agency_major_type,
+          ai.minor_type AS agency_minor_type,
+          a.cty_cook_eav AS agency_total_eav,
+          a.total_ext AS agency_total_ext
+      FROM tax_code tc
+      LEFT JOIN agency a
+          ON tc.year = a.year
+          AND tc.agency_num = a.agency_num
+      LEFT JOIN agency_info ai
+          ON tc.agency_num = ai.agency_num
       WHERE tc.year IN ({years*})
       AND tc.tax_code_num IN ({tax_codes*})
-      AND a.total_eav IS NOT NULL
+      AND a.cty_cook_eav IS NOT NULL
       ORDER BY tc.year, tc.tax_code_num, tc.agency_num
     ",
       years = unique(year),
@@ -98,13 +102,13 @@ lookup_agency <- function(year, tax_code, conn = ptaxsim_db_conn) {
     )
   )
 
-  df <- data.table::setDT(df, key = c("year", "tax_code", "agency_num"))
+  dt <- data.table::setDT(dt, key = c("year", "tax_code", "agency_num"))
 
-  return(df)
+  return(dt)
 }
 
 
-#' @describeIn lookup_df Lookup the equalized assessed value and exemptions
+#' @describeIn lookup_dt Lookup the equalized assessed value and exemptions
 #'   for a specific PIN and year. Returns a numeric vector the same length
 #'   as the longest input.
 #'
@@ -120,52 +124,48 @@ lookup_pin <- function(year, pin, conn = ptaxsim_db_conn) {
 
   # This lookup uses a temp table since it's faster than putting lots of
   # values into the WHERE clause for large lookups
-  df_idx <- expand.grid("year" = unique(year), "pin" = unique(pin))
+  dt_idx <- data.table::CJ("year" = year, "pin" = pin, unique = TRUE)
   DBI::dbWriteTable(
     conn = conn,
     name = "lookup_pin",
-    value = df_idx,
+    value = dt_idx,
     overwrite = TRUE,
     temporary = TRUE
   )
 
-  df <- DBI::dbGetQuery(
+  dt <- DBI::dbGetQuery(
     conn,
-    statement = glue::glue_sql(
+    statement =
       "
       SELECT
-        lp.year,
-        lp.pin,
-        p.class,
-        p.av,
-        ROUND(p.av * ef.equalization_factor, 0) AS eav,
-        p.exe_homeowner,
-        p.exe_senior,
-        p.exe_freeze,
-        p.exe_longtime_homeowner,
-        p.exe_disabled,
-        p.exe_vet_returning,
-        p.exe_vet_dis_lt50,
-        p.exe_vet_dis_50_69,
-        p.exe_vet_dis_ge70,
-        p.exe_abate
+          lp.year,
+          lp.pin,
+          p.class,
+          p.av,
+          CAST(ROUND(p.av * ef.eq_factor, 0) AS int) AS eav,
+          p.exe_homeowner,
+          p.exe_senior,
+          p.exe_freeze,
+          p.exe_longtime_homeowner,
+          p.exe_disabled,
+          p.exe_vet_returning,
+          p.exe_vet_dis_lt50,
+          p.exe_vet_dis_50_69,
+          p.exe_vet_dis_ge70,
+          p.exe_abate
       FROM lookup_pin lp
-      INNER JOIN pins p
-        ON lp.year = p.year
-        AND lp.pin = p.pin
-      LEFT JOIN eq_factors ef
-        ON p.year = ef.year
+      INNER JOIN pin p
+          ON lp.year = p.year
+          AND lp.pin = p.pin
+      LEFT JOIN eq_factor ef
+          ON lp.year = ef.year
       ORDER BY lp.year, lp.pin
-    ",
-      pins = pin,
-      years = year,
-      .con = conn
-    )
+    "
   )
 
-  df <- data.table::setDT(df, key = c("year", "pin"))
+  dt <- data.table::setDT(dt, key = c("year", "pin"))
 
-  return(df)
+  return(dt)
 }
 
 
@@ -186,43 +186,38 @@ lookup_tax_code <- function(year, pin, conn = ptaxsim_db_conn) {
   )
 
   if (length(year) != length(pin)) {
-    df_idx <- expand.grid("year" = year, "pin" = pin)
+    dt_idx <- data.table::CJ("year" = year, "pin" = pin, sorted = FALSE)
   } else {
-    df_idx <- data.frame("year" = year, "pin" = pin)
+    dt_idx <- data.table::data.table("year" = year, "pin" = pin)
   }
 
   DBI::dbWriteTable(
     conn = conn,
     name = "lookup_tax_code",
-    value = df_idx,
+    value = dt_idx,
     overwrite = TRUE,
     temporary = TRUE
   )
 
-  df <- DBI::dbGetQuery(
+  dt <- DBI::dbGetQuery(
     conn,
-    statement = glue::glue_sql(
+    statement =
       "
-      SELECT
-        p.tax_code_num
+      SELECT p.tax_code_num
       FROM lookup_tax_code ltc
-      LEFT JOIN pins p
-        ON p.year = ltc.year
-        AND p.pin = ltc.pin
-    ",
-      pins = pin,
-      years = year,
-      .con = conn
-    )
+      LEFT JOIN pin p
+          ON p.year = ltc.year
+          AND p.pin = ltc.pin
+    "
   )
 
-  return(df$tax_code_num)
+  return(dt$tax_code_num)
 }
 
 
-#' @describeIn lookup_df Lookup any TIFs that apply to a given tax code and
-#'   year. Returns a data frame with only 1 row per tax code and year, or 0 rows
-#'   if the tax code is not within a TIF.
+#' @describeIn lookup_dt Lookup any TIFs that apply to a given tax code and
+#'   year. Returns a \code{data.table} with only 1 row per tax code and year,
+#'   or 0 rows if the tax code is not within a TIF.
 #'
 #' @export
 lookup_tif <- function(year, tax_code, conn = ptaxsim_db_conn) {
@@ -235,19 +230,20 @@ lookup_tif <- function(year, tax_code, conn = ptaxsim_db_conn) {
   )
 
   tif_share <- NULL
-  df <- DBI::dbGetQuery(
+  dt <- DBI::dbGetQuery(
     conn,
     statement = glue::glue_sql("
       SELECT
-        td.year,
-        td.tax_code_num AS tax_code,
-        td.agency_num,
-        ts.tif_name AS agency_name,
-        td.tax_code_distribution_percent / 100 AS tif_share
-      FROM tif_distributions td
-      LEFT JOIN tif_summaries ts
-        ON td.year = ts.year
-        AND td.agency_num = ts.agency_num
+          td.year,
+          td.tax_code_num AS tax_code,
+          td.agency_num,
+          ai.agency_name,
+          ai.major_type AS agency_major_type,
+          ai.minor_type AS agency_minor_type,
+          td.tax_code_distribution_pct / 100 AS tif_share
+      FROM tif_distribution td
+      LEFT JOIN agency_info ai
+          ON td.agency_num = ai.agency_num
       WHERE td.year IN ({years*})
       AND td.tax_code_num IN ({tax_codes*})
       ORDER BY td.year, td.tax_code_num, td.agency_num
@@ -258,8 +254,8 @@ lookup_tif <- function(year, tax_code, conn = ptaxsim_db_conn) {
     )
   )
 
-  df <- data.table::setDT(df, key = c("year", "tax_code", "agency_num"))
-  df[, tif_share := as.numeric(tif_share)]
+  dt <- data.table::setDT(dt, key = c("year", "tax_code", "agency_num"))
+  dt[, tif_share := as.numeric(tif_share)]
 
-  return(df)
+  return(dt)
 }

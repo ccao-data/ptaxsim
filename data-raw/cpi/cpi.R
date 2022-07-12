@@ -17,15 +17,15 @@ row_to_names <- function(df) {
 
 # Paths for local raw data storage and remote storage on S3
 remote_bucket <- Sys.getenv("S3_REMOTE_BUCKET")
-remote_path <- file.path(remote_bucket, "cpis", "part-0.parquet")
+remote_path <- file.path(remote_bucket, "cpi", "part-0.parquet")
 
 # Extract the table only (no headers), then manually assign header
-cpis_ext <- extract_areas(file = "data-raw/cpis/cpihistory.pdf")[[1]]
-cpis <- as_tibble(cpis_ext[, c(1, 2, 4, 5, 6)])
-cpis <- setNames(cpis, c("year", "cpi", "ptell_cook", "comments", "levy_year"))
+cpi_ext <- extract_areas(file = "data-raw/cpi/cpihistory.pdf")[[1]]
+cpi <- as_tibble(cpi_ext[, c(1, 2, 4, 5, 6)])
+cpi <- setNames(cpi, c("year", "cpi", "ptell_cook", "comments", "levy_year"))
 
 # Merge Cook rate into main column
-cpis <- cpis %>%
+cpi <- cpi %>%
   mutate(
     across(c(year, levy_year), as.character),
     across(c(cpi), as.numeric),
@@ -39,7 +39,7 @@ cpis <- cpis %>%
 
 # Write to S3
 arrow::write_parquet(
-  x = cpis,
+  x = cpi,
   sink = remote_path,
   compression = "zstd"
 )

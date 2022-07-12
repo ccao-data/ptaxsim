@@ -42,27 +42,27 @@ clean_matrix <- function(mat) {
 # separate tables
 
 remote_bucket <- Sys.getenv("S3_REMOTE_BUCKET")
-remote_path_summ <- file.path(remote_bucket, "tif_summaries", "part-0.parquet")
+remote_path_main <- file.path(remote_bucket, "tif", "part-0.parquet")
 remote_path_dist <- file.path(
-  remote_bucket, "tif_distributions", "part-0.parquet"
+  remote_bucket, "tif_distribution", "part-0.parquet"
 )
 
 
 
 
-# Summaries --------------------------------------------------------------------
+# tif --------------------------------------------------------------------------
 
-## Excel Files -----
+## Excel files -----
 
 # Get summary report spreadsheets from after 2013
 summ_file_names_xls <- list.files(
-  path = "data-raw/tif/summaries/",
+  path = "data-raw/tif/main",
   pattern = "*Cook.*\\.xls*",
   full.names = TRUE
 )
 
 # Load each file and cleanup columns, then combine into single df
-tif_summaries_xls <- map_dfr(summ_file_names_xls, function(file) {
+tif_main_xls <- map_dfr(summ_file_names_xls, function(file) {
 
   # Extract year from file name
   year_ext <- as.integer(str_extract(file, "\\d{4}"))
@@ -80,32 +80,31 @@ tif_summaries_xls <- map_dfr(summ_file_names_xls, function(file) {
     rename_with(~ str_replace(.x, str_c(year_ext, "_"), "curr_year_")) %>%
     rename_with(~ str_replace(.x, str_c(year_ext - 1, "_"), "prev_year_")) %>%
     mutate(
-      tif_cancelled_this_year =
+      cancelled_this_year =
         year == str_extract(new_cancelled, "\\d{4}") &
           str_detect(tolower(new_cancelled), "cancel"),
-      across(c(tif_cancelled_this_year), ~ replace_na(.x, FALSE)),
+      across(c(cancelled_this_year), ~ replace_na(.x, FALSE)),
       across(c(curr_year_revenue, prev_year_revenue), ~ replace_na(.x, 0)),
       agency = str_pad(agency, 9, "left", "0")
     ) %>%
     select(
       year,
       agency_num = agency, tif_name, prev_year_revenue,
-      curr_year_revenue, first_year, tif_cancelled_this_year,
-      any_of("municipality")
+      curr_year_revenue, first_year, cancelled_this_year,
     )
 })
 
 
-## PDF Files -----
+## PDF files -----
 
 # Get summary report PDFs
 summ_file_names_pdf <- list.files(
-  path = "data-raw/tif/summaries/",
+  path = "data-raw/tif/main",
   pattern = "*Summary\\.pdf",
   full.names = TRUE
 )
 
-tif_summaries_pdf <- map_dfr(summ_file_names_pdf, function(file) {
+tif_main_pdf <- map_dfr(summ_file_names_pdf, function(file) {
   message("Reading: ", file)
   year_ext <- as.integer(str_extract(file, "\\d{4}"))
 
@@ -132,13 +131,13 @@ tif_summaries_pdf <- map_dfr(summ_file_names_pdf, function(file) {
         "left",
         "0"
       ),
-      tif_cancelled_this_year =
+      cancelled_this_year =
         year == str_extract(tif_name, "\\d{4}"),
       tif_name =
         str_trim(str_squish(str_remove(tif_name, "City of|Village of")))
     ) %>%
     filter(
-      tif_cancelled_this_year | is.na(tif_cancelled_this_year),
+      cancelled_this_year | is.na(cancelled_this_year),
       !is.na(agency_num)
     ) %>%
     mutate(
@@ -146,7 +145,7 @@ tif_summaries_pdf <- map_dfr(summ_file_names_pdf, function(file) {
       tif_name = str_remove_all(tif_name, "\\ *CANCEL.*"),
       tif_name = str_remove_all(tif_name, "\\ *New.*"),
       tif_name = str_squish(str_trim(tif_name)),
-      tif_cancelled_this_year = replace_na(tif_cancelled_this_year, FALSE),
+      cancelled_this_year = replace_na(cancelled_this_year, FALSE),
       across(
         c("first_year", "curr_year_revenue", "prev_year_revenue"),
         ~ replace_na(readr::parse_number(.x), 0)
@@ -154,14 +153,14 @@ tif_summaries_pdf <- map_dfr(summ_file_names_pdf, function(file) {
     ) %>%
     select(
       year, agency_num, tif_name, prev_year_revenue,
-      curr_year_revenue, first_year, tif_cancelled_this_year
+      curr_year_revenue, first_year, cancelled_this_year
     )
 })
 
 # Combine Excel and PDF outputs into since data frame
-tif_summaries <- bind_rows(
-  tif_summaries_pdf,
-  tif_summaries_xls
+tif_main <- bind_rows(
+  tif_main_pdf,
+  tif_main_xls
 ) %>%
   filter(!is.na(tif_name)) %>%
   # Manual fixes for misread values
@@ -179,30 +178,13 @@ tif_summaries <- bind_rows(
       "Homewood - East CBD",
       tif_name
     ),
-    tif_cancelled_this_year = ifelse(
+    cancelled_this_year = ifelse(
       tif_name == "Homewood - East CBD" & year == 2011,
       FALSE,
-      tif_cancelled_this_year
-    ),
-    tif_new_this_year = year == first_year
+      cancelled_this_year
+    )
   ) %>%
-  group_by(agency_num) %>%
-  mutate(tif_name = calc_mode(tif_name)) %>%
-  arrange(year) %>%
-  fill(municipality, .direction = "updown") %>%
-  ungroup() %>%
   mutate(
-    municipality = ifelse(
-      is.na(municipality),
-      str_extract(tif_name, ".*(?= - )"),
-      municipality
-    ),
-    municipality = ifelse(
-      is.na(municipality),
-      tif_name,
-      municipality
-    ),
-    tif_name = str_remove_all(tif_name, "[\\^]"),
     # More manual fixes
     agency_num = ifelse(
       tif_name == "Melrose Park - North Avenue / 25th Avenue",
@@ -220,32 +202,39 @@ tif_summaries <- bind_rows(
   ) %>%
   filter(!(agency_num == "030330500" & first_year == 2012)) %>%
   mutate(across(c(year, first_year), as.character)) %>%
-  relocate(municipality, .after = "tif_name") %>%
   arrange(year, agency_num)
+
+# Save TIF names to a separate file that gets attached to the agency_info table
+tif_info <- tif_main %>%
+  group_by(agency_num) %>%
+  summarise(agency_name = calc_mode(tif_name)) %>%
+  ungroup() %>%
+  mutate(agency_type = "TIF") %>%
+  readr::write_csv("data-raw/agency/tif_agency_names.csv")
 
 # Write to S3
 arrow::write_parquet(
-  x = tif_summaries,
-  sink = remote_path_summ,
+  x = tif_main %>% select(-tif_name),
+  sink = remote_path_main,
   compression = "zstd"
 )
 
 
 
 
-# Distributions ----------------------------------------------------------------
+# tif_distribution -------------------------------------------------------------
 
-## Excel Files -----
+## Excel files -----
 
 # Get a list of all TIF distribution report spreadsheets
 dist_file_names_xls <- list.files(
-  path = "data-raw/tif/distributions/",
+  path = "data-raw/tif/distribution",
   pattern = "*Distribution.*\\.xls*",
   full.names = TRUE
 )
 
 # Load each Excel file and cleanup columns, then combine into single df
-tif_distributions_xls <- map_dfr(dist_file_names_xls, function(file) {
+tif_distribution_xls <- map_dfr(dist_file_names_xls, function(file) {
 
   # Extract year from file name
   year_ext <- str_extract(file, "\\d{4}")
@@ -277,108 +266,104 @@ tif_distributions_xls <- map_dfr(dist_file_names_xls, function(file) {
 })
 
 
-## PDF Files -----
+## PDF files -----
 
-# Get a list of all TIF distribution report spreadsheets
-dist_file_names_pdf_list <- sort(list.files(
-  path = "data-raw/tif/distributions/",
-  pattern = "*Distribution.*\\.pdf",
-  full.names = TRUE
-))
+# Get a list of all TIF distribution report spreadsheets. ONLY RUN IF NECESSARY
+if (FALSE) {
+  dist_file_names_pdf_list <- sort(list.files(
+    path = "data-raw/tif/distribution/",
+    pattern = "*Distribution.*\\.pdf",
+    full.names = TRUE
+  ))
 
-# Combine into data frame with page dimensions and column locations for
-# each extract
-dist_file_names_pdf_df <- tibble(
-  file = dist_file_names_pdf_list,
-  area = list(
-    `2006` = c(78, 43, 612, 752),
-    `2007` = c(78, 43, 612, 752),
-    `2008` = c(78, 43, 612, 752),
-    `2009` = c(78, 43, 612, 752),
-    `2010` = c(78, 43, 612, 752),
-    `2011` = c(78, 43, 612, 752),
-    `2012` = c(78, 43, 612, 752),
-    `2013` = c(78, 43, 612, 752)
-  ),
-  cols = list(
-    `2006` = c(110, 326, 370, 404, 500, 575, 660),
-    `2007` = c(110, 326, 370, 404, 500, 575, 660),
-    `2008` = c(115, 322, 364, 404, 500, 575, 660),
-    `2009` = c(115, 322, 370, 414, 494, 580, 660),
-    `2010` = c(115, 322, 364, 404, 500, 575, 660),
-    `2011` = c(115, 322, 365, 414, 500, 575, 660),
-    `2012` = c(115, 322, 364, 404, 500, 575, 660),
-    `2013` = c(115, 322, 370, 414, 500, 575, 660)
-  )
-)
-
-# For each PDF, extract the already OCR'd text and convert it to a data frame
-# Save the output for manual correction
-pwalk(dist_file_names_pdf_df, function(file, area, cols) {
-  message("Reading: ", file)
-  year_ext <- str_extract(file, "\\d{4}")
-
-  # Extract tables from PDFs, keeping only data frame outputs with 7 columns
-  tables <- extract_tables(
-    file = file,
-    area = list(area),
-    columns = list(cols),
-    guess = FALSE
-  ) %>%
-    lapply(., clean_matrix) %>%
-    .[as.logical(lapply(., function(x) ncol(x) == 7 & nrow(x) > 0))]
-
-  do.call(rbind, tables) %>%
-    as_tibble() %>%
-    set_names(c(
-      "agency_num", "tax_code_num", "tax_code_rate",
-      "tax_code_eav", "tax_code_frozen_eav",
-      "tax_code_revenue", "tax_code_distribution_percent"
-    )) %>%
-    mutate(
-      year = year_ext,
-      across(c(tax_code_eav, tax_code_frozen_eav), ~ str_remove_all(.x, "\\.")),
-      across(
-        c(tax_code_rate:tax_code_distribution_percent),
-        readr::parse_number
-      )
-    ) %>%
-    relocate(year) %>%
-    openxlsx::write.xlsx(
-      file.path(
-        "data-raw/tif/distributions/ocr_corrected",
-        paste("temp.xlsx")
-      ),
-      overwrite = FALSE
+  # Combine into data frame with page dimensions and column locations for
+  # each extract
+  dist_file_names_pdf_df <- tibble(
+    file = dist_file_names_pdf_list,
+    area = list(
+      `2006` = c(78, 43, 612, 752),
+      `2007` = c(78, 43, 612, 752),
+      `2008` = c(78, 43, 612, 752),
+      `2009` = c(78, 43, 612, 752),
+      `2010` = c(78, 43, 612, 752),
+      `2011` = c(78, 43, 612, 752),
+      `2012` = c(78, 43, 612, 752),
+      `2013` = c(78, 43, 612, 752)
+    ),
+    cols = list(
+      `2006` = c(110, 326, 370, 404, 500, 575, 660),
+      `2007` = c(110, 326, 370, 404, 500, 575, 660),
+      `2008` = c(115, 322, 364, 404, 500, 575, 660),
+      `2009` = c(115, 322, 370, 414, 494, 580, 660),
+      `2010` = c(115, 322, 364, 404, 500, 575, 660),
+      `2011` = c(115, 322, 365, 414, 500, 575, 660),
+      `2012` = c(115, 322, 364, 404, 500, 575, 660),
+      `2013` = c(115, 322, 370, 414, 500, 575, 660)
     )
-})
+  )
+
+  # For each PDF, extract the already OCR'd text and convert it to a data frame
+  # Save the output for manual correction
+  pwalk(dist_file_names_pdf_df, function(file, area, cols) {
+    message("Reading: ", file)
+    year_ext <- str_extract(file, "\\d{4}")
+
+    # Extract tables from PDFs, keeping only data frame outputs with 7 columns
+    tables <- extract_tables(
+      file = file,
+      area = list(area),
+      columns = list(cols),
+      guess = FALSE
+    ) %>%
+      lapply(., clean_matrix) %>%
+      .[as.logical(lapply(., function(x) ncol(x) == 7 & nrow(x) > 0))]
+
+    do.call(rbind, tables) %>%
+      as_tibble() %>%
+      set_names(c(
+        "agency_num", "tax_code_num", "tax_code_rate",
+        "tax_code_eav", "tax_code_frozen_eav",
+        "tax_code_revenue", "tax_code_distribution_percent"
+      )) %>%
+      mutate(
+        year = year_ext,
+        across(
+          c(tax_code_eav, tax_code_frozen_eav),
+          ~ str_remove_all(.x, "\\.")
+        ),
+        across(
+          c(tax_code_rate:tax_code_distribution_percent),
+          readr::parse_number
+        )
+      ) %>%
+      relocate(year) %>%
+      openxlsx::write.xlsx(
+        file.path(
+          "data-raw/tif/distribution/ocr_corrected",
+          paste("temp.xlsx")
+        ),
+        overwrite = FALSE
+      )
+  })
+}
 
 # Load the manually corrected files into a single data frame
 dist_file_names_pdf_corrected <- list.files(
-  path = "data-raw/tif/distributions/ocr_corrected/",
+  path = "data-raw/tif/distribution/ocr_corrected/",
   pattern = "*.xlsx",
   full.names = TRUE
 )
 
-tif_distributions_pdf <- map_dfr(dist_file_names_pdf_corrected, read_xlsx)
-
-# Checks for manually corrected TIF data
-lapply(tif_distributions_pdf, function(x) table(str_detect(x, "\\.")))
-lapply(tif_distributions_pdf, function(x) table(x < 100 & x != 0))
-lapply(tif_distributions_pdf, function(x) table(nchar(x)))
-skimr::skim(tif_distributions)
-
-tif_distributions <- bind_rows(
-  tif_distributions_xls,
-  tif_distributions_pdf
-) %>%
+tif_distribution_pdf <- map_dfr(dist_file_names_pdf_corrected, read_xlsx)
+tif_distribution <- bind_rows(tif_distribution_xls, tif_distribution_pdf) %>%
   mutate(
     across(c(tax_code_eav, tax_code_frozen_eav, tax_code_revenue), as.integer64)
-  )
+  ) %>%
+  rename(tax_code_distribution_pct = tax_code_distribution_percent)
 
 # Write to S3
 arrow::write_parquet(
-  x = tif_distributions,
+  x = tif_distribution,
   sink = remote_path_dist,
   compression = "zstd"
 )

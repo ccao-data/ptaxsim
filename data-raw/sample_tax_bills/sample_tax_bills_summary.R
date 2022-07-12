@@ -11,8 +11,8 @@ sample_tax_bills_summary <- readr::read_csv(
   mutate(
     pin = str_pad(pin, 14, "left", "0"),
     year = as.integer(year),
-    eav_total = as.integer(eav_total),
-    township = snakecase::to_title_case(township)
+    eav = as.integer(eav),
+    township_name = snakecase::to_title_case(township_name)
   )
 
 # Convert the data to a data.table and use setkey to sort for faster joins

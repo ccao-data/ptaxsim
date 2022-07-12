@@ -2,6 +2,7 @@ context("test tax_bill()")
 
 ##### TEST tax_bill() #####
 
+library(data.table)
 library(dplyr)
 ptaxsim_db_conn <- DBI::dbConnect(
   RSQLite::SQLite(),
@@ -9,8 +10,8 @@ ptaxsim_db_conn <- DBI::dbConnect(
 )
 assign("ptaxsim_db_conn", ptaxsim_db_conn, envir = .GlobalEnv)
 
-sum_df <- sample_tax_bills_summary
-det_df <- sample_tax_bills_detail
+sum_dt <- sample_tax_bills_summary
+det_dt <- sample_tax_bills_detail
 
 # Create a vector of PINs with known, correct lookup values
 pins <- c(
@@ -31,9 +32,9 @@ test_that("bad/incorrect vector inputs throw errors", {
 })
 
 test_that("bad/incorrect data frame inputs throw errors", {
-  expect_error(tax_bill(2019, pins[1], pin_df = c(23000, 959051)))
-  expect_error(tax_bill(2019, pins[1], agency_df = c("3232", "TIF")))
-  expect_error(tax_bill(2019, pins[1], tif_df = c(23000, 959051)))
+  expect_error(tax_bill(2019, pins[1], pin_dt = c(23000, 959051)))
+  expect_error(tax_bill(2019, pins[1], agency_dt = c("3232", "TIF")))
+  expect_error(tax_bill(2019, pins[1], tif_dt = c(23000, 959051)))
 })
 
 test_that("incorrect size inputs throw errors", {
@@ -42,71 +43,62 @@ test_that("incorrect size inputs throw errors", {
 })
 
 test_that("data frame inputs throw errors when required cols missing", {
-  expect_error(tax_bill(2019, pins[1], pin_df = data.frame()))
-  expect_error(tax_bill(2019, pins[1], agency_df = data.frame()))
-  expect_error(tax_bill(2019, pins[1], tif_df = data.frame()))
+  expect_error(tax_bill(2019, pins[1], pin_dt = data.table()))
+  expect_error(tax_bill(2019, pins[1], agency_dt = data.table()))
+  expect_error(tax_bill(2019, pins[1], tif_dt = data.table()))
 })
 
-test_that("function returns expect data type/structure", {
+test_that("function returns expected data type/structure", {
   expect_s3_class(tax_bill(2018, pins[1]), "data.frame")
+  expect_s3_class(tax_bill(2018, pins[1]), "data.table")
+  expect_equal(
+    key(tax_bill(2018, pins[1])),
+    c("year", "pin", "agency_num")
+  )
   expect_named(
     tax_bill(2018:2019, pins[1:2]),
     c(
-      "year", "pin", "tax_code", "av", "eav", "agency_num", "agency_name",
-      "agency_tax_rate", "tax_amt_post_exemptions",
-      "tax_amt_total_to_tif", "tax_amt_final"
+      "year", "pin", "class", "tax_code", "av", "eav", "agency_num",
+      "agency_name", "agency_major_type", "agency_minor_type",
+      "agency_tax_rate", "final_tax"
     )
   )
   expect_equal(
-    sum(is.na(tax_bill(sum_df$year, sum_df$pin))),
+    sum(is.na(tax_bill(sum_dt$year, sum_dt$pin))),
     0
   )
   expect_named(
     tax_bill(2018:2019, pins[1:2], simplify = FALSE),
     c(
-      "year", "pin", "tax_code", "class", "av", "eav",
-      "exe_homeowner", "exe_senior", "exe_freeze", "exe_longtime_homeowner",
-      "exe_disabled", "exe_vet_returning", "exe_vet_dis_lt50",
-      "exe_vet_dis_50_69", "exe_vet_dis_ge70", "exe_abate", "tif_agency",
-      "tif_share", "in_rpm_tif", "agency_num", "agency_name", "total_ext",
-      "total_eav", "agency_tax_rate", "tax_amt_exempt",
-      "tax_amt_pre_exemptions", "tax_amt_post_exemptions",
-      "tax_amt_total_to_tif", "is_cps_agency", "tax_rate_for_cps",
-      "tax_prop_for_cps", "tax_amt_rpm_tif_to_cps", "tax_amt_rpm_tif_to_rpm",
-      "tax_amt_rpm_tif_back_to_jur_total", "tax_amt_rpm_tif_back_to_jur_dist",
-      "tax_amt_rpm_tif_back_to_jur", "tax_amt_final"
+      "year", "pin", "class", "tax_code", "av", "eav", "exe_total",
+      "agency_num", "agency_name", "agency_major_type", "agency_minor_type",
+      "agency_total_ext", "agency_total_eav", "agency_tax_rate",
+      "tax_amt_exe", "tax_amt_pre_exe", "tax_amt_post_exe", "tif_agency_num",
+      "tif_agency_name", "tif_share", "rpm_tif_to_cps", "rpm_tif_to_rpm",
+      "rpm_tif_to_dist", "final_tax_to_tif", "final_tax_to_dist"
     )
   )
   expect_equal(
     sum(is.na(tax_bill(years[1], pins[1], simplify = FALSE))),
     0
   )
+  expect_equal(dim(tax_bill(years[1], pins[1], simplify = TRUE)), c(11, 12))
+  expect_equal(dim(tax_bill(years[1], pins[1], simplify = FALSE)), c(10, 25))
 })
 
 test_that("returned amount/output correct for single PIN", {
   # District level tax amounts
   expect_equivalent(
-    tax_bill(2019, pins[1], simplify = FALSE) %>%
-      select(year, pin, agency = agency_num, tax = tax_amt_final) %>%
-      arrange(agency) %>%
+    tax_bill(2019, pins[1], simplify = TRUE) %>%
+      select(year, pin, agency_num, final_tax) %>%
+      arrange(agency_num) %>%
       as_tibble(),
-    det_df %>%
+    det_dt %>%
       filter(pin == pins[1]) %>%
-      select(year, pin, agency, tax) %>%
-      arrange(agency) %>%
+      select(year, pin, agency_num, final_tax) %>%
+      arrange(agency_num) %>%
       as_tibble(),
     tolerance = 0.005
-  )
-  # TIF total amounts
-  expect_equal(
-    tax_bill(2019, pins[1]) %>%
-      pull(tax_amt_total_to_tif) %>%
-      sum(),
-    det_df %>%
-      filter(pin == pins[1]) %>%
-      slice(1) %>%
-      pull(tif_total),
-    tolerance = 0.001
   )
 })
 
@@ -114,9 +106,10 @@ test_that("grid expansion works correctly", {
   expect_equal(
     tax_bill(2006:2020, pins[1:3]) %>%
       group_by(pin) %>%
-      summarize(n_year = length(unique(year))),
+      summarize(n_year = length(unique(year))) %>%
+      arrange(pin),
     tribble(
-      ~ "pin", ~ "n_year",
+      ~"pin", ~"n_year",
       "07101010391078", 13,
       "09274240240000", 15,
       "14081020190000", 15
@@ -127,43 +120,34 @@ test_that("grid expansion works correctly", {
 # Remove certain PINs from the test because they are anomalies/have VERY unique
 # situations
 exclude_pins <- c("20031180060000")
-sum_df <- sum_df %>%
+sum_dt <- sum_dt %>%
   filter(!pin %in% exclude_pins) %>%
   as_tibble()
-det_df <- det_df %>%
+det_dt <- det_dt %>%
   filter(!pin %in% exclude_pins) %>%
   as_tibble()
 
 test_that("returned amount/output correct for all sample bills", {
   # Output is correct number of rows
   expect_equal(
-    tax_bill(sum_df$year, sum_df$pin, simplify = FALSE) %>%
+    tax_bill(sum_dt$year, sum_dt$pin, simplify = FALSE) %>%
       nrow(),
     371
+  )
+  expect_equal(
+    tax_bill(sum_dt$year, sum_dt$pin, simplify = TRUE) %>%
+      nrow(),
+    385
   )
 
   # District level tax amounts
   expect_equivalent(
-    tax_bill(sum_df$year, sum_df$pin, simplify = FALSE) %>%
-      select(year, pin, agency = agency_num, tax_amt_final) %>%
-      arrange(year, pin, agency),
-    det_df %>%
-      select(year, pin, agency, tax_amt_final = tax) %>%
-      arrange(year, pin, agency) %>%
-      as_tibble(),
-    tolerance = 0.005
-  )
-
-  # TIF total amounts
-  expect_equivalent(
-    tax_bill(sum_df$year, sum_df$pin) %>%
-      group_by(year, pin) %>%
-      summarize(tif_total = sum(tax_amt_total_to_tif)) %>%
-      arrange(pin),
-    det_df %>%
-      group_by(year, pin) %>%
-      summarize(tif_total = first(tif_total)) %>%
-      arrange(pin) %>%
+    tax_bill(sum_dt$year, sum_dt$pin, simplify = TRUE) %>%
+      select(year, pin, agency_num, final_tax) %>%
+      arrange(year, pin, agency_num),
+    det_dt %>%
+      select(year, pin, agency_num, final_tax) %>%
+      arrange(year, pin, agency_num) %>%
       as_tibble(),
     tolerance = 0.005
   )
@@ -171,18 +155,18 @@ test_that("returned amount/output correct for all sample bills", {
 
 # Exclude certain PINs in the RPM TIF or with extremely high bills
 # Will run separate tests for these
-sum_df_no_rpm <- sum_df %>%
+sum_dt_no_rpm <- sum_dt %>%
   filter(!pin %in% c("14174100180000", "01363010130000"))
 
 test_that("all differences are less than $25", {
   expect_true(
     left_join(
-      tax_bill(sum_df_no_rpm$year, sum_df_no_rpm$pin, simplify = FALSE) %>%
-        select(year, pin, agency = agency_num, tax_calc = tax_amt_final),
-      det_df %>%
-        select(year, pin, agency, tax_real = tax) %>%
+      tax_bill(sum_dt_no_rpm$year, sum_dt_no_rpm$pin) %>%
+        select(year, pin, agency_num, tax_calc = final_tax),
+      det_dt %>%
+        select(year, pin, agency_num, tax_real = final_tax) %>%
         as_tibble(),
-      by = c("year", "pin", "agency")
+      by = c("year", "pin", "agency_num")
     ) %>%
       mutate(diff = abs(tax_calc - tax_real) < 25) %>%
       pull(diff) %>%
