@@ -31,7 +31,7 @@
 #'   perfectly match the amounts on real tax bills. This is due to rounding
 #'   and truncating that occurs in the real system. Most estimated amounts will
 #'   still be within a few dollars of the amounts on real bills.
-#'   
+#'
 #'   PIN and year combinations not found in the database will be silently
 #'   dropped from the output.
 #'

@@ -21,8 +21,8 @@ data manipulation, it can also answer questions such as:
     lower? What if I received a new exemption?
 -   How have tax bills changed in my area? Where does my tax money
     actually go?
--   How do exemptions affect my tax bill? What if a new exemption is
-    created?
+-   How do exemptions affect my tax bill? What if a current exemption
+    amount is increased?
 -   How do TIF districts affect my tax bill? What if TIF districts did
     not exist?
 
@@ -390,7 +390,7 @@ multiple_years_summ <- multiple_years %>%
 
 <details>
 <summary>
-*Click here* to show code for plot
+<strong>Click here</strong> to show plot code
 </summary>
 
 ``` r
@@ -453,7 +453,7 @@ data was available in mid-2020.
 
 <details>
 <summary>
-*Click here* to show full database diagram
+<strong>Click here</strong> to show full database diagram
 </summary>
 
 ``` mermaid

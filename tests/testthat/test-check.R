@@ -28,16 +28,16 @@ test_that("wrong column types throws error", {
   agency <- lookup_agency(years, tax_codes) %>%
     mutate(agency_num = as.integer(agency_num))
   expect_error(check_agency_dt_str(agency))
-  
+
   pin <- lookup_pin(years, pins) %>%
     mutate(class = as.integer(class))
-  expect_error(check_pin_dt_str(pin)) 
-  
+  expect_error(check_pin_dt_str(pin))
+
   tif <- lookup_tif(years, tax_codes) %>%
     mutate(agency_num = as.integer(agency_num))
   expect_error(check_tif_dt_str(tif))
 })
-  
+
 test_that("outputs fail if not keyed data.table", {
   agency <- lookup_agency(years, tax_codes) %>%
     as_tibble()
@@ -46,7 +46,7 @@ test_that("outputs fail if not keyed data.table", {
   expect_equal(key(agency), c("year", "tax_code", "agency_num"))
   setkey(agency, NULL)
   expect_error(check_agency_dt_str(agency))
-  
+
   pin <- lookup_pin(years, pins) %>%
     as_tibble()
   expect_error(check_pin_dt_str(pin))
@@ -54,7 +54,7 @@ test_that("outputs fail if not keyed data.table", {
   expect_equal(key(pin), c("year", "pin"))
   setkey(pin, NULL)
   expect_error(check_pin_dt_str(pin))
-  
+
   tif <- lookup_agency(years, tax_codes) %>%
     as_tibble()
   expect_error(check_tif_dt_str(tif))

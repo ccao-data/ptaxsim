@@ -24,7 +24,7 @@ PTAXSIM is an R package/database to approximate Cook County property tax bills. 
 
 * What would my property tax bill be if my assessed value was $50K lower? What if I received a new exemption?
 * How have tax bills changed in my area? Where does my tax money actually go?
-* How do exemptions affect my tax bill? What if a new exemption is created?
+* How do exemptions affect my tax bill? What if a current exemption amount is increased?
 * How do TIF districts affect my tax bill? What if TIF districts did not exist?
 
 PTAXSIM can generate hundreds, or even millions, of tax bills in a single function call, which enables complex tax analysis on a municipality or even county level. PTAXSIM is accurate (within $10 of the real bill) for >99% of historic property tax bills. However, it is currently an experimental tool only and is *not* recommended for critical use. See [Notes](#notes) and [Disclaimer](#disclaimer) for more information.
@@ -138,7 +138,7 @@ multiple_years_summ <- multiple_years %>%
 
 <details>
 
-<summary>*Click here* to show code for plot</summary>
+<summary><strong>Click here</strong> to show plot code</summary>
 
 ```{r mutli_year_3, message=FALSE, warning=FALSE}
 library(ggplot2)
@@ -196,7 +196,7 @@ The PTAXSIM backend database contains cleaned data from the Cook County Clerk, T
 
 <details>
 
-<summary>*Click here* to show full database diagram</summary>
+<summary><strong>Click here</strong> to show full database diagram</summary>
 
 ```mermaid
 erDiagram
