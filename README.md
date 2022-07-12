@@ -15,16 +15,16 @@ PTAXSIM is an R package/database to approximate Cook County property tax
 bills. It uses real assessment, exemption, TIF, and levy data to
 generate historic, line-item tax bills (broken out by taxing district)
 for any property from 2006 to 2020. Given some careful assumptions and
-data manipulation, it can also generate counterfactual property tax
-bills to answer questions such as:
+data manipulation, it can also answer questions such as:
 
--   What would my property tax bill be if my assessed value was $10K
-    lower?
--   What would my property tax bill be if I received a new exemption?
--   What would my property tax bill be if my school district increased
-    its levy by 5%?
--   What would my property tax bill be if a large new development was
-    added to my neighborhood?
+-   What would my property tax bill be if my assessed value was $50K
+    lower? What if I received a new exemption?
+-   How have tax bills changed in my area? Where does my tax money
+    actually go?
+-   How do exemptions affect my tax bill? What if a new exemption is
+    created?
+-   How do TIF districts affect my tax bill? What if TIF districts did
+    not exist?
 
 PTAXSIM can generate hundreds, or even millions, of tax bills in a
 single function call, which enables complex tax analysis on a
@@ -38,7 +38,8 @@ For detailed documentation on included functions and data, [**visit the
 full reference
 list**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/reference/).
 
-For examples of PTAXSIM’s functionality and usage, see the [**vignettes
+For examples of PTAXSIM’s functionality and usage, click one of the
+questions above or see the [**vignettes
 page**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/index.html).
 
 ## Installation
@@ -71,9 +72,8 @@ remotes::install_gitlab(
 ### Database installation
 
 PTAXSIM relies on a separate SQLite database to function correctly. This
-database contains the information about properties, taxing districts,
-and TIF districts necessary to calculate tax bills. To use this
-database:
+database contains information about properties, taxing districts, and
+TIF districts necessary to calculate tax bills. To use this database:
 
 1.  Download the compressed database file from the CCAO’s public S3
     bucket. [Link
@@ -106,12 +106,14 @@ arguments:
 1.  `year_vec` - A numeric vector of tax years
 2.  `pin_vec` - A character vector of Property Index Numbers (PINs)
 
-The output is a data frame of the tax amount directed to each taxing
-body, by PIN and year. By default, `tax_bill()` can only generate
-*historic* tax bills; it cannot generate future or counterfactual bills.
-To generate future/counterfactual bills, you must provide additional
-data to `tax_bill()` via its secondary arguments. See [Counterfactual
-scenarios](#counterfactual-scenarios) for more details.
+The output is a data frame containing the tax amount directed to each
+taxing district, by PIN and year. By default, `tax_bill()` can only
+generate *historic* tax bills; it cannot generate future or
+counterfactual bills. To generate future/counterfactual bills, you must
+provide additional data to `tax_bill()` via its secondary arguments. See
+the [vignettes
+page](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/index.html)
+for more details.
 
 ### Single bill, single year
 
@@ -327,226 +329,45 @@ broken out by taxing district. To do so, pass a vector of multiple years
 to the `year_vec` argument of `tax_bill()`:
 
 ``` r
-multiple_years <- tax_bill(2010:2020, "14081020210000") %>%
-  select(year, av, agency_name, agency_minor_type, final_tax)
-
-# Sort by taxing district name and display the first 10 rows of data
-multiple_years %>%
-  arrange(agency_name, year) %>%
-  slice_head(n = 11) %>%
-  knitr::kable("html", digits = 3)
+multiple_years <- tax_bill(2010:2020, "14081020210000")
+multiple_years
+#>      year            pin class tax_code    av    eav agency_num
+#>   1: 2010 14081020210000   206    73001 69062 227905  010010000
+#>   2: 2010 14081020210000   206    73001 69062 227905  010020000
+#>   3: 2010 14081020210000   206    73001 69062 227905  030210000
+#>   4: 2010 14081020210000   206    73001 69062 227905  030210001
+#>   5: 2010 14081020210000   206    73001 69062 227905  030210002
+#>  ---                                                           
+#> 111: 2020 14081020210000   206    73105 61605 198578  043030000
+#> 112: 2020 14081020210000   206    73105 61605 198578  044060000
+#> 113: 2020 14081020210000   206    73105 61605 198578  050200000
+#> 114: 2020 14081020210000   206    73105 61605 198578  050200001
+#> 115: 2020 14081020210000   206    73105 61605 198578  080180000
+#>                                              agency_name     agency_major_type
+#>   1:                                      COUNTY OF COOK           COOK COUNTY
+#>   2:             FOREST PRESERVE DISTRICT OF COOK COUNTY           COOK COUNTY
+#>   3:                                     CITY OF CHICAGO MUNICIPALITY/TOWNSHIP
+#>   4:                        CITY OF CHICAGO LIBRARY FUND MUNICIPALITY/TOWNSHIP
+#>   5:              CITY OF CHICAGO SCHOOL BLDG & IMP FUND MUNICIPALITY/TOWNSHIP
+#>  ---                                                                          
+#> 111:              CHICAGO COMMUNITY COLLEGE DISTRICT 508                SCHOOL
+#> 112:                                  BOARD OF EDUCATION                SCHOOL
+#> 113:                               CHICAGO PARK DISTRICT         MISCELLANEOUS
+#> 114:       CHICAGO PARK DISTRICT AQUARIUM & MUSEUM BONDS         MISCELLANEOUS
+#> 115: METRO WATER RECLAMATION DISTRICT OF GREATER CHICAGO         MISCELLANEOUS
+#>      agency_minor_type agency_tax_rate final_tax
+#>   1:              COOK         0.00423    964.04
+#>   2:              COOK         0.00051    116.23
+#>   3:              MUNI         0.00914   2083.05
+#>   4:           LIBRARY         0.00102    232.46
+#>   5:              MUNI         0.00116    264.37
+#>  ---                                            
+#> 111:            SCHOOL         0.00151    240.64
+#> 112:            SCHOOL         0.03656   5468.12
+#> 113:              PARK         0.00329    524.32
+#> 114:              BOND         0.00000      0.00
+#> 115:             WATER         0.00378    602.41
 ```
-
-<table>
-<thead>
-<tr>
-<th style="text-align:right;">
-year
-</th>
-<th style="text-align:right;">
-av
-</th>
-<th style="text-align:left;">
-agency_name
-</th>
-<th style="text-align:left;">
-agency_minor_type
-</th>
-<th style="text-align:right;">
-final_tax
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:right;">
-2010
-</td>
-<td style="text-align:right;">
-69062
-</td>
-<td style="text-align:left;">
-BOARD OF EDUCATION
-</td>
-<td style="text-align:left;">
-SCHOOL
-</td>
-<td style="text-align:right;">
-5882.23
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-2011
-</td>
-<td style="text-align:right;">
-69062
-</td>
-<td style="text-align:left;">
-BOARD OF EDUCATION
-</td>
-<td style="text-align:left;">
-SCHOOL
-</td>
-<td style="text-align:right;">
-5553.23
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-2012
-</td>
-<td style="text-align:right;">
-51982
-</td>
-<td style="text-align:left;">
-BOARD OF EDUCATION
-</td>
-<td style="text-align:left;">
-SCHOOL
-</td>
-<td style="text-align:right;">
-4751.14
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-2013
-</td>
-<td style="text-align:right;">
-51982
-</td>
-<td style="text-align:left;">
-BOARD OF EDUCATION
-</td>
-<td style="text-align:left;">
-SCHOOL
-</td>
-<td style="text-align:right;">
-4823.00
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-2014
-</td>
-<td style="text-align:right;">
-51982
-</td>
-<td style="text-align:left;">
-BOARD OF EDUCATION
-</td>
-<td style="text-align:left;">
-SCHOOL
-</td>
-<td style="text-align:right;">
-4928.81
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-2015
-</td>
-<td style="text-align:right;">
-61068
-</td>
-<td style="text-align:left;">
-BOARD OF EDUCATION
-</td>
-<td style="text-align:left;">
-SCHOOL
-</td>
-<td style="text-align:right;">
-5388.42
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-2016
-</td>
-<td style="text-align:right;">
-61068
-</td>
-<td style="text-align:left;">
-BOARD OF EDUCATION
-</td>
-<td style="text-align:left;">
-SCHOOL
-</td>
-<td style="text-align:right;">
-5849.59
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-2017
-</td>
-<td style="text-align:right;">
-61068
-</td>
-<td style="text-align:left;">
-BOARD OF EDUCATION
-</td>
-<td style="text-align:left;">
-SCHOOL
-</td>
-<td style="text-align:right;">
-6118.57
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-2018
-</td>
-<td style="text-align:right;">
-68450
-</td>
-<td style="text-align:left;">
-BOARD OF EDUCATION
-</td>
-<td style="text-align:left;">
-SCHOOL
-</td>
-<td style="text-align:right;">
-5204.55
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-2019
-</td>
-<td style="text-align:right;">
-68450
-</td>
-<td style="text-align:left;">
-BOARD OF EDUCATION
-</td>
-<td style="text-align:left;">
-SCHOOL
-</td>
-<td style="text-align:right;">
-5556.25
-</td>
-</tr>
-<tr>
-<td style="text-align:right;">
-2020
-</td>
-<td style="text-align:right;">
-61605
-</td>
-<td style="text-align:left;">
-BOARD OF EDUCATION
-</td>
-<td style="text-align:left;">
-SCHOOL
-</td>
-<td style="text-align:right;">
-5468.12
-</td>
-</tr>
-</tbody>
-</table>
 
 The result is a tax amount per taxing district, per PIN, per year. We
 can collapse these amounts and then plot them to see how a single PIN
@@ -569,7 +390,7 @@ multiple_years_summ <- multiple_years %>%
 
 <details>
 <summary>
-Show code for plot
+*Click here* to show code for plot
 </summary>
 
 ``` r
@@ -601,155 +422,38 @@ multiple_years_plot <- ggplot(data = multiple_years_summ) +
 
 <img src="man/figures/README-mutli_year_4-1.png" width="100%" />
 
-### Counterfactual scenarios
+For more advanced usage, such as large area or counterfactual analysis,
+see the [vignettes
+page](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/index.html).
 
-PTAXSIM can also perform more complex analysis, such as measuring the
-impact of exemptions in a given area. To perform this analysis, we can
-use the `tax_bill()` function to calculate tax bills before and after
-exemptions are removed.
+# Data
 
-Let’s look at the effect of exemptions in the Cook County township of
-Thornton:
+The PTAXSIM backend database contains cleaned data from the Cook County
+Clerk, Treasurer, and Assessor. The database is updated whenever all the
+data necessary to calculate a new tax year becomes available. Typically
+this occurs roughly a year after assessments are mailed i.e. 2019 bill
+data was available in mid-2020.
 
-![](man/figures/thornton.png)
+## Data sources
 
-``` r
-library(data.table)
+| Table Name       | Source Agency     | Source Link                                                                                                                                          | Ingest Script                                                    | Contains                                                          |
+|------------------|-------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|-------------------------------------------------------------------|
+| agency           | Clerk             | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates)                                  | [data-raw/agency/agency.R](data-raw/agency/agency.R)             | Taxing district extensions, limits, and base EAV                  |
+| agency_info      | Clerk + imputed   | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates)                                  | [data-raw/agency/agency.R](data-raw/agency/agency.R)             | Taxing district name, type, and subtype                           |
+| agency_fund      | Clerk             | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates)                                  | [data-raw/agency/agency.R](data-raw/agency/agency.R)             | Funds and line-items that contribute to each district’s extension |
+| agency_fund_info | Clerk             | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates)                                  | [data-raw/agency/agency.R](data-raw/agency/agency.R)             | Fund name and whether the fund is statutorily capped              |
+| cpi              | IDOR              | [History of CPI’s Used for the PTELL](https://www2.illinois.gov/rev/localgovernments/property/Documents/cpihistory.pdf)                              | [data-raw/cpi/cpi.R](data-raw/cpi/cpi.R)                         | CPI-U used to calculate PTELL limits                              |
+| eq_factor        | Clerk             | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates)                                  | [data-raw/eq_factor/eq_factor.R](data-raw/eq_factor/eq_factor.R) | Equalization factor applied to AV to get EAV                      |
+| pin              | Clerk + Treasurer | CLERKVALUES and TAXBILLAMOUNTS internal SQL tables                                                                                                   | [data-raw/pin/pin.R](data-raw/pin/pin.R)                         | PIN-level tax code, AV, and exemptions                            |
+| tax_code         | Clerk             | [Tax Extension - Tax Code Agency Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates)                             | [data-raw/tax_code/tax_code.R](data-raw/tax_code/tax_code.R)     | Crosswalk of tax codes by district                                |
+| tif              | Clerk             | [TIF Reports - Cook County Summary Reports](https://www.cookcountyclerkil.gov/property-taxes/tifs-tax-increment-financing/tif-reports)               | [data-raw/tif/tif.R](data-raw/tif/tif.R)                         | TIF revenue, start year, and cancellation year                    |
+| tif_distribution | Clerk             | [TIF Reports - Tax Increment Agency Distribution Reports](https://www.cookcountyclerkil.gov/property-taxes/tifs-tax-increment-financing/tif-reports) | [data-raw/tif/tif.R](data-raw/tif/tif.R)                         | TIF EAV, frozen EAV, and distribution percentage by tax code      |
 
-# Use the included database to get all unique PINs in Thornton township
-t_pins <- DBI::dbGetQuery(
-  ptaxsim_db_conn,
-  "
-  SELECT DISTINCT pin
-  FROM pin
-  WHERE substr(tax_code_num, 1, 2) = '37'
-  "
-)
-t_pins <- t_pins$pin
-t_years <- 2006:2020
-
-# Generate all tax bills for Thornton, 2006 - 2020, with exemptions
-t_pre <- tax_bill(t_years, t_pins)[, stage := "With exemptions"]
-
-# Lookup exemptions and tax code for all Thornton pins
-t_pin_dt <- lookup_pin(t_years, t_pins)
-t_pin_dt[, tax_code := lookup_tax_code(year, pin)]
-
-# For each tax code, calculate the total EAV recovered by removing exemptions
-exe_cols <- names(t_pin_dt)[startsWith(names(t_pin_dt), "exe_")]
-t_tc_sum <- t_pin_dt[,
-  exe_total := rowSums(.SD), .SDcols = exe_cols
-][,
-  .(exe_total = sum(exe_total)), by = .(year, tax_code)
-]
-
-# Recalculate Thornton's tax base by adding EAV returned from exemptions to each
-# taxing district's total EAV
-t_agency_dt <- lookup_agency(t_years, t_pin_dt$tax_code)
-t_agency_dt[t_tc_sum, on = .(year, tax_code), added_eav := exe_total][
-  , agency_total_eav := agency_total_eav + added_eav
-][, added_eav := NULL]
-
-# Remove all PIN-level exemptions
-t_pin_dt[, (exe_cols) := 0][, c("exe_total", "tax_code") := NULL]
-
-# Recalculate all tax bills after exemptions are removed + new base
-t_post <- tax_bill(
-  year_vec = t_years,
-  pin_vec = t_pins,
-  agency_dt = t_agency_dt,
-  pin_dt = t_pin_dt
-)[, stage := "Without exemptions"]
-
-# Little function to get the statistical mode
-Mode <- function(x) {
-  ux <- unique(x)
-  ux[which.max(tabulate(match(x, ux)))]
-}
-
-# Calculate the average tax bill by major class, with and without exemptions
-# Index the resulting average to 2006
-t_summ <- rbind(t_pre, t_post)[, class := Mode(substr(class, 1, 1)), by = pin][
-  class %in% c("2", "3", "5"),
-][
-  , class := ifelse(class == "2", "Residential", "Commercial")
-][
-  , .(total_bill = sum(final_tax)), by = .(year, pin, class, stage)
-][
-  , .(avg_bill = mean(total_bill)), by = .(year, class, stage)
-][
-  , idx_bill := (avg_bill / avg_bill[year == 2006]) * 100, by = .(class, stage)
-]
-```
+## Database diagram
 
 <details>
 <summary>
-Show code for plot
-</summary>
-
-``` r
-t_annot <- tibble(
-  class = c("Residential", "Commercial"),
-  x = c(2008, 2006.4),
-  y = c(105, 115)
-)
-
-# Plot the change in indexed values over time 
-t_summ_plot <- ggplot(data = t_summ) +
-  geom_line(aes(x = year, y = idx_bill, color = class, linetype = stage)) +
-  geom_text(data = t_annot, aes(x = x, y = y, color = class, label = class), hjust = 0) + 
-  scale_y_continuous(name = "Average Tax Bill, Indexed to 2006") +
-  scale_x_continuous(name = "Year", n.breaks = 10, limits = c(2006, 2020.4)) +
-  scale_linetype_manual(
-    name = "",
-    values = c("With exemptions" = "solid", "Without exemptions" = "dashed")
-  ) +
-  scale_color_brewer(name = "", palette = "Set1", direction = -1) +
-  guides(color = "none") +
-  facet_wrap(vars(class)) +
-  theme_minimal() +
-  theme(
-    legend.position = "bottom",
-    axis.title = element_text(size = 13),
-    axis.title.x = element_text(margin = margin(t = 6)),
-    axis.title.y = element_text(margin = margin(r = 6)),
-    legend.text = element_text(size = 12),
-    strip.text = element_blank()
-  )
-```
-
-</details>
-
-<img src="man/figures/README-complex_3-1.png" width="100%" />
-
-# Notes
-
--   The PTAXSIM database is updated whenever all the data necessary to
-    calculate a new tax year becomes available. Typically this occurs
-    roughly a year after assessments are mailed i.e. 2019 bill data was
-    available in mid-2020.
--   Currently, the per-district tax calculations for properties in the
-    RPM TIF are slightly flawed. However, the total tax bill per PIN is
-    still accurate. See issue \#11 for more information.
--   PTAXSIM is a currently a developer and researcher-focused package.
-    It is not intended to predict or explain individual bills. In the
-    future, we plan to make PTAXSIM more accessible via a web frontend
-    and API.
--   PTAXSIM is relatively memory-efficient and can calculate every
-    district line-item for every tax bill for the last 15 years (roughly
-    350 million rows). However, the memory requirements for this
-    calculation are substantial (around 100 GB).
-
-# Database Diagram
-
-The PTAXSIM backend database contains cleaned up data from the Cook
-County Clerk, Treasurer, and Assessor. The database diagram below shows
-the logical relationship between the PTAXSIM tables. See the `data-raw/`
-directory for the source of each table’s data.
-
-<details>
-<summary>
-Show full database diagram
+*Click here* to show full database diagram
 </summary>
 
 ``` mermaid
@@ -980,6 +684,20 @@ erDiagram
   tif ||--|{ tif_distribution : "has"
   tax_code ||--o| tif : "may have"
 ```
+
+# Notes
+
+-   Currently, the per-district tax calculations for properties in the
+    RPM TIF are slightly flawed. However, the total tax bill per PIN is
+    still accurate. See issue \#11 for more information.
+-   PTAXSIM is a currently a developer and researcher-focused package.
+    It is not intended to predict or explain individual bills. In the
+    future, we plan to make PTAXSIM more accessible via a web frontend
+    and API.
+-   PTAXSIM is relatively memory-efficient and can calculate every
+    district line-item for every tax bill for the last 15 years (roughly
+    350 million rows). However, the memory requirements for this
+    calculation are substantial (around 100 GB).
 
 # Disclaimer
 
