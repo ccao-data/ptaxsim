@@ -171,7 +171,7 @@ multiple_years_plot <- ggplot(data = multiple_years_summ) +
 multiple_years_plot
 ```
 
-For more advanced usage, such as large area or counterfactual analysis, see the [vignettes page](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/index.html).
+For more advanced usage, such as counterfactual analysis, see the [vignettes page](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/index.html).
 
 # Data
 
@@ -426,6 +426,7 @@ erDiagram
   tif ||--|{ tif_distribution : "has"
   tax_code ||--o| tif : "may have"
 ```
+
 # Notes
 
 - Currently, the per-district tax calculations for properties in the RPM TIF are slightly flawed. However, the total tax bill per PIN is still accurate. See issue #11 for more information.

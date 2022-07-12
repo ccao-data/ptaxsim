@@ -422,8 +422,8 @@ multiple_years_plot <- ggplot(data = multiple_years_summ) +
 
 <img src="man/figures/README-mutli_year_4-1.png" width="100%" />
 
-For more advanced usage, such as large area or counterfactual analysis,
-see the [vignettes
+For more advanced usage, such as counterfactual analysis, see the
+[vignettes
 page](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/index.html).
 
 # Data
