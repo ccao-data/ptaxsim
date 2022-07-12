@@ -307,6 +307,10 @@ t_summ_plot
 
 The PTAXSIM backend database contains cleaned up data from the Cook County Clerk, Treasurer, and Assessor. The database diagram below shows the logical relationship between the PTAXSIM tables. See the `data-raw/` directory for the source of each table's data.
 
+<details>
+
+<summary>Show full database diagram</summary>
+
 ```mermaid
 erDiagram
 
@@ -446,7 +450,104 @@ erDiagram
   agency_fund_info ||--|{ agency_fund : "describes"
   tif ||--|{ tif_distribution : "has"
   tax_code ||--o| tif : "may have"
+```
 
+</details>
+
+```mermaid
+erDiagram
+
+  agency {
+    int     year              PK
+    varchar agency_num        PK
+    boolean home_rule_ind
+    bigint  cty_cook_eav
+    double  total_ext
+  }
+
+  agency_info {
+    varchar agency_num         PK
+    varchar agency_name
+    varchar major_type
+  }
+
+  agency_fund {
+    int     year               PK
+    varchar agency_num         PK
+    varchar fund_num           PK
+    bigint  final_levy
+    double  final_rate
+  }
+
+  agency_fund_info {
+    varchar fund_num           PK
+    varchar fund_name
+    boolean capped_ind
+  }
+
+  cpi {
+    int     year
+    double  cpi
+    double  ptell_cook
+    int     levy_year          PK
+  }
+
+  eq_factor {
+    int     year               PK
+    double  eq_factor
+  }
+
+  pin {
+    int     year               PK
+    varchar pin                PK
+    varchar class
+    int     av
+    int     exe_homeowner
+    int     exe_senior
+    int     exe_longtime_homeowner
+    int     exe_freeze
+    int     exe_disabled
+    int     exe_vet_returning
+    int     exe_vet_dis_lt50
+    int     exe_vet_dis_50_69
+    int     exe_vet_dis_ge70
+    int     exe_abate
+  }
+
+  tax_code {
+    int     year               PK
+    varchar agency_num         PK
+    double  agency_rate
+    varchar tax_code_num       PK
+    double  tax_code_rate
+  }
+
+  tif {
+    int     year               PK
+    varchar agency_num         PK
+    double  prev_year_revenue
+    double  curr_year_revenue
+    int     first_year
+    boolean cancelled_this_year
+  }
+
+  tif_distribution {
+    int     year               PK
+    varchar agency_num         PK
+    varchar tax_code_num       PK
+    double  tax_code_distribution_pct
+  }
+
+  eq_factor ||--|{ pin : "applies to"
+  pin ||--|{ tax_code : "within"
+  cpi ||--|{ agency : "applies to"
+  tax_code ||--|| agency : "has"
+  tax_code ||--o| tif_distribution : "may have"
+  agency ||--|{ agency_fund : "contains"
+  agency_info ||--|{ agency : "describes"
+  agency_fund_info ||--|{ agency_fund : "describes"
+  tif ||--|{ tif_distribution : "has"
+  tax_code ||--o| tif : "may have"
 ```
 
 # Disclaimer
