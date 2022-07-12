@@ -37,6 +37,14 @@ test_that("bad/incorrect data frame inputs throw errors", {
   expect_error(tax_bill(2019, pins[1], tif_dt = c(23000, 959051)))
 })
 
+test_that("non-unique values to main args throws error", {
+  expect_error(tax_bill(2019, pins[c(1, 1)]))
+  expect_error(tax_bill(c(2010, 2010), pins[1]))
+  expect_error(
+    tax_bill(c(2010, 2010), pins[c(1, 2)], tax_code_vec = c("73105"))
+  )
+})
+
 test_that("incorrect size inputs throw errors", {
   expect_error(tax_bill(years, pins, tax_code_vec = c("73105", "73105")))
   expect_error(tax_bill(years, pins, tax_code_vec = c("73105", "73105")))
