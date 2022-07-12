@@ -502,16 +502,6 @@ erDiagram
     varchar pin                PK
     varchar class
     int     av
-    int     exe_homeowner
-    int     exe_senior
-    int     exe_longtime_homeowner
-    int     exe_freeze
-    int     exe_disabled
-    int     exe_vet_returning
-    int     exe_vet_dis_lt50
-    int     exe_vet_dis_50_69
-    int     exe_vet_dis_ge70
-    int     exe_abate
   }
 
   tax_code {
