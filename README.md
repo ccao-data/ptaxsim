@@ -314,7 +314,7 @@ COUNTY OF COOK
 
 Here’s the real 2020 tax bill for this PIN for comparison:
 
-![](man/figures/sample_bill_w_tif.png)
+![](man/figures/README-sample_bill.png)
 
 There are some minor differences between PTAXSIM and the real bill. The
 taxing district names may not be identical. Additionally, PTAXSIM
