@@ -90,7 +90,7 @@ test_that("lookup values/data are correct", {
 test_that("function returns expect data type/structure", {
   expect_s3_class(
     lookup_tif(2018, "73105"),
-    "data.frame"
+    c("data.frame", "data.table")
   )
   expect_named(
     lookup_tif(2018, c("70069", "73105")),
@@ -126,6 +126,14 @@ test_that("lookup values/data are correct", {
     lookup_pin(2014:2019, pins[2])$exe_senior,
     c(15000, 15000, 10000, 24000, 32000, 32000)
   )
+  expect_equal(
+    lookup_pin(2016:2020, pins[2], stage = "mailed")$av,
+    c(171414, 106400, 106400, 163489, 137998)
+  )
+  expect_equal(
+    lookup_pin(2016:2020, pins[2], stage = "board")$av,
+    c(106400, 106400, 106400, 137998, 137998)
+  )
 
   # Match all values in real data to lookup values
   expect_equivalent(
@@ -148,7 +156,7 @@ test_that("lookup values/data are correct", {
 test_that("function returns expect data type/structure", {
   expect_s3_class(
     lookup_pin(2018, pins),
-    "data.frame"
+    c("data.frame", "data.table")
   )
   expect_named(
     lookup_pin(2018:2019, pins[1]),
@@ -167,6 +175,8 @@ test_that("function returns expect data type/structure", {
 
 test_that("bad/incorrect inputs throw errors", {
   expect_error(lookup_pin("2019", pins[1]))
+  expect_error(lookup_pin(2019, pins[1], stage = 1))
+  expect_error(lookup_pin(2019, pins[1], stage = "mail"))
   expect_error(lookup_pin(2019, "73105"))
   expect_error(lookup_pin(c(2000, 2019), pins[1]))
   expect_error(lookup_pin(2019, as.numeric(pins[1])))
@@ -208,7 +218,7 @@ test_that("lookup values/data are correct", {
 test_that("function returns expect data type/structure", {
   expect_s3_class(
     lookup_agency(2018, "73105"),
-    "data.frame"
+    c("data.frame", "data.table")
   )
   expect_named(
     lookup_agency(2018:2019, "73105"),
