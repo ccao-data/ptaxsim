@@ -12,8 +12,8 @@ lookup_tax_code(year, pin, conn = ptaxsim_db_conn)
 
 \item{pin}{A character vector of 14-digit PINs.}
 
-\item{conn}{A connection object pointing to the local copy of the
-PTAXSIM database. Usually instantiated on package load.}
+\item{conn}{A connection object pointing to a local copy of the
+PTAXSIM database.}
 }
 \value{
 A vector containing the specified tax data values.
@@ -25,8 +25,8 @@ return a vector as an output. The output vector can be used directly in
 }
 \section{Functions}{
 \itemize{
-\item \code{lookup_tax_code}: Lookup Cook County tax code for a specific PIN and
-year. The tax code represents the unique geographic overlap of different
+\item \code{lookup_tax_code}: Lookup the Cook County tax code for a specific PIN and
+year. Tax codes represent the unique geographic overlap of different
 taxing districts. If the input vectors are both length N, then the output
 will also be length N. If the input vectors are different lengths, the
 Cartesian product is returned.
