@@ -4,7 +4,7 @@ globalVariables(c("ptaxsim_db_conn", "."))
 #'
 #' @description The functions in this group take a tax year, PIN, and/or tax
 #'   code as input and return a \code{data.table} as an output. The returned
-#'   data sets are in a specific format (in terms of column name/type/order)
+#'   data are in a specific format (in terms of column name/type/order)
 #'   and can be used directly in \code{\link{tax_bill}} or piped to helper
 #'   functions.
 #'
@@ -14,11 +14,10 @@ globalVariables(c("ptaxsim_db_conn", "."))
 #' @param year A numeric vector of tax years.
 #' @param pin A character vector of 14-digit PINs.
 #' @param tax_code A character vector of 5-digit Cook County tax codes.
-#' @param conn A connection object pointing to the local copy of the
-#'   PTAXSIM database. Usually instantiated on package load.
+#' @param conn A connection object pointing to a local copy of the
+#'   PTAXSIM database.
 #'
-#' @return A \code{data.table} containing the specified tax data by year and
-#'   PIN/tax code.
+#' @return A \code{data.table} containing the specified tax data.
 #'
 #' @examples
 #' \dontrun{
@@ -40,8 +39,8 @@ NULL
 #'
 #' @param year A numeric vector of tax years.
 #' @param pin A character vector of 14-digit PINs.
-#' @param conn A connection object pointing to the local copy of the
-#'   PTAXSIM database. Usually instantiated on package load.
+#' @param conn A connection object pointing to a local copy of the
+#'   PTAXSIM database.
 #'
 #' @return A vector containing the specified tax data values.
 #'
@@ -109,18 +108,29 @@ lookup_agency <- function(year, tax_code, conn = ptaxsim_db_conn) {
 
 
 #' @describeIn lookup_dt Lookup the equalized assessed value and exemptions
-#'   for a specific PIN and year. Returns a numeric vector the same length
-#'   as the longest input.
+#'   for a specific PIN and year. Returns a \code{data.table} with AV, EAV, and
+#'   a column specifying the EAV value of each received exemption.
+#'
+#' @param stage A length 1 character vector indicating the assessment stage
+#'   from which to pull assessed value (column \code{av}) and equalized assessed
+#'   value (column \code{eav}). Options include \code{"mailed"},
+#'   \code{"certified"}, \code{"board"}, and \code{"clerk"}.
 #'
 #' @export
-lookup_pin <- function(year, pin, conn = ptaxsim_db_conn) {
+lookup_pin <- function(year, pin, stage = "clerk", conn = ptaxsim_db_conn) {
   stopifnot(
     is.numeric(year),
     is.character(pin),
+    is.character(stage),
+    length(stage) == 1,
     all(year >= 2006),
     all(nchar(pin) == 14),
     DBI::dbIsValid(conn)
   )
+
+  if (!stage %in% c("mailed", "certified", "board", "clerk")) {
+    stop("stage must be one of: mailed, certified, board, clerk")
+  }
 
   # This lookup uses a temp table since it's faster than putting lots of
   # values into the WHERE clause for large lookups
@@ -133,16 +143,17 @@ lookup_pin <- function(year, pin, conn = ptaxsim_db_conn) {
     temporary = TRUE
   )
 
+  stage <- glue::glue("av_", stage)
   dt <- DBI::dbGetQuery(
     conn,
-    statement =
+    statement = glue::glue_sql(
       "
       SELECT
           lp.year,
           lp.pin,
           p.class,
-          p.av,
-          CAST(ROUND(p.av * ef.eq_factor, 0) AS int) AS eav,
+          p.{`stage`} AS av,
+          CAST(ROUND(p.{`stage`} * ef.eq_factor, 0) AS int) AS eav,
           p.exe_homeowner,
           p.exe_senior,
           p.exe_freeze,
@@ -160,7 +171,9 @@ lookup_pin <- function(year, pin, conn = ptaxsim_db_conn) {
       LEFT JOIN eq_factor ef
           ON lp.year = ef.year
       ORDER BY lp.year, lp.pin
-    "
+    ",
+      .con = conn
+    )
   )
 
   dt <- data.table::setDT(dt, key = c("year", "pin"))
@@ -169,8 +182,8 @@ lookup_pin <- function(year, pin, conn = ptaxsim_db_conn) {
 }
 
 
-#' @describeIn lookup_vec Lookup Cook County tax code for a specific PIN and
-#'   year. The tax code represents the unique geographic overlap of different
+#' @describeIn lookup_vec Lookup the Cook County tax code for a specific PIN and
+#'   year. Tax codes represent the unique geographic overlap of different
 #'   taxing districts. If the input vectors are both length N, then the output
 #'   will also be length N. If the input vectors are different lengths, the
 #'   Cartesian product is returned.
@@ -217,7 +230,7 @@ lookup_tax_code <- function(year, pin, conn = ptaxsim_db_conn) {
 
 #' @describeIn lookup_dt Lookup any TIFs that apply to a given tax code and
 #'   year. Returns a \code{data.table} with only 1 row per tax code and year,
-#'   or 0 rows if the tax code is not within a TIF.
+#'   or 0 rows if the tax code is not part of a TIF.
 #'
 #' @export
 lookup_tif <- function(year, tax_code, conn = ptaxsim_db_conn) {

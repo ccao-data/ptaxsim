@@ -9,7 +9,7 @@
 \usage{
 lookup_agency(year, tax_code, conn = ptaxsim_db_conn)
 
-lookup_pin(year, pin, conn = ptaxsim_db_conn)
+lookup_pin(year, pin, stage = "clerk", conn = ptaxsim_db_conn)
 
 lookup_tif(year, tax_code, conn = ptaxsim_db_conn)
 }
@@ -18,19 +18,23 @@ lookup_tif(year, tax_code, conn = ptaxsim_db_conn)
 
 \item{tax_code}{A character vector of 5-digit Cook County tax codes.}
 
-\item{conn}{A connection object pointing to the local copy of the
-PTAXSIM database. Usually instantiated on package load.}
+\item{conn}{A connection object pointing to a local copy of the
+PTAXSIM database.}
 
 \item{pin}{A character vector of 14-digit PINs.}
+
+\item{stage}{A length 1 character vector indicating the assessment stage
+from which to pull assessed value (column \code{av}) and equalized assessed
+value (column \code{eav}). Options include \code{"mailed"},
+\code{"certified"}, \code{"board"}, and \code{"clerk"}.}
 }
 \value{
-A \code{data.table} containing the specified tax data by year and
-PIN/tax code.
+A \code{data.table} containing the specified tax data.
 }
 \description{
 The functions in this group take a tax year, PIN, and/or tax
 code as input and return a \code{data.table} as an output. The returned
-data sets are in a specific format (in terms of column name/type/order)
+data are in a specific format (in terms of column name/type/order)
 and can be used directly in \code{\link{tax_bill}} or piped to helper
 functions.
 
@@ -46,12 +50,12 @@ levy amount. Returns a \code{data.table} with 1 row for each agency
 associated with the input tax code and year.
 
 \item \code{lookup_pin}: Lookup the equalized assessed value and exemptions
-for a specific PIN and year. Returns a numeric vector the same length
-as the longest input.
+for a specific PIN and year. Returns a \code{data.table} with AV, EAV, and
+a column specifying the EAV value of each received exemption.
 
 \item \code{lookup_tif}: Lookup any TIFs that apply to a given tax code and
 year. Returns a \code{data.table} with only 1 row per tax code and year,
-or 0 rows if the tax code is not within a TIF.
+or 0 rows if the tax code is not part of a TIF.
 }}
 
 \examples{
