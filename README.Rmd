@@ -286,7 +286,10 @@ erDiagram
     varchar class
     varchar tax_code_num
     double  tax_bill_total
-    int     av
+    int     av_mailed
+    int     av_certified
+    int     av_board
+    int     av_clerk
     int     exe_homeowner
     int     exe_senior
     int     exe_longtime_homeowner
@@ -388,7 +391,6 @@ erDiagram
     int     year               PK
     varchar pin                PK
     varchar class
-    int     av
   }
 
   tax_code {
