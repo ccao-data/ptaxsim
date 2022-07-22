@@ -11,7 +11,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-## Introduction
+# Introduction
 
 Property tax exemptions are savings that lower a homeowner’s property tax bill. They work by multiplying the composite tax rate for the area by a flat amount. For example, in the bill below (PIN = **29-34-135-014-0000**), the local tax rate of 18.103% is multiplied by the Homeowner Exemption flat amount of \$10,000, yielding an exemption amount of \$1,810.30.
 
@@ -21,7 +21,7 @@ This amount is then deducted from the Equalized Assessed Value (EAV) of the prop
 
 PTAXSIM can determine the impact of exemptions both for single properties and large areas, such as municipalities. We demonstrate both in this vignette.
 
-## Single PIN
+# Single PIN
 
 Using PTAXSIM, let's look at the historic impact of exemptions for a single PIN by recalculating its tax bills without any exemptions.
 
@@ -67,7 +67,7 @@ Finally, we can plot the change in total bill amount over time.
 ```{r, echo=FALSE}
 bills_plot_1 <- bills_w_exe_summ %>%
   ggplot() +
-  geom_line(aes(x = Year, y = `Bill Amt.`, linetype = Type)) +
+  geom_line(aes(x = Year, y = `Bill Amt.`, linetype = Type), size = 1.1) +
   scale_x_continuous(n.breaks = 9) +
   scale_y_continuous(labels = scales::label_dollar(), limits = c(1000, 5100)) +
   scale_linetype_manual(
@@ -76,16 +76,22 @@ bills_plot_1 <- bills_w_exe_summ %>%
   ) +
   theme_minimal() +
   theme(
-    legend.position = "bottom",
     axis.title = element_text(size = 13),
     axis.title.x = element_text(margin = margin(t = 6)),
     axis.title.y = element_text(margin = margin(r = 6)),
+    axis.text = element_text(size = 11),
+    strip.text = element_text(size = 16),
+    strip.background = element_rect(fill = "#c9c9c9"),
+    legend.title = element_text(size = 14),
+    legend.key.size = unit(24, "points"),
     legend.text = element_text(size = 12),
-    strip.text = element_blank()
+    legend.position = "bottom"
   )
 ```
 
 </details>
+
+<br>
 
 ```{r, echo=FALSE, out.width="100%"}
 bills_plot_1
@@ -93,7 +99,7 @@ bills_plot_1
 
 This PIN's total tax bill has increased since 2006, particularly in the last couple years. Let's see how much it would've increased _without_ its Homeowner Exemption.
 
-### Removing exemptions
+## Removing exemptions
 
 We can remove exemptions by modifying the inputs to the `tax_bill()` function and then recalculating each bill.
 
@@ -137,7 +143,7 @@ Finally, we can compare the real bills (with exemptions) to the counterfactual b
 ```{r, echo=FALSE}
 bills_plot_2 <- rbind(bills_w_exe_summ, bills_no_exe_summ) %>%
   ggplot() +
-  geom_line(aes(x = Year, y = `Bill Amt.`, linetype = Type)) +
+  geom_line(aes(x = Year, y = `Bill Amt.`, linetype = Type), size = 1.1) +
   scale_x_continuous(n.breaks = 9) +
   scale_y_continuous(labels = scales::label_dollar(), limits = c(1000, 5100)) +
   scale_linetype_manual(
@@ -146,16 +152,22 @@ bills_plot_2 <- rbind(bills_w_exe_summ, bills_no_exe_summ) %>%
   ) +
   theme_minimal() +
   theme(
-    legend.position = "bottom",
     axis.title = element_text(size = 13),
     axis.title.x = element_text(margin = margin(t = 6)),
     axis.title.y = element_text(margin = margin(r = 6)),
+    axis.text = element_text(size = 11),
+    strip.text = element_text(size = 16),
+    strip.background = element_rect(fill = "#c9c9c9"),
+    legend.title = element_text(size = 14),
+    legend.key.size = unit(24, "points"),
     legend.text = element_text(size = 12),
-    strip.text = element_blank()
+    legend.position = "bottom"
   )
 ```
 
 </details>
+
+<br>
 
 ```{r, echo=FALSE, out.width="100%"}
 bills_plot_2
@@ -163,7 +175,7 @@ bills_plot_2
 
 The exemption amount for this PIN has increased in tandem with increases in the local tax rate. There were also a statutory increases in the amount of the Homeowner Exemption during the same time period.
 
-### Changing exemptions
+## Changing exemptions
 
 We can also use PTAXSIM to answer hypotheticals. For example, how would this PIN's bill history change if the Homeowner Exemption increased from \$10,000 to \$15,000 in 2018?
 
@@ -208,7 +220,7 @@ bills_plot_3 <- rbind(
   bills_new_exe_summ
 ) %>%
   ggplot() +
-  geom_line(aes(x = Year, y = `Bill Amt.`, linetype = Type)) +
+  geom_line(aes(x = Year, y = `Bill Amt.`, linetype = Type), size = 1.1) +
   scale_x_continuous(n.breaks = 9) +
   scale_y_continuous(labels = scales::label_dollar(), limits = c(1000, 5100)) +
   scale_linetype_manual(
@@ -221,16 +233,22 @@ bills_plot_3 <- rbind(
   ) +
   theme_minimal() +
   theme(
-    legend.position = "bottom",
     axis.title = element_text(size = 13),
     axis.title.x = element_text(margin = margin(t = 6)),
     axis.title.y = element_text(margin = margin(r = 6)),
+    axis.text = element_text(size = 11),
+    strip.text = element_text(size = 16),
+    strip.background = element_rect(fill = "#c9c9c9"),
+    legend.title = element_text(size = 14),
+    legend.key.size = unit(24, "points"),
     legend.text = element_text(size = 12),
-    strip.text = element_blank()
+    legend.position = "bottom"
   )
 ```
 
 </details>
+
+<br>
 
 ```{r, echo=FALSE, out.width="100%"}
 bills_plot_3
@@ -238,11 +256,11 @@ bills_plot_3
 
 Increasing the Homeowner Exemption to \$15,000 would save this property owner around \$1,000 per year in taxes. However, this hypothetical does not account for changes in the tax base that would occur if overall exemption amounts changed, so it is (slightly) inaccurate.
 
-## Many PINs
+# Many PINs
 
 PTAXSIM can also perform more complex analysis, such as measuring the impact of exemptions in a given area. To perform this analysis, we can again use the `tax_bill()` function to calculate tax bills before and after exemptions are removed, this time for many PINs.
 
-### Removing exemptions
+## Removing exemptions
 
 Let's look at the overall effect of exemptions in the Cook County township of Thornton, shown in <span style="color:#e41a1c"><strong>red</strong></span> below.
 
@@ -356,7 +374,10 @@ t_annot <- tibble(
 
 # Plot the change in indexed values over time 
 t_no_exe_summ_plot <- ggplot(data = t_no_exe_summ) +
-  geom_line(aes(x = year, y = idx_bill, color = class, linetype = stage)) +
+  geom_line(
+    aes(x = year, y = idx_bill, color = class, linetype = stage),
+    size = 1.1
+  ) +
   geom_text(
     data = t_annot,
     aes(x = x, y = y, color = class, label = class),
@@ -373,16 +394,22 @@ t_no_exe_summ_plot <- ggplot(data = t_no_exe_summ) +
   facet_wrap(vars(class)) +
   theme_minimal() +
   theme(
-    legend.position = "bottom",
     axis.title = element_text(size = 13),
     axis.title.x = element_text(margin = margin(t = 6)),
     axis.title.y = element_text(margin = margin(r = 6)),
+    axis.text.y = element_text(size = 11),
+    strip.text = element_text(size = 16),
+    strip.background = element_rect(fill = "#c9c9c9"),
+    legend.title = element_text(size = 14),
+    legend.key.size = unit(24, "points"),
     legend.text = element_text(size = 12),
-    strip.text = element_blank()
+    legend.position = "bottom"
   )
 ```
 
 </details>
+
+<br>
 
 ```{r, echo=FALSE, out.width="100%"}
 t_no_exe_summ_plot
@@ -392,7 +419,7 @@ Exemptions in Thornton have significantly increased in both volume and amount (v
 
 Conversely, Thornton's commercial property owners have picked up an increasingly large share of the overall tax burden since 2006. In 2019, the average commercial property paid about $1,500 more than they would have if exemptions did not exist.
 
-### Changing exemptions 
+## Changing exemptions 
 
 PTAXSIM can also answer hypotheticals about large areas. For example, how would the average residential tax bill in Thornton change if the Senior Exemption increased by $5,000 and the Senior Freeze Exemption was removed?
 
@@ -464,9 +491,16 @@ t_new_exe_summ <- rbind(t_bills_w_exe, t_bills_new_exe)[
 
 Finally, we can plot the original bills against the updated ones.
 
-```{r, out.width="100%"}
-ggplot(data = t_new_exe_summ) +
-  geom_line(aes(x = year, y = idx_bill, color = class, linetype = stage)) +
+<details>
+
+<summary><strong>Click here</strong> to show plot code</summary>
+
+```{r}
+t_new_exe_summ_plot <- ggplot(data = t_new_exe_summ) +
+  geom_line(
+    aes(x = year, y = idx_bill, color = class, linetype = stage),
+    size = 1.1
+  ) +
   geom_text(
     data = t_annot,
     aes(x = x, y = y, color = class, label = class),
@@ -483,13 +517,25 @@ ggplot(data = t_new_exe_summ) +
   facet_wrap(vars(class)) +
   theme_minimal() +
   theme(
-    legend.position = "bottom",
     axis.title = element_text(size = 13),
     axis.title.x = element_text(margin = margin(t = 6)),
     axis.title.y = element_text(margin = margin(r = 6)),
+    axis.text.y = element_text(size = 11),
+    strip.text = element_text(size = 16),
+    strip.background = element_rect(fill = "#c9c9c9"),
+    legend.title = element_text(size = 14),
+    legend.key.size = unit(24, "points"),
     legend.text = element_text(size = 12),
-    strip.text = element_blank()
+    legend.position = "bottom"
   )
+```
+
+</details>
+
+<br>
+
+```{r, out.width="100%", echo=FALSE}
+t_new_exe_summ_plot
 ```
 
 The net effect of increasing the Senior Exemption while removing the Senior Freeze Exemption is a decrease in the _average_ bill. However, this is complicated by the fact that the Senior Freeze is means-tested, while the Senior Exemption is not. The reality of our hypothetical change is mostly likely an increase in the property tax bills of poorer seniors, even though the average bill decreased.
