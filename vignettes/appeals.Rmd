@@ -71,7 +71,7 @@ sb_res <- GET(
 )
 ```
 
-Next, we convert the response from the API to a `data.frame` and then to an [`sf` object](https://r-spatial.github.io/sf/). This will let us plot each PIN's location on a map. We also add the major class code (property type) and label to each PIN.
+Next, we convert the response from the API to a `data.frame` and then to an [`sf` object](https://r-spatial.github.io/sf/). This will let us plot each PIN's location on a map. We also add the major class code (property type) to each PIN.
 
 ```{r}
 sb_pins <- fromJSON(rawToChar(sb_res$content)) %>%
@@ -144,22 +144,17 @@ The map clearly shows that most commercial buildings cluster on the north side o
 
 ## Appeals' impact on AVs
 
-Now that we've gathered our PINs of interest, we can start to investigate how they were affected by the 2019 reassessment and subsequent appeals. Let's start by looking at changes in assessed values. We can gather the AVs from each assessment stage using PTAXSIM's `lookup_pin()` function.
+Now that we've gathered our PINs of interest, we can start to investigate how they were affected by appeals after the 2019 reassessment. Let's start by looking at changes in assessed values. We can gather the AVs from each assessment stage using PTAXSIM's `lookup_pin()` function.
 
 ```{r}
-sb_pins_18 <- lookup_pin(2018, sb_pins$pin, stage = "clerk") %>%
-  mutate(stage = "clerk")
-
 # Iterate through the difference stages, then combine into a single data.frame
-sb_pins_19 <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
+sb_pins_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
   lookup_pin(2019, sb_pins$pin, stage = x) %>%
     mutate(stage = x)
 })
-
-sb_pins_all <- rbind(sb_pins_18, sb_pins_19)
 ```
 
-Next, we get the median AV for each assessment stage and major class. We also index the change in the median to the final 2018 median value (prior to reassessment) to make the different classes easier to compare.
+Next, we get the median AV for each assessment stage and major class. We also create an index to make the relative changes in AV caused by appeals easier to see. The indexed stage is `2019 mailed`, meaning a change of -20 means a 20% drop in the median AV from the `2019 mailed` median AV.
 
 ```{r}
 sb_pins_summ <- sb_pins_all %>%
@@ -179,13 +174,13 @@ sb_pins_summ <- sb_pins_all %>%
   mutate(
     stage = factor(
       paste0(year, "\n", stage),
-      levels = c("2018\nclerk", "2019\nmailed", "2019\ncertified", "2019\nboard")
+      levels = c("2019\nmailed", "2019\ncertified", "2019\nboard")
     ),
-    idx = (med_av / med_av[stage == "2018\nclerk"]) * 100
+    idx = (med_av / med_av[stage == "2019\nmailed"]) * 100
   )
 ```  
 
-Finally, we can plot the index by stage to see the impact of the 2019 reassessment and each stage of subsequent appeals.
+Finally, we can plot the index over time to see how each stage of appeals impacted assessed values.
 
 <details>
 
@@ -199,7 +194,8 @@ sb_pins_av_plot <- ggplot() +
     size = 1.1
   ) +
   scale_color_brewer(name = "", palette = "Set1") +
-  labs(x = "Stage", y = "Median AV, Indexed to 2018") +
+  labs(x = "Stage", y = "Median AV, Indexed to 2019 Mailed") +
+  lims(y = c(70, 110)) +
   theme_minimal() +
   theme(
     axis.title = element_text(size = 13),
@@ -223,28 +219,20 @@ sb_pins_av_plot <- ggplot() +
 sb_pins_av_plot
 ```
 
-The 2019 reassessment increased commercial property AVs significantly. The median increase in AV was over 60%. However, these increases were later decreased by appeals at the Assessor's Office and Board of Review.
+There's a very significant drop in the median commercial property AV due to appeals, particularly at the Board of Review. However, commercial properties also received much larger AV increases during the 2019 reassessment (not shown, since we're trying to isolate the effect of appeals).
 
 ## Appeals' impact on bills
 
-Using PTAXSIM, we can calculate the impact of these appeals on 2019 tax bills. To do so, we'll first calculate bills at each stage of assessment. The bills for the `mailed` and `certified` stages are counterfactual; they represent what bills _would have been_ at each stage if no further appeals were granted. The 2019 board bills are the actual bills received by property owners.
+Now that we've looked at AVs, we can also use PTAXSIM to examine the impact of appeals on 2019 tax bills. To do so, we'll first calculate bills at each stage of assessment. The bills for the `mailed` and `certified` stages are counterfactual; they represent what bills ***would have been*** at each stage if no further appeals were granted. The 2019 board bills are the actual bills received by property owners.
 
 ```{r}
-# Get the final tax bills from 2018 as a pre-reassessment point-of-reference
-sb_bills_18 <- tax_bill(
-  year = 2018,
-  pin = sb_pins$pin,
-  pin_dt = lookup_pin(2018, sb_pins$pin, stage = "clerk")
-) %>%
-  mutate(stage = "clerk")
-
 # Grab equalization factors from the PTAXSIM database
 eq_dt <- DBI::dbGetQuery(ptaxsim_db_conn, "SELECT * FROM eq_factor")
 
 # Calculate tax bills from 2019 at each stage of appeal. Note that recalculating
 # bills with counterfactual AVs also requires recalculating the base of each
 # taxing district
-sb_bills_19 <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
+sb_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
   
   sb_pin_dt_actual <- lookup_pin(2019, sb_pins$pin, stage = "clerk")
   sb_pin_dt_stage <- lookup_pin(2019, sb_pins$pin, stage = x)
@@ -285,10 +273,10 @@ sb_bills_19 <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
 })
 ```
 
-We now have two sets of bills: the real bills from 2018, and the counterfactual bills for each stage of 2019. Each bill from `tax_bill()` is broken out into per-district line items. In order to visualize changes in bills, we first collapse the bills into their totals, then aggregate and index them in the same way we did for AVs.
+We now have two sets of bills: the real bills from the `board` stage, and the counterfactual bills from the `mailed` and `certified` stages. Each bill from `tax_bill()` is broken out into per-district line items. In order to visualize the changes in bills, we first collapse the bills into their totals, then aggregate and index them in the same way we did for AVs.
 
 ```{r}
-sb_bills_summ <- rbind(sb_bills_18, sb_bills_19) %>%
+sb_bills_summ <- sb_bills_all %>%
   group_by(year, pin, class, stage) %>%
   summarize(bill_total = sum(final_tax)) %>%
   ungroup() %>%
@@ -308,13 +296,13 @@ sb_bills_summ <- rbind(sb_bills_18, sb_bills_19) %>%
   mutate(
     stage = factor(
       paste0(year, "\n", stage),
-      levels = c("2018\nclerk", "2019\nmailed", "2019\ncertified", "2019\nboard")
+      levels = c("2019\nmailed", "2019\ncertified", "2019\nboard")
     ),
-    idx = (med_bill / med_bill[stage == "2018\nclerk"]) * 100
+    idx = (med_bill / med_bill[stage == "2019\nmailed"]) * 100
   ) 
 ```
 
-We can then plot the median total tax bill by stage to see what bills _would have been_ in the absence of appeals (`2019 mailed`) or with only Assessor's Office appeals (`2019 certified`). The earlier plot showing assessed values is added for reference.
+We can then plot the change in the median total tax bill (indexed to the `2019 mailed` median bill) to see the effect of each stage of appeals. The earlier plot showing assessed values is added for reference.
 
 <details>
 
@@ -331,7 +319,8 @@ ggplot() +
     size = 1.1
   ) +
   scale_color_brewer(name = "", palette = "Set1") +
-  labs(x = "Stage", y = "Median Value, Indexed to 2018") +
+  labs(x = "Stage", y = "Median Value, Indexed to 2019 Mailed") +
+  lims(y = c(70, 110)) +
   facet_wrap(vars(type)) +
   theme_minimal() +
   theme(
@@ -356,16 +345,16 @@ ggplot() +
 sb_bills_plot
 ```
 
-Overall, the 2019 reassessment in Schaumburg resulted in the median tax bill increasing by roughly 10% from 2018. Without appeals, particularly at the Board of Review, the median commercial bill would have increased roughly 30%.
+Overall, post-reassessment appeals in Schaumburg resulted in a roughly 7% increase in the median residential tax bill and a 19% decrease in the median commercial tax bill. Without appeals, particularly at the Board of Review, the median commercial bill would have increased roughly 30% from 2018.
 
 # Counterfactual scenarios
 
-The plot above also shows the zero-sum nature of assessment appeals. The large AV decreases for commercial properties in Schaumburg likely raised the median tax bill for residential property owners. We can test this by holding the assessed value of all commercial properties constant (as if no appeals were granted) and then recalculating tax bills.
+The plot above shows the zero-sum nature of assessment appeals. The large AV decreases for commercial properties in Schaumburg raised the median tax bill for residential property owners. We can test this by holding the assessed value of all commercial properties constant (as if no appeals were granted) and then recalculating tax bills.
 
 ```{r}
 # Again we need to calculate bills at each stage of appeal. This time it's more
 # complicated since we need to exclude commercial appeals
-sb_cntr_19 <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
+sb_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
 
   sb_pin_dt_actual <- lookup_pin(2019, sb_pins$pin, stage = "clerk")
   sb_pin_dt_mailed <- lookup_pin(2019, sb_pins$pin, stage = "mailed")
@@ -430,10 +419,10 @@ sb_cntr_19 <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
 })
 ```
 
-We again have two sets of bills: real bills from 2018, and counterfactual 2019 bills _as if no commercial appeals were granted_. We can aggregate and index these bills the same way we did previously.
+We again have two sets of bills: real bills from the `mailed` stage, and counterfactual bills from the `certified` and `board` stage, _as if no commercial appeals were granted_. We can aggregate and index these bills the same way we did previously.
 
 ```{r}
-sb_cntr_summ <- rbind(sb_bills_18, sb_cntr_19) %>%
+sb_cntr_summ <- sb_cntr_all %>%
   group_by(year, pin, class, stage) %>%
   summarize(bill_total = sum(final_tax)) %>%
   ungroup() %>%
@@ -453,23 +442,20 @@ sb_cntr_summ <- rbind(sb_bills_18, sb_cntr_19) %>%
   mutate(
     stage = factor(
       paste0(year, "\n", stage),
-      levels = c("2018\nclerk", "2019\nmailed", "2019\ncertified", "2019\nboard")
+      levels = c("2019\nmailed", "2019\ncertified", "2019\nboard")
     ),
-    idx = (med_bill / med_bill[stage == "2018\nclerk"]) * 100
+    idx = (med_bill / med_bill[stage == "2019\nmailed"]) * 100
   ) 
 ```
 
-Finally, we plot the change in the median bill over each stage. The AV plot (left) is also recalculated to exclude commercial appeals.
+Finally, we again plot the change in the median bill for each stage. The previous plot is shown again (top row) for reference. The earlier AV plot (bottom left) is also recalculated to exclude commercial appeals.
 
 <details>
 
 <summary><strong>Click here</strong> to show plot code</summary>
 
 ```{r}
-sb_pins_18 <- lookup_pin(2018, sb_pins$pin, stage = "clerk") %>%
-  mutate(stage = "clerk")
-
-sb_pins_19_no_app <- purrr::map_dfr(
+sb_pins_no_app <- purrr::map_dfr(
   c("mailed", "certified", "board"),
   function(x) {
     comm_pins <- sb_pins %>%
@@ -488,7 +474,7 @@ sb_pins_19_no_app <- purrr::map_dfr(
   }
 )
 
-sb_pins_summ_no_app <- rbind(sb_pins_18, sb_pins_19_no_app) %>%
+sb_pins_summ_no_app <- sb_pins_no_app %>%
   mutate(major_class = substr(class, 1, 1)) %>%
   filter(major_class %in% c("2", "3", "5")) %>%
   mutate(
@@ -505,13 +491,15 @@ sb_pins_summ_no_app <- rbind(sb_pins_18, sb_pins_19_no_app) %>%
   mutate(
     stage = factor(
       paste0(year, "\n", stage),
-      levels = c("2018\nclerk", "2019\nmailed", "2019\ncertified", "2019\nboard")
+      levels = c("2019\nmailed", "2019\ncertified", "2019\nboard")
     ),
-    idx = (med_av / med_av[stage == "2018\nclerk"]) * 100
+    idx = (med_av / med_av[stage == "2019\nmailed"]) * 100
   )
 
 sb_cntr_plot <- bind_rows(
-  sb_pins_summ_no_app %>% mutate(type = "Assessed Values"),
+  sb_pins_summ %>% mutate(type = "Assessed Values"),
+  sb_bills_summ %>% mutate(type = "Tax Bills"),
+  sb_pins_summ_no_app %>% mutate(type = "Assessed Values\n(No Commercial Appeals)"),
   sb_cntr_summ %>% mutate(type = "Tax Bills\n(No Commercial Appeals)")
 ) %>%
 ggplot() +
@@ -520,9 +508,10 @@ ggplot() +
     size = 1.1
   ) +
   scale_color_brewer(name = "", palette = "Set1") +
-  labs(x = "Stage", y = "Median Tax Bill, Indexed to 2018") +
+  labs(x = "Stage", y = "Median Value, Indexed to 2019 Mailed") +
+  lims(y = c(70, 110)) +
   theme_minimal() +
-  facet_wrap(vars(type)) +
+  facet_wrap(vars(type), nrow = 2, ncol = 2, dir = "v") +
   theme(
     axis.title = element_text(size = 13),
     axis.title.x = element_text(margin = margin(t = 6)),
@@ -541,12 +530,12 @@ ggplot() +
 
 <br>
 
-```{r, out.width="100%", echo=FALSE}
+```{r, out.width="100%", fig.height=8, echo=FALSE}
 sb_cntr_plot
 ```
 
 Holding commercial appeals constant makes their effect on residential tax bills clearer: large commercial appeals shift the property tax burden back to residential property owners. In the case of Schaumburg, the drop in commercial AVs at the Board of Review contributed to a roughly 7% rise in the median residential tax bill.
 
-Whether or not this is correct is mostly a matter of interpretation. If the Assessor's commercial values are accurate, then the subsequent appeals unjustly shifted tax burden back to residential properties. If the Board of Review's post-appeal values are accurate, then their appeals rightly reversed the unjust increase in commercial tax bills.
+Whether or not this is correct is mostly a matter of interpretation. If the Assessor's commercial values are accurate, then the subsequent appeals unjustly shifted tax burden back to residential properties. If the Board of Review's post-appeal values are accurate, then their appeals rightly reversed the unjust increase in commercial tax bills resulting from the 2019 reassessment.
 
 PTAXSIM doesn't offer a definitive answer or make any normative claims, but it's an incredibly useful tool for measuring these effects and weighing their potential trade-offs.
