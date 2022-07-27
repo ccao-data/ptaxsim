@@ -421,7 +421,7 @@ multiple_years_plot <- ggplot(data = multiple_years_summ) +
 
 </details>
 
-<img src="man/figures/README-mutli_year_4-1.png" width="100%" />
+<img src="man/figures/README-multi_year_4-1.png" width="100%" />
 
 For more advanced usage, such as counterfactual analysis, see the
 [vignettes

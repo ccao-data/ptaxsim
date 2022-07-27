@@ -114,14 +114,14 @@ There are some minor differences between PTAXSIM and the real bill. The taxing d
 
 We can also look at a single property over multiple years, in this case broken out by taxing district. To do so, pass a vector of multiple years to the `year_vec` argument of `tax_bill()`:
 
-```{r mutli_year_1, message=FALSE, warning=FALSE}
+```{r multi_year_1, message=FALSE, warning=FALSE}
 multiple_years <- tax_bill(2010:2020, "14081020210000")
 multiple_years
 ```
 
 The `tax_bill()` function will automatically combine the years and PIN into their Cartesian product. The result is a tax amount per taxing district, per PIN, per year. We can collapse these amounts and then plot them to see how a single PIN has changed over time:
 
-```{r mutli_year_2, message=FALSE, warning=FALSE}
+```{r multi_year_2, message=FALSE, warning=FALSE}
 multiple_years_summ <- multiple_years %>%
   group_by(year, agency_minor_type) %>%
   summarize(final_tax = sum(final_tax)) %>%
@@ -140,7 +140,7 @@ multiple_years_summ <- multiple_years %>%
 
 <summary><strong>Click here</strong> to show plot code</summary>
 
-```{r mutli_year_3, message=FALSE, warning=FALSE}
+```{r multi_year_3, message=FALSE, warning=FALSE}
 library(ggplot2)
 
 # Plot the amount of taxes going to each district over time
@@ -167,7 +167,7 @@ multiple_years_plot <- ggplot(data = multiple_years_summ) +
 
 </details>
 
-```{r mutli_year_4, message=FALSE, warning=FALSE, echo=FALSE}
+```{r multi_year_4, message=FALSE, warning=FALSE, echo=FALSE}
 multiple_years_plot
 ```
 
