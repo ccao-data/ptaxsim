@@ -1,5 +1,5 @@
 ---
-title: "Measuring the Impact of Appeals"
+title: "Measuring the impact of appeals"
 output: html_document
 ---
 
@@ -347,7 +347,7 @@ sb_bills_plot
 
 Overall, post-reassessment appeals in Schaumburg resulted in a roughly 7% increase in the median residential tax bill and a 19% decrease in the median commercial tax bill. Without appeals, particularly at the Board of Review, the median commercial bill would have increased roughly 30% from 2018.
 
-# Counterfactual scenarios
+# Counterfactual scenario
 
 The plot above shows the zero-sum nature of assessment appeals. The large AV decreases for commercial properties in Schaumburg raised the median tax bill for residential property owners. We can test this by holding the assessed value of all commercial properties constant (as if no appeals were granted) and then recalculating tax bills.
 

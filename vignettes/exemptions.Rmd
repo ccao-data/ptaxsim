@@ -1,5 +1,5 @@
 ---
-title: "Measuring the Impact of Exemptions"
+title: "Measuring the impact of exemptions"
 output: html_document
 ---
 
