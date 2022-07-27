@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-Property tax exemptions are savings that lower a homeowner’s property tax bill. They work by multiplying the composite tax rate for the area by a flat amount. For example, in the bill below (PIN = **29-34-135-014-0000**), the local tax rate of 18.103% is multiplied by the Homeowner Exemption flat amount of \$10,000, yielding an exemption amount of \$1,810.30.
+Property tax exemptions are savings that lower a homeowner’s property tax bill. They work by multiplying the composite tax rate for the area by a flat amount. For example, in the bill below (PIN = **25-32-114-005-0000**), the local tax rate of 18.898% is multiplied by the Homeowner Exemption flat amount of \$10,000, yielding an exemption amount of \$1,889.80.
 
 ![](../man/figures/exemptions-example_bill.png)
 
@@ -37,12 +37,12 @@ library(ptaxsim)
 ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.db"))
 ```
 
-The PIN we'll use is **29-34-135-014-0000**, the same PIN whose bill is shown above. This is a small, single-family property in Thornton with a very typical exemption situation, just a Homeowner Exemption.
+The PIN we'll use is **25-32-114-005-0000**, the same PIN whose bill is shown above. This is a small, single-family property in Calumet with a very typical exemption situation, just a Homeowner Exemption.
 
 We can use the `tax_bill()` function to get every bill for this PIN from the last 15 years. These bills will _include_ any reduction from exemptions the PIN received.
 
 ```{r}
-bills_w_exe <- tax_bill(2006:2020, "29341350140000", simplify = FALSE)
+bills_w_exe <- tax_bill(2006:2020, "25321140050000", simplify = FALSE)
 ```
 
 Next, we can use `dplyr` to collapse the line-item bills into totals by year.
@@ -69,7 +69,7 @@ bills_plot_1 <- bills_w_exe_summ %>%
   ggplot() +
   geom_line(aes(x = Year, y = `Bill Amt.`, linetype = Type), size = 1.1) +
   scale_x_continuous(n.breaks = 9) +
-  scale_y_continuous(labels = scales::label_dollar(), limits = c(1000, 5100)) +
+  scale_y_continuous(labels = scales::label_dollar(), limits = c(0, 6500)) +
   scale_linetype_manual(
     name = "",
     values = c("With exemptions" = "solid")
@@ -97,7 +97,7 @@ bills_plot_1 <- bills_w_exe_summ %>%
 bills_plot_1
 ```
 
-This PIN's total tax bill has increased since 2006, particularly in the last couple years. Let's see how much it would've increased _without_ its Homeowner Exemption.
+This PIN's total tax bill has increased slightly since 2006, with some dips in the last few years. Let's see how much it would've increased _without_ its Homeowner Exemption.
 
 ## Removing exemptions
 
@@ -106,7 +106,7 @@ We can remove exemptions by modifying the inputs to the `tax_bill()` function an
 First, we retrieve the `pin_dt` input to `tax_bill()` by using the `lookup_pin()` function. This input contains all of the exemptions, AV, and EAV information for each PIN. By default, it has the actual historical values, but we can modify it to produce counterfactual bills. In this case, we can remove all exemptions by setting the amount in each exemption column (prefixed with `exe_`) to zero.
 
 ```{r}
-exe_dt <- lookup_pin(2006:2020, "29341350140000") %>%
+exe_dt <- lookup_pin(2006:2020, "25321140050000") %>%
   mutate(across(starts_with("exe_"), ~ 0)) %>%
   setDT(key = c("year", "pin"))
 ```
@@ -115,7 +115,7 @@ Then, we recalculate each bill using the new, zeroed-out `pin_dt`.
 
 ```{r}
 bills_no_exe <- tax_bill(2006:2020,
-  "29341350140000",
+  "25321140050000",
   pin_dt = exe_dt,
   simplify = FALSE
 )
@@ -145,7 +145,7 @@ bills_plot_2 <- rbind(bills_w_exe_summ, bills_no_exe_summ) %>%
   ggplot() +
   geom_line(aes(x = Year, y = `Bill Amt.`, linetype = Type), size = 1.1) +
   scale_x_continuous(n.breaks = 9) +
-  scale_y_continuous(labels = scales::label_dollar(), limits = c(1000, 5100)) +
+  scale_y_continuous(labels = scales::label_dollar(), limits = c(0, 6500)) +
   scale_linetype_manual(
     name = "",
     values = c("With exemptions" = "solid", "No exemptions" = "dashed")
@@ -182,7 +182,7 @@ We can also use PTAXSIM to answer hypotheticals. For example, how would this PIN
 To find out, we again create a modified PIN input to pass to `tax_bill()`. This time, we increase the Homeowner Exemption to $15,000 for all years after 2018. 
 
 ```{r}
-exe_dt_2 <- lookup_pin(2006:2020, "29341350140000") %>%
+exe_dt_2 <- lookup_pin(2006:2020, "25321140050000") %>%
   mutate(exe_homeowner = ifelse(year >= 2018, 15000, exe_homeowner)) %>%
   setDT(key = c("year", "pin"))
 ```
@@ -192,7 +192,7 @@ Then, we recalculate all the bills with the new PIN input and do the same aggreg
 ```{r}
 bills_new_exe <- tax_bill(
   2006:2020,
-  "29341350140000",
+  "25321140050000",
   pin_dt = exe_dt_2,
   simplify = FALSE
 )
@@ -222,7 +222,7 @@ bills_plot_3 <- rbind(
   ggplot() +
   geom_line(aes(x = Year, y = `Bill Amt.`, linetype = Type), size = 1.1) +
   scale_x_continuous(n.breaks = 9) +
-  scale_y_continuous(labels = scales::label_dollar(), limits = c(1000, 5100)) +
+  scale_y_continuous(labels = scales::label_dollar(), limits = c(0, 6500)) +
   scale_linetype_manual(
     name = "",
     values = c(
@@ -262,11 +262,11 @@ PTAXSIM can also perform more complex analysis, such as measuring the impact of 
 
 ## Removing exemptions
 
-Let's look at the overall effect of exemptions in the Cook County township of Thornton, shown in <span style="color:#e41a1c"><strong>red</strong></span> below.
+Let's look at the overall effect of exemptions in the Cook County township of Calumet, shown in <span style="color:#e41a1c"><strong>red</strong></span> below.
 
-![](../man/figures/exemptions-thornton.png)
+![](../man/figures/exemptions-map.png)
 
-First, we can use the PTAXSIM database to get a list of all the unique PINs in Thornton township. We can also create a vector of years we're interested in.
+First, we can use the PTAXSIM database to get a list of all the unique PINs in Calumet township. We can also create a vector of years we're interested in.
 
 ```{r}
 t_pins <- DBI::dbGetQuery(
@@ -274,14 +274,14 @@ t_pins <- DBI::dbGetQuery(
   "
   SELECT DISTINCT pin
   FROM pin
-  WHERE substr(tax_code_num, 1, 2) = '37'
+  WHERE substr(tax_code_num, 1, 2) = '14'
   "
 )
 t_pins <- t_pins$pin
 t_years <- 2006:2020
 ```
 
-Next, we can generate bills for all PINs in Thornton for the past 15 years. These bills will _include_ any exemptions they actually received.
+Next, we can generate bills for all PINs in Calumet for the past 15 years. These bills will _include_ any exemptions they actually received.
 
 We're using `data.table` syntax here because it's much faster than `dplyr` when working with large data. Note that PTAXSIM functions always output a `data.table` with keys.
 
@@ -305,7 +305,7 @@ t_tc_sum_no_exe <- t_pin_dt_no_exe[,
 ]
 ```
 
-Next, we recalculate the base of all taxing districts in Thornton by adding the EAV returned from exemptions to each district's total EAV.
+Next, we recalculate the base of all taxing districts in Calumet by adding the EAV returned from exemptions to each district's total EAV.
 
 ```{r}
 t_agency_dt_no_exe <- lookup_agency(t_years, t_pin_dt_no_exe$tax_code)
@@ -319,10 +319,10 @@ t_agency_dt_no_exe[
 Then, we again alter the `pin_dt` input by setting all exemption columns equal to zero.
 
 ```{r}
-t_pin_dt_no_exe[, (exe_cols) := 0][, c("exe_total", "tax_code") := NULL]
+t_pin_dt_no_exe[, (exe_cols) := 0][, c("tax_code") := NULL]
 ```
 
-We recalculate all Thornton tax bills _without_ exemptions and with an updated tax base for each district (passed via `agency_dt`).
+We recalculate all Calumet tax bills _without_ exemptions and with an updated tax base for each district (passed via `agency_dt`).
 
 ```{r}
 t_bills_no_exe <- tax_bill(
@@ -415,13 +415,13 @@ t_no_exe_summ_plot <- ggplot(data = t_no_exe_summ) +
 t_no_exe_summ_plot
 ```
 
-Exemptions in Thornton have significantly increased in both volume and amount (via increased tax rates) in recent years. In 2019, the average residential homeowner saved around $1,500 via exemptions.
+Exemptions in Calumet have significantly increased in both volume and amount (via increased tax rates) in recent years. In 2019, the average residential homeowner saved around $1,100 via exemptions.
 
-Conversely, Thornton's commercial property owners have picked up an increasingly large share of the overall tax burden since 2006. In 2019, the average commercial property paid about $1,500 more than they would have if exemptions did not exist.
+Conversely, Calumet's commercial property owners have picked up an increasingly large share of the overall tax burden since 2006. In 2019, the average commercial property paid about $1,100 more than they would have if exemptions did not exist.
 
 ## Changing exemptions 
 
-PTAXSIM can also answer hypotheticals about large areas. For example, how would the average residential tax bill in Thornton change if the Senior Exemption increased by $5,000 and the Senior Freeze Exemption was removed?
+PTAXSIM can also answer hypotheticals about large areas. For example, how would the average residential tax bill in Calumet change if the Senior Exemption increased by $5,000 and the Senior Freeze Exemption was removed?
 
 To find out, we again create a PIN input with modified exemption amounts, then recalculate the base by taking the difference between the real and hypothetical exemptions.
 
@@ -454,11 +454,11 @@ t_pin_dt_new_exe <- t_pin_dt_new_exe[
 ][
   exe_senior != 0, exe_senior := exe_senior + 5000
 ][
-  , c("exe_total", "tax_code") := NULL
+  , c("tax_code") := NULL
 ]
 ```
 
-We again recalculate all Thornton tax bills with our updated exemptions and with an updated tax base for each district.
+We again recalculate all Calumet tax bills with our updated exemptions and with an updated tax base for each district.
 
 ```{r}
 t_bills_new_exe <- tax_bill(
@@ -538,6 +538,6 @@ t_new_exe_summ_plot <- ggplot(data = t_new_exe_summ) +
 t_new_exe_summ_plot
 ```
 
-The net effect of increasing the Senior Exemption while removing the Senior Freeze Exemption is a decrease in the _average_ bill. However, this is complicated by the fact that the Senior Freeze is means-tested, while the Senior Exemption is not. The reality of our hypothetical change is mostly likely an increase in the property tax bills of poorer seniors, even though the average bill decreased.
+The net effect of increasing the Senior Exemption while removing the Senior Freeze Exemption is a slight decrease in the _average_ bill. However, this is complicated by the fact that the Senior Freeze is means-tested, while the Senior Exemption is not. The reality of our hypothetical change is mostly likely an increase in the property tax bills of poorer seniors, even though the average bill decreased.
 
 Ultimately, with some careful coding and assumptions, PTAXSIM (and its included data) can be used to test almost any hypothetical change in exemptions.
