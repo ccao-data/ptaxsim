@@ -21,10 +21,14 @@ data manipulation, it can also answer questions such as:
     lower? What if I received a new exemption?
 -   How have tax bills changed in my area? Where does my tax money
     actually go?
--   How do exemptions affect my tax bill? What if a current exemption
-    amount is increased?
--   How do TIF districts affect my tax bill? What if TIF districts did
-    not exist?
+-   [How do appeals affect tax bills? What if nobody
+    appealed?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/appeals.html)
+-   [How do exemptions affect tax bills? What if a current exemption
+    amount is
+    increased?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/exemptions.html)
+-   [How do TIF districts affect tax bills? What if a nearby TIF
+    district did not
+    exist?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/tifs.html)
 
 PTAXSIM can generate hundreds, or even millions, of tax bills in a
 single function call, which enables complex tax analysis on a
