@@ -65,7 +65,7 @@ sb_res <- GET(
   query = list(
     year = 2021,
     municipality_name = "Schaumburg",
-    `$select` = paste0(c("pin", "lat", "lon" , "class"), collapse = ","),
+    `$select` = paste0(c("pin", "lat", "lon", "class"), collapse = ","),
     `$limit` = 500000L
   )
 )
@@ -136,7 +136,7 @@ sb_pins_map <- ggplot() +
 
 <br>
 
-```{r, out.width="100%", echo=FALSE}
+```{r, out.width="100%", echo=FALSE, results='hide'}
 sb_pins_map
 ```
 
