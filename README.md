@@ -17,10 +17,9 @@ generate historic, line-item tax bills (broken out by taxing district)
 for any property from 2006 to 2020. Given some careful assumptions and
 data manipulation, it can also answer questions such as:
 
--   What would my property tax bill be if my assessed value was $50K
-    lower? What if I received a new exemption?
--   How have tax bills changed in my area? Where does my tax money
-    actually go?
+-   [What would my property tax bill be if my assessed value was $50K
+    lower? What if my school district’s levy goes
+    up?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html)
 -   [How do appeals affect tax bills? What if nobody
     appealed?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/appeals.html)
 -   [How do exemptions affect tax bills? What if a current exemption
@@ -104,7 +103,7 @@ ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), "./ptaxsim.db")
 
 ## Usage
 
-PTAXSIM has a single primary function - `tax_bill()` - with two main
+PTAXSIM has a single primary function - `tax_bill()` - with two required
 arguments:
 
 1.  `year_vec` - A numeric vector of tax years
@@ -115,8 +114,8 @@ taxing district, by PIN and year. By default, `tax_bill()` can only
 generate *historic* tax bills; it cannot generate future or
 counterfactual bills. To generate future/counterfactual bills, you must
 provide additional data to `tax_bill()` via its secondary arguments. See
-the [vignettes
-page](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/index.html)
+the [introduction
+page](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html)
 for more details.
 
 ### Single bill, single year
@@ -700,7 +699,7 @@ erDiagram
 -   PTAXSIM is a currently a developer and researcher-focused package.
     It is not intended to predict or explain individual bills. In the
     future, we plan to make PTAXSIM more accessible via a web frontend
-    and API.
+    and/or API.
 -   PTAXSIM is relatively memory-efficient and can calculate every
     district line-item for every tax bill for the last 15 years (roughly
     350 million rows). However, the memory requirements for this
