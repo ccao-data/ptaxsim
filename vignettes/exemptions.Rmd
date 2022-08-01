@@ -1,5 +1,6 @@
 ---
-title: "Measuring the impact of exemptions"
+title: "Altering exemptions"
+subtitle: "Or,
 output: html_document
 ---
 
