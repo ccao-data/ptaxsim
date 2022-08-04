@@ -39,7 +39,9 @@ information.
 
 For detailed documentation on included functions and data, [**visit the
 full reference
-list**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/reference/).
+list**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/reference/)
+or the [**introduction
+vignette**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html).
 
 For examples of PTAXSIM’s functionality and usage, click one of the
 questions above or see the [**vignettes
@@ -109,7 +111,7 @@ arguments:
 1.  `year_vec` - A numeric vector of tax years
 2.  `pin_vec` - A character vector of Property Index Numbers (PINs)
 
-The output is a data frame containing the tax amount directed to each
+The output is a `data.table` containing the tax amount directed to each
 taxing district, by PIN and year. By default, `tax_bill()` can only
 generate *historic* tax bills; it cannot generate future or
 counterfactual bills. To generate future/counterfactual bills, you must
@@ -138,30 +140,30 @@ single_bill
 #>  9: 2020 17341020511001   299    76037 11568 37288  050200000
 #> 10: 2020 17341020511001   299    76037 11568 37288  050200001
 #> 11: 2020 17341020511001   299    76037 11568 37288  080180000
-#>                                             agency_name     agency_major_type
-#>  1:                                      COUNTY OF COOK           COOK COUNTY
-#>  2:             FOREST PRESERVE DISTRICT OF COOK COUNTY           COOK COUNTY
-#>  3:                                     CITY OF CHICAGO MUNICIPALITY/TOWNSHIP
-#>  4:                        CITY OF CHICAGO LIBRARY FUND MUNICIPALITY/TOWNSHIP
-#>  5:              CITY OF CHICAGO SCHOOL BLDG & IMP FUND MUNICIPALITY/TOWNSHIP
-#>  6:                         TIF - CHICAGO - BRONZEVILLE MUNICIPALITY/TOWNSHIP
-#>  7:              CHICAGO COMMUNITY COLLEGE DISTRICT 508                SCHOOL
-#>  8:                                  BOARD OF EDUCATION                SCHOOL
-#>  9:                               CHICAGO PARK DISTRICT         MISCELLANEOUS
-#> 10:       CHICAGO PARK DISTRICT AQUARIUM & MUSEUM BONDS         MISCELLANEOUS
-#> 11: METRO WATER RECLAMATION DISTRICT OF GREATER CHICAGO         MISCELLANEOUS
-#>     agency_minor_type agency_tax_rate final_tax
-#>  1:              COOK         0.00453     57.57
-#>  2:              COOK         0.00058      7.37
-#>  3:              MUNI         0.01580    200.79
-#>  4:           LIBRARY         0.00140     17.79
-#>  5:              MUNI         0.00166     21.10
-#>  6:               TIF         0.00000   1698.69
-#>  7:            SCHOOL         0.00151     19.19
-#>  8:            SCHOOL         0.03656    464.62
-#>  9:              PARK         0.00329     41.81
-#> 10:              BOND         0.00000      0.00
-#> 11:             WATER         0.00378     48.04
+#>                      agency_name     agency_major_type agency_minor_type
+#>  1:               COUNTY OF COOK           COOK COUNTY              COOK
+#>  2: FOREST PRESERVE DISTRICT ...           COOK COUNTY              COOK
+#>  3:              CITY OF CHICAGO MUNICIPALITY/TOWNSHIP              MUNI
+#>  4: CITY OF CHICAGO LIBRARY F... MUNICIPALITY/TOWNSHIP           LIBRARY
+#>  5: CITY OF CHICAGO SCHOOL BL... MUNICIPALITY/TOWNSHIP              MUNI
+#>  6: TIF - CHICAGO - BRONZEVIL... MUNICIPALITY/TOWNSHIP               TIF
+#>  7: CHICAGO COMMUNITY COLLEGE...                SCHOOL            SCHOOL
+#>  8:           BOARD OF EDUCATION                SCHOOL            SCHOOL
+#>  9:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
+#> 10: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
+#> 11: METRO WATER RECLAMATION D...         MISCELLANEOUS             WATER
+#>     agency_tax_rate final_tax
+#>  1:         0.00453     57.57
+#>  2:         0.00058      7.37
+#>  3:         0.01580    200.79
+#>  4:         0.00140     17.79
+#>  5:         0.00166     21.10
+#>  6:         0.00000   1698.69
+#>  7:         0.00151     19.19
+#>  8:         0.03656    464.62
+#>  9:         0.00329     41.81
+#> 10:         0.00000      0.00
+#> 11:         0.00378     48.04
 ```
 
 To compare this output to a real tax bill, we can reorder the rows and
@@ -346,30 +348,30 @@ multiple_years
 #> 113: 2020 14081020210000   206    73105 61605 198578  050200000
 #> 114: 2020 14081020210000   206    73105 61605 198578  050200001
 #> 115: 2020 14081020210000   206    73105 61605 198578  080180000
-#>                                              agency_name     agency_major_type
-#>   1:                                      COUNTY OF COOK           COOK COUNTY
-#>   2:             FOREST PRESERVE DISTRICT OF COOK COUNTY           COOK COUNTY
-#>   3:                                     CITY OF CHICAGO MUNICIPALITY/TOWNSHIP
-#>   4:                        CITY OF CHICAGO LIBRARY FUND MUNICIPALITY/TOWNSHIP
-#>   5:              CITY OF CHICAGO SCHOOL BLDG & IMP FUND MUNICIPALITY/TOWNSHIP
-#>  ---                                                                          
-#> 111:              CHICAGO COMMUNITY COLLEGE DISTRICT 508                SCHOOL
-#> 112:                                  BOARD OF EDUCATION                SCHOOL
-#> 113:                               CHICAGO PARK DISTRICT         MISCELLANEOUS
-#> 114:       CHICAGO PARK DISTRICT AQUARIUM & MUSEUM BONDS         MISCELLANEOUS
-#> 115: METRO WATER RECLAMATION DISTRICT OF GREATER CHICAGO         MISCELLANEOUS
-#>      agency_minor_type agency_tax_rate final_tax
-#>   1:              COOK         0.00423    964.04
-#>   2:              COOK         0.00051    116.23
-#>   3:              MUNI         0.00914   2083.05
-#>   4:           LIBRARY         0.00102    232.46
-#>   5:              MUNI         0.00116    264.37
-#>  ---                                            
-#> 111:            SCHOOL         0.00151    240.64
-#> 112:            SCHOOL         0.03656   5468.12
-#> 113:              PARK         0.00329    524.32
-#> 114:              BOND         0.00000      0.00
-#> 115:             WATER         0.00378    602.41
+#>                       agency_name     agency_major_type agency_minor_type
+#>   1:               COUNTY OF COOK           COOK COUNTY              COOK
+#>   2: FOREST PRESERVE DISTRICT ...           COOK COUNTY              COOK
+#>   3:              CITY OF CHICAGO MUNICIPALITY/TOWNSHIP              MUNI
+#>   4: CITY OF CHICAGO LIBRARY F... MUNICIPALITY/TOWNSHIP           LIBRARY
+#>   5: CITY OF CHICAGO SCHOOL BL... MUNICIPALITY/TOWNSHIP              MUNI
+#>  ---                                                                     
+#> 111: CHICAGO COMMUNITY COLLEGE...                SCHOOL            SCHOOL
+#> 112:           BOARD OF EDUCATION                SCHOOL            SCHOOL
+#> 113:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
+#> 114: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
+#> 115: METRO WATER RECLAMATION D...         MISCELLANEOUS             WATER
+#>      agency_tax_rate final_tax
+#>   1:         0.00423    964.04
+#>   2:         0.00051    116.23
+#>   3:         0.00914   2083.05
+#>   4:         0.00102    232.46
+#>   5:         0.00116    264.37
+#>  ---                          
+#> 111:         0.00151    240.64
+#> 112:         0.03656   5468.12
+#> 113:         0.00329    524.32
+#> 114:         0.00000      0.00
+#> 115:         0.00378    602.41
 ```
 
 The `tax_bill()` function will automatically combine the years and PIN

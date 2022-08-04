@@ -11,6 +11,7 @@ knitr::opts_chunk$set(
   fig.path = "man/figures/README-",
   out.width = "100%"
 )
+options(datatable.prettyprint.char = 25L)
 ```
 
 # PTAXSIM package <a href='https://gitlab.com/ccao-data-science---modeling/packages/ptaxsim'><img src='man/figures/logo.png' align="right" height="139"/></a>
@@ -29,7 +30,7 @@ PTAXSIM is an R package/database to approximate Cook County property tax bills. 
 
 PTAXSIM can generate hundreds, or even millions, of tax bills in a single function call, which enables complex tax analysis on a municipality or even county level. PTAXSIM is accurate (within $10 of the real bill) for >99% of historic property tax bills. However, it is currently an experimental tool only and is *not* recommended for critical use. See [Notes](#notes) and [Disclaimer](#disclaimer) for more information.
 
-For detailed documentation on included functions and data, [**visit the full reference list**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/reference/).
+For detailed documentation on included functions and data, [**visit the full reference list**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/reference/) or the [**introduction vignette**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html).
 
 For examples of PTAXSIM's functionality and usage, click one of the questions above or see the [**vignettes page**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/index.html).
 
@@ -82,7 +83,7 @@ PTAXSIM has a single primary function - `tax_bill()` - with two required argumen
 1. `year_vec` - A numeric vector of tax years
 2. `pin_vec` - A character vector of Property Index Numbers (PINs)
 
-The output is a data frame containing the tax amount directed to each taxing district, by PIN and year. By default, `tax_bill()` can only generate _historic_ tax bills; it cannot generate future or counterfactual bills. To generate future/counterfactual bills, you must provide additional data to `tax_bill()` via its secondary arguments. See the [introduction page](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html) for more details.
+The output is a `data.table` containing the tax amount directed to each taxing district, by PIN and year. By default, `tax_bill()` can only generate *historic* tax bills; it cannot generate future or counterfactual bills. To generate future/counterfactual bills, you must provide additional data to `tax_bill()` via its secondary arguments. See the [introduction page](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html) for more details.
 
 ### Single bill, single year
 
