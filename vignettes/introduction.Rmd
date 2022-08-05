@@ -1,0 +1,493 @@
+---
+title: "Introduction to PTAXSIM"
+output: html_document
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  message = FALSE
+)
+options(datatable.prettyprint.char = 25L)
+```
+
+This vignette introduces the PTAXSIM package, including its: main function, primary inputs, basic abilities, and common uses. Advanced use cases are described in separate vignettes. Familiarity with the Cook County tax system is useful, but not essential to follow this vignette.
+
+In this vignette, we will:
+
+1. Start with the basics - what is PTAXSIM, its main function, the main function's inputs;
+2. Then we will look at common scenarios - calculating a bill after a change in assessed value, getting the change in a bill's proportions over time, etc.
+
+# 1. Basics {#basics}
+
+---
+
+## What is PTAXSIM?
+
+PTAXSIM is a utility to estimate Cook County property tax bills. It has two parts:
+
+1. A database file containing the historical data (>= 2006) necessary to estimate individual property tax bills
+2. A highly-optimized R package that utilizes the database to quickly and efficiently estimate tax bills
+
+By default, PTAXSIM uses the data in the database to estimate historical tax bills. However, you can also provide counterfactual data in order to generate counterfactual bills.
+
+**Note that:**
+
+- The R package ***cannot*** function without the separate database, as its functions query the database directly.
+- PTAXSIM's output bills are *estimates* which may not be identical to real bills. This is due to differences in rounding, math, and data between PTAXSIM and the real tax calculation program.
+- All of PTAXSIM's inputs and outputs are `data.table`s to facilitate [efficient operation chaining and/or by-reference column updates](https://cran.r-project.org/web/packages/data.table/vignettes/datatable-intro.html). This enables fast and memory-efficient calculations, which are needed to perform large-scale counterfactual simulations.
+- You ***must*** instantiate a database connection object with the name `ptaxsim_db_conn` before using PTAXSIM. Here is an example connection:
+
+  ```{r db_conn}
+  library(data.table)
+  library(dplyr)
+  library(here)
+  library(ptaxsim)
+
+  # Create the DB connection with the default name expected by PTAXSIM functions
+  ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("ptaxsim.db"))
+  ```
+
+## The main function - `tax_bill()` {#main-arguments}
+
+PTAXSIM has a single primary function - `tax_bill()` - with two *required* arguments:
+
+1. `year_vec` - A numeric vector of tax years
+2. `pin_vec` - A character vector of 14-digit Property Index Numbers (PINs), with no dashes or spaces
+
+The output is a `data.table` containing the tax amount directed to each taxing district, by PIN and year. Let's look at an example using just one property and year:
+
+```{r}
+bill <- tax_bill(year_vec = 2020, pin_vec = "13264290020000")
+print(bill)
+```
+
+### Output columns {#table1}
+
+| Column Name             | Description                                                                                                                                                                                                                                | Possible Valus                                                                                                              |
+|-------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| **`year`**              | Tax year of the bill. Note that bills are paid in arrears, so a 2020 bill is paid in 2021.                                                                                                                                                 | Must be >= 2006                                                                                                             |
+| **`pin`**               | Property Index Number of the property. This is the unique identifier of each parcel in Cook County.                                                                                                                                        |                                                                                                                             |
+| **`class`**             | The 3-digit Assessor minor class code. This identifies the property type/structure. See the [ccao package](https://gitlab.com/ccao-data-science---modeling/packages/ccao) for more information.                                            | See [class dictionary](https://gitlab.com/ccao-data-science---modeling/packages/ccao/-/blob/master/data-raw/class_dict.csv) |
+| **`tax_code`**          | The 5-digit tax code. Each tax code identifies the unique combination of taxing districts that a PIN is subject to. Note that the first 2 digits of `tax_code` are the Assessor township code.                                              |                                                                                                                             |
+| **`av`**                | Assessed value of the property. By default, this is the finalized AV *after all appeals have been completed*. See [optional arguments](#optional-arguments) below for more details.                                                                               | Must be >= 0                                                                                                                |
+| **`eav`**               | The `av` multiplied by the state equalization factor.                                                                                                                                                                                      | Must be >= 0                                                                                                                |
+| **`agency_num`**        | Unique numeric identifier for each taxing body/district. Each `pin` is typically taxed by multiple taxing districts. `tax_bill()` will output 1 row for each district for each PIN and year. The PIN above is being taxed by 11 districts. |                                                                                                                             |
+| **`agency_name`**       | Name of the taxing district.                                                                                                                                                                                                               |                                                                                                                             |
+| **`agency_major_type`** | Type of taxing district. Similar to the grouping used on real tax bills.                                                                                                                                                                   | COOK COUNTY, MISCELLANEOUS, MUNICIPALITY/TOWNSHIP, SCHOOL                                                                   |
+| **`agency_minor_type`** | Sub-type of taxing district. Much more fine-grained.                                                                                                                                                                                       | BOND, COOK, FIRE, GEN ASST, HEALTH, INFRA, LIBRARY, MISC, MOSQUITO, MUNI, PARK, POLICE, SANITARY, SCHOOL, SSA, TIF, WATER   |
+| **`agency_tax_rate`**   | The tax rate for the PIN and district, which calculated from each district's levy and total tax base.                                                                                                                                      |                                                                                                                             |
+| **`final_tax`**         | The final tax (in dollars) the PIN owes to the taxing district. Equal to `agency_tax_rate * eav` in most cases.                                                                                                                            |                                                                                                                             |
+
+### Multiple PINs or years
+
+The `tax_bill()` function can take multiple years in the `year_vec` argument:
+
+```{r}
+bills <- tax_bill(2010:2020, "13264290020000")
+print(bills, topn = 3)
+```
+
+And multiple PINs in the `pin_vec` argument:
+
+```{r}
+bills <- tax_bill(2020, c("13264290020000", "07101010391078", "10153080520000"))
+print(bills, topn = 3)
+```
+
+Passing `year_vec` and `pin_vec` of different lengths will yield the Cartesian product of those vectors:
+
+```{r}
+bills <- tax_bill(
+  year_vec = 2006:2020,
+  pin_vec = c("13264290020000", "07101010391078", "10153080520000")
+)
+print(bills, topn = 3)
+```
+
+Passing `year_vec` and `pin_vec` of the same length will match the vectors element-wise:
+
+```{r}
+bills <- tax_bill(
+  year_vec = c(2012, 2006, 2020),
+  pin_vec = c("13264290020000", "07101010391078", "10153080520000")
+)
+print(bills, topn = 3)
+```
+
+These basic arguments can even be used to calculate line-item bills for all PINs and years, assuming you have enough system memory:
+
+```{r, eval=FALSE}
+# Query the PTAXSIM database directly to get all unique PINs
+pins <- DBI::dbGetQuery(ptaxsim_db_conn, "SELECT DISTINCT pin FROM pin")
+
+# Calculate all bills for all years (~350M rows, takes about 10 minutes)
+bills <- tax_bill(2006:2020, pins$pin)
+print(bills, topn = 3)
+#> NOT RUN, takes too long on GitLab CI and requires ~90 GB of RAM
+```
+
+## Optional arguments to `tax_bill()` {#optional-arguments}
+
+In addition to the two required arguments, `tax_bill()` also has a number of optional arguments that can be used for counterfactual or predictive analysis.
+
+By default, these arguments are filled with historic data from the PTAXSIM database. Each argument has a corresponding function, prefixed with `lookup_`, that retrieves data from the database and puts it in the format expected by `tax_bill()`. These arguments and their corresponding `lookup_` functions are:
+
+### `tax_code_vec` {#tax_code_vec}
+
+* Expects a character vector of Cook County tax codes. Must be the same length as the combination of `year_vec` and `pin_vec`, using the same recycling rules as `tax_bill()`
+* A tax code is a 5-digit number that identifies the unique overlap of taxing districts for a given PIN and year
+* Tax codes can vary from year to year for the same PIN as taxing districts are created or destroyed
+* Changing `tax_code_vec` "relocates" a PIN by changing the things that are taxing it. This can be useful for counterfactual analysis. For example, if you own property within a school district and want to know what your tax bill would be just outside the district, but otherwise within the same municipality, then you can find the tax code that represents that situation and plug it into `tax_bill()`
+* Filled by **`lookup_tax_code()`**:
+  * Takes PINs and years as inputs and outputs a character vector of tax codes. Here is an example:
+  
+    ```{r}
+    tax_code <- lookup_tax_code(2018:2020, "13264290020000")
+    print(tax_code)
+    ```
+  * Follows the same recycling rules as `tax_bill()`: input vectors of the same length return an element-wise output, input vectors of different lengths return the Cartesian product.
+  
+    ```{r}
+    tax_code <- lookup_tax_code(
+      year = 2018:2020,
+      pin = c("13264290020000", "07101010391078", "10153080520000")
+    )
+    print(tax_code)
+
+    tax_code <- lookup_tax_code(
+      year = 2006:2020,
+      pin = c("13264290020000", "07101010391078", "10153080520000")
+    )
+    print(tax_code)
+    ```
+  
+### `agency_dt` {#agency_dt}
+
+| Column Name             | Type       | Key | Note                                                                                                                                                                                      |
+|-------------------------|------------|-----|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **`year`**              | int        | 1   | See [tax_bill() outputs](#table1)                                                                                                                                                         |
+| **`tax_code`**          | varchar(5) | 2   | See [tax_bill() outputs](#table1)                                                                                                                                                         |
+| **`agency_num`**        | varchar(9) | 3   | See [tax_bill() outputs](#table1)                                                                                                                                                         |
+| **`agency_name`**       | varchar    |     | See [tax_bill() outputs](#table1)                                                                                                                                                         |
+| **`agency_major_type`** | varchar    |     | See [tax_bill() outputs](#table1)                                                                                                                                                         |
+| **`agency_minor_type`** | varchar    |     | See [tax_bill() outputs](#table1)                                                                                                                                                         |
+| **`agency_total_eav`**  | bigint     |     | The total amount of EAV within the taxing district, otherwise known as the "base". This is the denominator when calculating tax rates                                                     |
+| **`agency_total_ext`**  | double     |     | The total extension requested by the taxing district, otherwise known as the "levy". This is the amount the district needs in tax revenue and is the numerator when calculating tax rates |
+
+* Expects a `data.table` with the columns above:
+* Each row represents a taxing district (agency) that imposes a tax on the specified `tax_code`. Different `tax_code`s can have different numbers of districts taxing them
+* The input `data.table` must be [keyed](https://cran.r-project.org/web/packages/data.table/vignettes/datatable-keys-fast-subset.html) on the `year`, `tax_code`, and `agency_num` columns and must be ***distinct***, e.i. it must not have repeat rows
+* When joined to the PIN level (via `tax_code`) the `agency_dt` table is used to determine which districts a PIN pays and how much. The basic calculation is: $pin\_eav * (agency\_levy / agency\_base)$
+* Filled by **`lookup_agency()`**:
+  * Takes years and tax codes as inputs and outputs a keyed `data.table` of taxing districts, including their identifying information, extension, and base. Here is an example:
+  
+    ```{r}
+    tax_code <- lookup_tax_code(2020, "13264290020000")
+    agency <- lookup_agency(2020, tax_code)
+    print(agency, topn = 3)
+    ```
+  
+  * Note that it returns a distinct set of districts, even if year and tax code are repeated:
+  
+    ```{r}
+    tax_codes <- lookup_tax_code(
+      year = 2020,
+      pin = c("13264290020000", "13264290020000", "13264290020000")
+    )
+    agency <- lookup_agency(c(2020, 2020, 2020), tax_codes)
+    print(agency, topn = 3)
+    ```
+
+### `pin_dt` {#pin_dt}
+
+| Column Name                  | Type        | Key | Note                                                                                                                                                                                 |
+|------------------------------|-------------|-----|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **`year`**                   | int         | 1   | See [tax_bill() outputs](#table1)                                                                                                                                                    |
+| **`pin`**                    | varchar(14) | 2   | See [tax_bill() outputs](#table1)                                                                                                                                                    |
+| **`class`**                  | varchar(3)  |     | See [tax_bill() outputs](#table1)                                                                                                                                                    |
+| **`av`**                     | int         |     | See [tax_bill() outputs](#table1)                                                                                                                                                    |
+| **`eav`**                    | int         |     | See [tax_bill() outputs](#table1)                                                                                                                                                    |
+| **`exe_homeowner`**          | int         |     | [Homeowner Exemption](https://www.cookcountyassessor.com/homeowner-exemption). All exemption amounts are in EAV, e.i. the Homeowner Exemption is typically an integer equal to 10000 |
+| **`exe_senior`**             | int         |     | [Senior Exemption](https://www.cookcountyassessor.com/senior-citizen-exemption)                                                                                                      |
+| **`exe_freeze`**             | int         |     | [Senior Freeze Exemption](https://www.cookcountyassessor.com/senior-freeze-exemption). Subtract from `eav` to get the frozen amount                                                  |
+| **`exe_longtime_homeowner`** | int         |     | [Longtime Homeowner Exemption](https://www.cookcountyassessor.com/longtime-homeowner-exemption)                                                                                      |
+| **`exe_disabled`**           | int         |     | [Persons with Disabilities Exemption](https://www.cookcountyassessor.com/persons-disabilities-exemption)                                                                             |
+| **`exe_vet_returning`**      | int         |     | [Returning Veterans Exemption](https://www.cookcountyassessor.com/returning-veterans-exemption)                                                                                      |
+| **`exe_vet_dis_lt50`**       | int         |     | [Veterans with Disabilities Exemption](https://www.cookcountyassessor.com/veterans-disabilities-exemption). Level of disability < 50%                                                |
+| **`exe_vet_dis_50_69`**      | int         |     | [Veterans with Disabilities Exemption](https://www.cookcountyassessor.com/veterans-disabilities-exemption). Level of disability >= 51% and <= 69%                                    |
+| **`exe_vet_dis_ge70`**       | int         |     | [Veterans with Disabilities Exemption](https://www.cookcountyassessor.com/veterans-disabilities-exemption). Level of disability >= 70%                                               |
+| **`exe_abate`**              | int         |     | Other tax abatements, exemptions, etc.                                                                                                                                               |
+
+* Expects a `data.table` with the columns above:
+* Each row represents the assessed value and [exemptions](https://www.cookcountyassessor.com/exemptions) for a specific PIN and year
+* All exemptions are recorded in EAV. For example, per Illinois statute, the Homeowner Exemption is currently equal to $10,000 in EAV. This amount is multiplied by the local tax rate for the PIN to determine the final exemption amount. The higher the tax rate, the larger the exemption
+* The input `data.table` must be [keyed](https://cran.r-project.org/web/packages/data.table/vignettes/datatable-keys-fast-subset.html) on the `year` and `pin` columns and must be ***distinct***, e.i. it must not have repeat rows
+* Filled by **`lookup_pin()`**:
+  * Takes years and PINs as inputs and outputs a keyed `data.table` of PINs, including their class, assessed value, and individual exemptions. Here is an example:
+
+    ```{r}
+    pin <- lookup_pin(2020, "13264290020000")
+    print(pin)
+    ```
+    
+  * Repeat inputs will yield distinct outputs:
+
+    ```{r}
+    pin <- lookup_pin(2020, c("13264290020000", "13264290020000"))
+    print(pin)
+    ```
+    
+  * By default, will return the final assessed value for the year *after all appeals are processed*. This can be changed using an additional argument: `stage`. The options for `stage` include:
+    * `"mailed"` - Initial assessed values mailed to taxpayers, no appeals
+    * `"certified"` - Assessed values after Assessor appeals are complete
+    * `"board"` - Assessed values after Board of Review appeals are complete
+    * `"clerk"` - Assessed values used by the Clerk to calculate the base and by the Treasurer to calculate bills. Identical to `"board"` in the huge majority of cases
+    
+    ```{r}
+    pin_mailed <- lookup_pin(2020, "13264290020000", stage = "mailed")
+    pin_board <- lookup_pin(2020, "13264290020000", stage = "board")
+    print(rbind(pin_mailed, pin_board))
+    ```
+
+### `tif_dt` {#tif_dt}
+
+| Column Name             | Type       | Key | Note                                                                                                                       |
+|-------------------------|------------|-----|----------------------------------------------------------------------------------------------------------------------------|
+| **`year`**              | int        | 1   | See [tax_bill() outputs](#table1)                                                                                          |
+| **`tax_code`**          | varchar(5) | 2   | See [tax_bill() outputs](#table1). Unique identifier for the *tax situation* created by the TIF                            |
+| **`agency_num`**        | varchar(9) | 3   | See [tax_bill() outputs](#table1). Unique identifier for the TIF                                                           |
+| **`agency_name`**       | varchar    |     | See [tax_bill() outputs](#table1)                                                                                          |
+| **`agency_major_type`** | varchar    |     | See [tax_bill() outputs](#table1)                                                                                          |
+| **`agency_minor_type`** | varchar    |     | See [tax_bill() outputs](#table1)                                                                                          |
+| **`tif_share`**         | double     |     | The percentage of this tax code/PIN's revenue dedicated to the TIF. Increases as the EAV above the frozen amount increases |
+
+* Expects a `data.table` with the columns above:
+* Each row represents a TIF that covers the specified `tax_code`. Each `tax_code` can only have one TIF, likewise for PINs
+* The input `data.table` must be [keyed](https://cran.r-project.org/web/packages/data.table/vignettes/datatable-keys-fast-subset.html) on the `year`, `tax_code`, and `agency_num` columns and must be ***distinct***, e.i. it must not have repeat rows
+* Filled by **`lookup_tif()`**:
+  * Takes years and tax codes as inputs and outputs a keyed `data.table` of TIF districts, including their identifying information and distribution percentage/TIF share. Here is an example:
+
+    ```{r}
+    tax_code <- lookup_tax_code(2020, "14172270080000")
+    tif <- lookup_tif(2020, tax_code)
+    print(tif, topn = 3)
+    ```
+  
+  * Returns a `data.table` with zero rows if the specified `tax_code` is not within a TIF district:
+  
+    ```{r}
+    tax_code <- lookup_tax_code(2020, "13264290020000")
+    tif <- lookup_tif(2020, tax_code)
+    print(tif, topn = 3)
+    ``` 
+    
+# 2. Common scenarios
+
+---
+
+In this section, we'll look at how to use the `tax_bill()` function to model common property tax scenarios. These scenarios are simple enough that they do not require complicated secondary `tax_bill()` inputs (such as recalculating the tax base). Let's see some examples.
+
+## Change in assessed value
+
+To recalculate a tax bill with a counterfactual assessed value, simply change the `pin_dt` column `eav`. For example, PIN **13-26-429-002-0000** had a 2020 estimated market value of \$403,710. What if it had a market value of $800,000?
+
+To find out, we'll first convert the new market value into the equalized assessed value (EAV).
+
+```{r}
+mkt_value <- 800000
+
+# For residential properties, AV is 10% of market value
+assmt_value <- mkt_value * 0.1
+
+# Get the equalization factor for 2020 to get the equalized assessed value
+eq_factor <- DBI::dbGetQuery(
+  ptaxsim_db_conn,
+  "SELECT * FROM eq_factor WHERE year = 2020"
+) %>%
+  pull(eq_factor)
+
+eq_value <- assmt_value * eq_factor
+```
+
+Then we'll recalculate the bill using the new EAV and compare to the original. To do so, we'll create a counterfactual `pin_dt` input by replacing the original 2020 `eav` column with our newly calculated EAV.
+
+```{r}
+pin_dt_new <- lookup_pin(2020, "13264290020000") %>%
+  mutate(av = assmt_value, eav = eq_value) %>%
+  setDT(key = c("year", "pin")) # convert to data.table or R will complain
+
+# Combine the original and updated bills into one output
+rbind(
+  tax_bill(2020, "13264290020000") %>% mutate(type = "original"),
+  tax_bill(2020, "13264290020000", pin_dt = pin_dt_new) %>%
+    mutate(type = "counterfactual")
+) %>%
+  group_by(year, pin, type, av) %>%
+  summarize(bill_total = sum(final_tax)) %>%
+  arrange(desc(type))
+```
+
+What if the market value went down to $300,000?
+
+```{r}
+mkt_value <- 300000
+assmt_value <- mkt_value * 0.1
+eq_value <- assmt_value * eq_factor
+
+pin_dt_new <- lookup_pin(2020, "13264290020000") %>%
+  mutate(av = assmt_value, eav = eq_value) %>%
+  setDT(key = c("year", "pin"))
+
+rbind(
+  tax_bill(2020, "13264290020000") %>% mutate(type = "original"),
+  tax_bill(2020, "13264290020000", pin_dt = pin_dt_new) %>%
+    mutate(type = "counterfactual")
+) %>%
+  group_by(year, pin, type, av) %>%
+  summarize(bill_total = sum(final_tax)) %>%
+  arrange(desc(type))
+```
+
+In this case, the percentage change in total tax roughly mirrors the percentage change in assessed value. However, this isn't always true. During a reassessment, the base can increase significantly, resulting in bills going *down* even for properties with increased assessments.
+
+## Change in levy
+
+Changes in levies are another common cause of increased tax bills. Calculating a levy change is not as straightforward as a change in AV, but a good rule-of-thumb is that levies can only increase by 5% or the rate of inflation, whichever is less.
+
+> **NOTE:** Correctly calculating a levy increase can be extremely complicated. Levies are subject to numerous limiting laws (PTELL, rate limits, tax caps) that can vary by municipality/district
+
+To change a levy, we need to alter the `agency_total_ext` column of the `agency_dt` input. Let's see what happens if we increase Chicago's levy by 5%.
+
+```{r}
+tax_code <- lookup_tax_code(2020, "13264290020000")
+
+# Add 5% to only Chicago's levy for this PIN
+agency_dt_new <- lookup_agency(2020, tax_code) %>%
+  mutate(agency_total_ext = ifelse(
+    agency_num == "030210000",
+    agency_total_ext + (agency_total_ext * 0.05),
+    agency_total_ext
+  )) %>%
+  setDT(key = c("year", "tax_code", "agency_num"))
+
+rbind(
+  tax_bill(2020, "13264290020000") %>% mutate(type = "original"),
+  tax_bill(2020, "13264290020000", agency_dt = agency_dt_new) %>%
+    mutate(type = "counterfactual")
+) %>%
+  group_by(year, pin, type, av) %>%
+  summarize(bill_total = sum(final_tax)) %>%
+  arrange(desc(type))
+```
+
+A 5% increase in the Chicago levy leads to a roughly $100 increase in taxes for this PIN, holding all else constant.
+
+## Tax bills over time
+
+We can also use PTAXSIM to look at how tax bills have changed over time. To do so, simply use `tax_bill()` to get multiple years' worth of bills. The PTAXSIM database starts in 2006, so we can use that as our earliest year.
+
+```{r}
+bills <- tax_bill(2006:2020, "13264290020000")
+
+bills_summ <- bills %>%
+  group_by(pin, year) %>%
+  summarize(bill_total = sum(final_tax))
+```
+
+We can plot the total bill over time:
+
+<details>
+
+<summary><strong>Click here</strong> to show plot code</summary>
+
+```{r, echo=FALSE}
+library(ggplot2)
+
+bills_summ_plot <- ggplot(data = bills_summ) +
+  geom_line(aes(x = year, y = bill_total), size = 1.1) +
+  scale_y_continuous(
+    name = "Total Tax Amount",
+    labels = scales::dollar,
+    limits = c(0, 11000),
+    n.breaks = 7
+  ) +
+  scale_x_continuous(name = "Year", n.breaks = 9) +
+  scale_fill_manual(values = scales::hue_pal()(8)) +
+  theme_minimal() +
+  theme(
+    axis.title = element_text(size = 13),
+    axis.title.x = element_text(margin = margin(t = 6)),
+    axis.title.y = element_text(margin = margin(r = 6)),
+    axis.text = element_text(size = 11),
+    strip.text = element_text(size = 16),
+    strip.background = element_rect(fill = "#c9c9c9"),
+    legend.title = element_text(size = 14),
+    legend.key.size = unit(24, "points"),
+    legend.text = element_text(size = 12),
+    legend.position = "bottom"
+  )
+```
+
+</details>
+
+<br>
+
+```{r, echo=FALSE, out.width="100%"}
+bills_summ_plot
+```
+
+Or the change in proportion of tax to each district:
+
+<details>
+
+<summary><strong>Click here</strong> to show plot code</summary>
+
+```{r, echo=FALSE}
+library(ggplot2)
+
+bills_summ2 <- bills %>%
+  group_by(pin, year, agency_minor_type) %>%
+  summarize(bill_total = sum(final_tax))
+
+bills_summ_plot2 <- ggplot(data = bills_summ2) +
+  geom_area(aes(x = year, y = bill_total, fill = agency_minor_type)) +
+  scale_y_continuous(
+    name = "Total Tax Amount",
+    labels = scales::dollar,
+    expand = c(0, 0),
+    limits = c(0, 11000),
+    n.breaks = 7
+  ) +
+  scale_x_continuous(name = "Year", n.breaks = 9) +
+  scale_fill_manual(name = "District Type", values = scales::hue_pal()(8)) +
+  theme_minimal() +
+  theme(
+    axis.title = element_text(size = 13),
+    axis.title.x = element_text(margin = margin(t = 6)),
+    axis.title.y = element_text(margin = margin(r = 6)),
+    axis.text = element_text(size = 11),
+    strip.text = element_text(size = 16),
+    strip.background = element_rect(fill = "#c9c9c9"),
+    legend.title = element_text(size = 14),
+    legend.key.size = unit(24, "points"),
+    legend.text = element_text(size = 12)
+  )
+```
+
+</details>
+
+<br>
+
+```{r, echo=FALSE, out.width="100%"}
+bills_summ_plot2
+```
+
+This PIN's bill has increased nearly 2.5x since 2006. A significant portion of that increase due to increases in the Chicago Public Schools levy.
+
+## Advanced scenarios
+
+PTAXSIM can also be used to perform much more advanced analysis, such as calculating the impact of appeals or changes to exemptions. These analyses involve creating multiple counterfacual inputs for the `tax_bill()` function and typically require recalculating the tax base.
+
+If you're comfortable with `data.table` or `dplyr` and want to dive further into PTAXSIM, check out the articles section for a list of advanced vignettes.

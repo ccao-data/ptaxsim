@@ -17,14 +17,17 @@ generate historic, line-item tax bills (broken out by taxing district)
 for any property from 2006 to 2020. Given some careful assumptions and
 data manipulation, it can also answer questions such as:
 
--   What would my property tax bill be if my assessed value was $50K
-    lower? What if I received a new exemption?
--   How have tax bills changed in my area? Where does my tax money
-    actually go?
--   How do exemptions affect my tax bill? What if a current exemption
-    amount is increased?
--   How do TIF districts affect my tax bill? What if TIF districts did
-    not exist?
+-   [What would my property tax bill be if my assessed value was $50K
+    lower? What if my school district’s levy goes
+    up?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html)
+-   [How do appeals affect tax bills? What if nobody
+    appealed?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/appeals.html)
+-   [How do exemptions affect tax bills? What if a current exemption
+    amount is
+    increased?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/exemptions.html)
+-   [How do TIF districts affect tax bills? What if a nearby TIF
+    district did not
+    exist?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/tifs.html)
 
 PTAXSIM can generate hundreds, or even millions, of tax bills in a
 single function call, which enables complex tax analysis on a
@@ -36,7 +39,9 @@ information.
 
 For detailed documentation on included functions and data, [**visit the
 full reference
-list**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/reference/).
+list**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/reference/)
+or the [**introduction
+vignette**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html).
 
 For examples of PTAXSIM’s functionality and usage, click one of the
 questions above or see the [**vignettes
@@ -100,19 +105,19 @@ ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), "./ptaxsim.db")
 
 ## Usage
 
-PTAXSIM has a single primary function - `tax_bill()` - with two main
+PTAXSIM has a single primary function - `tax_bill()` - with two required
 arguments:
 
 1.  `year_vec` - A numeric vector of tax years
 2.  `pin_vec` - A character vector of Property Index Numbers (PINs)
 
-The output is a data frame containing the tax amount directed to each
+The output is a `data.table` containing the tax amount directed to each
 taxing district, by PIN and year. By default, `tax_bill()` can only
 generate *historic* tax bills; it cannot generate future or
 counterfactual bills. To generate future/counterfactual bills, you must
 provide additional data to `tax_bill()` via its secondary arguments. See
-the [vignettes
-page](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/index.html)
+the [introduction
+page](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html)
 for more details.
 
 ### Single bill, single year
@@ -135,30 +140,30 @@ single_bill
 #>  9: 2020 17341020511001   299    76037 11568 37288  050200000
 #> 10: 2020 17341020511001   299    76037 11568 37288  050200001
 #> 11: 2020 17341020511001   299    76037 11568 37288  080180000
-#>                                             agency_name     agency_major_type
-#>  1:                                      COUNTY OF COOK           COOK COUNTY
-#>  2:             FOREST PRESERVE DISTRICT OF COOK COUNTY           COOK COUNTY
-#>  3:                                     CITY OF CHICAGO MUNICIPALITY/TOWNSHIP
-#>  4:                        CITY OF CHICAGO LIBRARY FUND MUNICIPALITY/TOWNSHIP
-#>  5:              CITY OF CHICAGO SCHOOL BLDG & IMP FUND MUNICIPALITY/TOWNSHIP
-#>  6:                         TIF - CHICAGO - BRONZEVILLE MUNICIPALITY/TOWNSHIP
-#>  7:              CHICAGO COMMUNITY COLLEGE DISTRICT 508                SCHOOL
-#>  8:                                  BOARD OF EDUCATION                SCHOOL
-#>  9:                               CHICAGO PARK DISTRICT         MISCELLANEOUS
-#> 10:       CHICAGO PARK DISTRICT AQUARIUM & MUSEUM BONDS         MISCELLANEOUS
-#> 11: METRO WATER RECLAMATION DISTRICT OF GREATER CHICAGO         MISCELLANEOUS
-#>     agency_minor_type agency_tax_rate final_tax
-#>  1:              COOK         0.00453     57.57
-#>  2:              COOK         0.00058      7.37
-#>  3:              MUNI         0.01580    200.79
-#>  4:           LIBRARY         0.00140     17.79
-#>  5:              MUNI         0.00166     21.10
-#>  6:               TIF         0.00000   1698.69
-#>  7:            SCHOOL         0.00151     19.19
-#>  8:            SCHOOL         0.03656    464.62
-#>  9:              PARK         0.00329     41.81
-#> 10:              BOND         0.00000      0.00
-#> 11:             WATER         0.00378     48.04
+#>                      agency_name     agency_major_type agency_minor_type
+#>  1:               COUNTY OF COOK           COOK COUNTY              COOK
+#>  2: FOREST PRESERVE DISTRICT ...           COOK COUNTY              COOK
+#>  3:              CITY OF CHICAGO MUNICIPALITY/TOWNSHIP              MUNI
+#>  4: CITY OF CHICAGO LIBRARY F... MUNICIPALITY/TOWNSHIP           LIBRARY
+#>  5: CITY OF CHICAGO SCHOOL BL... MUNICIPALITY/TOWNSHIP              MUNI
+#>  6: TIF - CHICAGO - BRONZEVIL... MUNICIPALITY/TOWNSHIP               TIF
+#>  7: CHICAGO COMMUNITY COLLEGE...                SCHOOL            SCHOOL
+#>  8:           BOARD OF EDUCATION                SCHOOL            SCHOOL
+#>  9:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
+#> 10: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
+#> 11: METRO WATER RECLAMATION D...         MISCELLANEOUS             WATER
+#>     agency_tax_rate final_tax
+#>  1:         0.00453     57.57
+#>  2:         0.00058      7.37
+#>  3:         0.01580    200.79
+#>  4:         0.00140     17.79
+#>  5:         0.00166     21.10
+#>  6:         0.00000   1698.69
+#>  7:         0.00151     19.19
+#>  8:         0.03656    464.62
+#>  9:         0.00329     41.81
+#> 10:         0.00000      0.00
+#> 11:         0.00378     48.04
 ```
 
 To compare this output to a real tax bill, we can reorder the rows and
@@ -314,7 +319,7 @@ COUNTY OF COOK
 
 Here’s the real 2020 tax bill for this PIN for comparison:
 
-![](man/figures/sample_bill_w_tif.png)
+![](man/figures/README-sample_bill.png)
 
 There are some minor differences between PTAXSIM and the real bill. The
 taxing district names may not be identical. Additionally, PTAXSIM
@@ -343,30 +348,30 @@ multiple_years
 #> 113: 2020 14081020210000   206    73105 61605 198578  050200000
 #> 114: 2020 14081020210000   206    73105 61605 198578  050200001
 #> 115: 2020 14081020210000   206    73105 61605 198578  080180000
-#>                                              agency_name     agency_major_type
-#>   1:                                      COUNTY OF COOK           COOK COUNTY
-#>   2:             FOREST PRESERVE DISTRICT OF COOK COUNTY           COOK COUNTY
-#>   3:                                     CITY OF CHICAGO MUNICIPALITY/TOWNSHIP
-#>   4:                        CITY OF CHICAGO LIBRARY FUND MUNICIPALITY/TOWNSHIP
-#>   5:              CITY OF CHICAGO SCHOOL BLDG & IMP FUND MUNICIPALITY/TOWNSHIP
-#>  ---                                                                          
-#> 111:              CHICAGO COMMUNITY COLLEGE DISTRICT 508                SCHOOL
-#> 112:                                  BOARD OF EDUCATION                SCHOOL
-#> 113:                               CHICAGO PARK DISTRICT         MISCELLANEOUS
-#> 114:       CHICAGO PARK DISTRICT AQUARIUM & MUSEUM BONDS         MISCELLANEOUS
-#> 115: METRO WATER RECLAMATION DISTRICT OF GREATER CHICAGO         MISCELLANEOUS
-#>      agency_minor_type agency_tax_rate final_tax
-#>   1:              COOK         0.00423    964.04
-#>   2:              COOK         0.00051    116.23
-#>   3:              MUNI         0.00914   2083.05
-#>   4:           LIBRARY         0.00102    232.46
-#>   5:              MUNI         0.00116    264.37
-#>  ---                                            
-#> 111:            SCHOOL         0.00151    240.64
-#> 112:            SCHOOL         0.03656   5468.12
-#> 113:              PARK         0.00329    524.32
-#> 114:              BOND         0.00000      0.00
-#> 115:             WATER         0.00378    602.41
+#>                       agency_name     agency_major_type agency_minor_type
+#>   1:               COUNTY OF COOK           COOK COUNTY              COOK
+#>   2: FOREST PRESERVE DISTRICT ...           COOK COUNTY              COOK
+#>   3:              CITY OF CHICAGO MUNICIPALITY/TOWNSHIP              MUNI
+#>   4: CITY OF CHICAGO LIBRARY F... MUNICIPALITY/TOWNSHIP           LIBRARY
+#>   5: CITY OF CHICAGO SCHOOL BL... MUNICIPALITY/TOWNSHIP              MUNI
+#>  ---                                                                     
+#> 111: CHICAGO COMMUNITY COLLEGE...                SCHOOL            SCHOOL
+#> 112:           BOARD OF EDUCATION                SCHOOL            SCHOOL
+#> 113:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
+#> 114: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
+#> 115: METRO WATER RECLAMATION D...         MISCELLANEOUS             WATER
+#>      agency_tax_rate final_tax
+#>   1:         0.00423    964.04
+#>   2:         0.00051    116.23
+#>   3:         0.00914   2083.05
+#>   4:         0.00102    232.46
+#>   5:         0.00116    264.37
+#>  ---                          
+#> 111:         0.00151    240.64
+#> 112:         0.03656   5468.12
+#> 113:         0.00329    524.32
+#> 114:         0.00000      0.00
+#> 115:         0.00378    602.41
 ```
 
 The `tax_bill()` function will automatically combine the years and PIN
@@ -421,7 +426,7 @@ multiple_years_plot <- ggplot(data = multiple_years_summ) +
 
 </details>
 
-<img src="man/figures/README-mutli_year_4-1.png" width="100%" />
+<img src="man/figures/README-multi_year_4-1.png" width="100%" />
 
 For more advanced usage, such as counterfactual analysis, see the
 [vignettes
@@ -696,7 +701,7 @@ erDiagram
 -   PTAXSIM is a currently a developer and researcher-focused package.
     It is not intended to predict or explain individual bills. In the
     future, we plan to make PTAXSIM more accessible via a web frontend
-    and API.
+    and/or API.
 -   PTAXSIM is relatively memory-efficient and can calculate every
     district line-item for every tax bill for the last 15 years (roughly
     350 million rows). However, the memory requirements for this

@@ -11,6 +11,7 @@ knitr::opts_chunk$set(
   fig.path = "man/figures/README-",
   out.width = "100%"
 )
+options(datatable.prettyprint.char = 25L)
 ```
 
 # PTAXSIM package <a href='https://gitlab.com/ccao-data-science---modeling/packages/ptaxsim'><img src='man/figures/logo.png' align="right" height="139"/></a>
@@ -22,14 +23,14 @@ knitr::opts_chunk$set(
 
 PTAXSIM is an R package/database to approximate Cook County property tax bills. It uses real assessment, exemption, TIF, and levy data to generate historic, line-item tax bills (broken out by taxing district) for any property from 2006 to `r max(ptaxsim::sample_tax_bills_summary$year)`. Given some careful assumptions and data manipulation, it can also answer questions such as:
 
-* What would my property tax bill be if my assessed value was $50K lower? What if I received a new exemption?
-* How have tax bills changed in my area? Where does my tax money actually go?
-* How do exemptions affect my tax bill? What if a current exemption amount is increased?
-* How do TIF districts affect my tax bill? What if TIF districts did not exist?
+* [What would my property tax bill be if my assessed value was $50K lower? What if my school district's levy goes up?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html)
+* [How do appeals affect tax bills? What if nobody appealed?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/appeals.html)
+* [How do exemptions affect tax bills? What if a current exemption amount is increased?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/exemptions.html)
+* [How do TIF districts affect tax bills? What if a nearby TIF district did not exist?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/tifs.html)
 
 PTAXSIM can generate hundreds, or even millions, of tax bills in a single function call, which enables complex tax analysis on a municipality or even county level. PTAXSIM is accurate (within $10 of the real bill) for >99% of historic property tax bills. However, it is currently an experimental tool only and is *not* recommended for critical use. See [Notes](#notes) and [Disclaimer](#disclaimer) for more information.
 
-For detailed documentation on included functions and data, [**visit the full reference list**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/reference/).
+For detailed documentation on included functions and data, [**visit the full reference list**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/reference/) or the [**introduction vignette**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html).
 
 For examples of PTAXSIM's functionality and usage, click one of the questions above or see the [**vignettes page**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/index.html).
 
@@ -77,12 +78,12 @@ ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), "./ptaxsim.db")
 
 ## Usage
 
-PTAXSIM has a single primary function - `tax_bill()` - with two main arguments:
+PTAXSIM has a single primary function - `tax_bill()` - with two required arguments:
 
 1. `year_vec` - A numeric vector of tax years
 2. `pin_vec` - A character vector of Property Index Numbers (PINs)
 
-The output is a data frame containing the tax amount directed to each taxing district, by PIN and year. By default, `tax_bill()` can only generate _historic_ tax bills; it cannot generate future or counterfactual bills. To generate future/counterfactual bills, you must provide additional data to `tax_bill()` via its secondary arguments. See the [vignettes page](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/index.html) for more details.
+The output is a `data.table` containing the tax amount directed to each taxing district, by PIN and year. By default, `tax_bill()` can only generate *historic* tax bills; it cannot generate future or counterfactual bills. To generate future/counterfactual bills, you must provide additional data to `tax_bill()` via its secondary arguments. See the [introduction page](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html) for more details.
 
 ### Single bill, single year
 
@@ -106,7 +107,7 @@ single_bill %>%
 
 Here's the real 2020 tax bill for this PIN for comparison:
 
-![](man/figures/sample_bill_w_tif.png)
+![](man/figures/README-sample_bill.png)
 
 There are some minor differences between PTAXSIM and the real bill. The taxing district names may not be identical. Additionally, PTAXSIM aggregates the different Cook County agencies (Public Safety, Health Facilities, and County of Cook) into a single line-item (COUNTY OF COOK).
 
@@ -114,14 +115,14 @@ There are some minor differences between PTAXSIM and the real bill. The taxing d
 
 We can also look at a single property over multiple years, in this case broken out by taxing district. To do so, pass a vector of multiple years to the `year_vec` argument of `tax_bill()`:
 
-```{r mutli_year_1, message=FALSE, warning=FALSE}
+```{r multi_year_1, message=FALSE, warning=FALSE}
 multiple_years <- tax_bill(2010:2020, "14081020210000")
 multiple_years
 ```
 
 The `tax_bill()` function will automatically combine the years and PIN into their Cartesian product. The result is a tax amount per taxing district, per PIN, per year. We can collapse these amounts and then plot them to see how a single PIN has changed over time:
 
-```{r mutli_year_2, message=FALSE, warning=FALSE}
+```{r multi_year_2, message=FALSE, warning=FALSE}
 multiple_years_summ <- multiple_years %>%
   group_by(year, agency_minor_type) %>%
   summarize(final_tax = sum(final_tax)) %>%
@@ -140,7 +141,7 @@ multiple_years_summ <- multiple_years %>%
 
 <summary><strong>Click here</strong> to show plot code</summary>
 
-```{r mutli_year_3, message=FALSE, warning=FALSE}
+```{r multi_year_3, message=FALSE, warning=FALSE}
 library(ggplot2)
 
 # Plot the amount of taxes going to each district over time
@@ -167,7 +168,7 @@ multiple_years_plot <- ggplot(data = multiple_years_summ) +
 
 </details>
 
-```{r mutli_year_4, message=FALSE, warning=FALSE, echo=FALSE}
+```{r multi_year_4, message=FALSE, warning=FALSE, echo=FALSE}
 multiple_years_plot
 ```
 
@@ -432,7 +433,7 @@ erDiagram
 # Notes
 
 - Currently, the per-district tax calculations for properties in the RPM TIF are slightly flawed. However, the total tax bill per PIN is still accurate. See issue #11 for more information.
-- PTAXSIM is a currently a developer and researcher-focused package. It is not intended to predict or explain individual bills. In the future, we plan to make PTAXSIM more accessible via a web frontend and API.
+- PTAXSIM is a currently a developer and researcher-focused package. It is not intended to predict or explain individual bills. In the future, we plan to make PTAXSIM more accessible via a web frontend and/or API.
 - PTAXSIM is relatively memory-efficient and can calculate every district line-item for every tax bill for the last 15 years (roughly 350 million rows). However, the memory requirements for this calculation are substantial (around 100 GB).
 - PTAXSIM's accuracy is measured automatically with an [integration test](tests/testthat/test-accuracy.R). The test takes a random sample of 10,000 PINs from each year, calculates the total bill for each PIN, and compares it to the real total bill. The most common source of inaccuracy is tax refunds (e.g. overpaying a previous bill).
 

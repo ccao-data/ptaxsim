@@ -18,7 +18,7 @@ variables:
   DOCKER_DRIVER: "overlay2" # Docker FS driver, don't change this
   GIT_SUBMODULE_STRATEGY: "recursive" # Set how GitLab handles submodules
   # If a package has a linux dependency that isn't already listed, add it here
-  APT_DEPS: "libcurl4-openssl-dev libssl-dev libxml2-dev libgit2-dev pandoc git zstd curl zip libfontconfig1-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev"
+  APT_DEPS: "libcurl4-openssl-dev libssl-dev libxml2-dev libgit2-dev pandoc git zstd curl zip libfontconfig1-dev libharfbuzz-dev libfribidi-dev libfreetype6-dev libpng-dev libtiff5-dev libjpeg-dev libudunits2-dev libgdal-dev libgeos-dev libproj-dev libxt-dev"
   # Specify vars to enable caching and dependency management via renv
   RENV_CONFIG_REPOS_OVERRIDE: "https://cloud.r-project.org/"
   RENV_PATHS_CACHE: ${CI_PROJECT_DIR}/cache
@@ -117,5 +117,3 @@ pages:
   artifacts:
     paths:
       - public
-  only:
-    - master

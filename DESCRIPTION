@@ -25,10 +25,16 @@ Suggests:
     covr,
     devtools,
     dplyr,
+    ggplot2,
+    ggspatial,
+    here,
+    jsonlite,
+    httr,
     knitr,
     lintr,
     pkgdown,
     rmarkdown,
+    sf,
     RSQLite,
     testthat
 Depends: 

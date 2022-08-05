@@ -31,7 +31,7 @@ extract_tax_bill <- function(file) {
   base_file <- basename(file)
 
   # Scan table into memory
-  tbl <- extract_areas(file = file, pages = 1)[[1]] %>%
+  tbl <- tabulizer::extract_areas(file = file, pages = 1)[[1]] %>%
     as_tibble() %>%
     row_to_names() %>%
     set_names(
