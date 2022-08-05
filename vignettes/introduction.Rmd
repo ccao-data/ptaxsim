@@ -151,14 +151,14 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
   
     ```{r}
     tax_code <- lookup_tax_code(
-      year_vec = 2018:2020,
-      pin_vec = c("13264290020000", "07101010391078", "10153080520000")
+      year = 2018:2020,
+      pin = c("13264290020000", "07101010391078", "10153080520000")
     )
     print(tax_code)
 
     tax_code <- lookup_tax_code(
-      year_vec = 2006:2020,
-      pin_vec = c("13264290020000", "07101010391078", "10153080520000")
+      year = 2006:2020,
+      pin = c("13264290020000", "07101010391078", "10153080520000")
     )
     print(tax_code)
     ```
@@ -193,8 +193,8 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
   
     ```{r}
     tax_codes <- lookup_tax_code(
-      year_vec = 2020,
-      pin_vec = c("13264290020000", "13264290020000", "13264290020000")
+      year = 2020,
+      pin = c("13264290020000", "13264290020000", "13264290020000")
     )
     agency <- lookup_agency(c(2020, 2020, 2020), tax_codes)
     print(agency, topn = 3)
