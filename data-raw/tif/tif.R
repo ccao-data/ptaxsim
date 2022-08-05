@@ -22,7 +22,7 @@ clean_matrix <- function(mat) {
   nr <- nrow(mat)
   chr <- stringr::str_replace_all(mat, "[^0-9\\.]", "")
   out <- as.data.frame(matrix(chr, nrow = nr, ncol = nc)) %>%
-    mutate(V1 = str_remove_all(V1, "[^0-9]")) %>%
+    mutate(V1 = str_remove_all(.data$V1, "[^0-9]")) %>%
     na_if("") %>%
     # filter(!is.na(V1)) %>%
     # select(where(function(x) all(!is.na(x)))) %>%

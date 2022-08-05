@@ -93,7 +93,7 @@ For added flavor, we can get the municipality boundary for Schaumburg from [Cook
 ```{r, results='hide'}
 muni <- st_read(paste0(
   "https://opendata.arcgis.com/api/v3/datasets/",
-  "534226c6b1034985aca1e14a2eb234af_2/downloads/", 
+  "534226c6b1034985aca1e14a2eb234af_2/downloads/",
   "data?format=geojson&spatialRefId=4326&where=1%3D1"
 ))
 
@@ -189,7 +189,7 @@ Finally, we can plot the index over time to see how each stage of appeals impact
 ```{r}
 sb_pins_av_plot <- ggplot() +
   geom_line(
-    data = sb_pins_summ, 
+    data = sb_pins_summ,
     aes(x = stage, y = idx, color = major_class, group = major_class),
     size = 1.1
   ) +
@@ -233,10 +233,10 @@ eq_dt <- DBI::dbGetQuery(ptaxsim_db_conn, "SELECT * FROM eq_factor")
 # bills with counterfactual AVs also requires recalculating the base of each
 # taxing district
 sb_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
-  
+
   sb_pin_dt_actual <- lookup_pin(2019, sb_pins$pin, stage = "clerk")
   sb_pin_dt_stage <- lookup_pin(2019, sb_pins$pin, stage = x)
-  
+
   # The base of each district in the included PTAXSIM data is based on 2019
   # board (post-appeal) values. It is therefore smaller than it would be if
   # appeals had not been granted. As such, we need to calculate the difference
@@ -255,14 +255,14 @@ sb_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
     ) %>%
     group_by(year, tax_code) %>%
     summarize(diff_total = sum(diff))
-  
-  # Update each district base using the amount recovered from "undoing" appeals 
+
+  # Update each district base using the amount recovered from "undoing" appeals
   sb_agency_dt <- lookup_agency(sb_pin_diff$year, sb_pin_diff$tax_code) %>%
     left_join(sb_pin_diff, by = c("year", "tax_code")) %>%
     mutate(agency_total_eav = agency_total_eav + diff_total) %>%
     select(-diff_total) %>%
     setkey(year, tax_code, agency_num)
-  
+
   tax_bill(
       year = 2019,
       pin = sb_pin_dt_stage$pin,
@@ -299,7 +299,7 @@ sb_bills_summ <- sb_bills_all %>%
       levels = c("2019\nmailed", "2019\ncertified", "2019\nboard")
     ),
     idx = (med_bill / med_bill[stage == "2019\nmailed"]) * 100
-  ) 
+  )
 ```
 
 We can then plot the change in the median total tax bill (indexed to the `2019 mailed` median bill) to see the effect of each stage of appeals. The earlier plot showing assessed values is added for reference.
@@ -359,7 +359,7 @@ sb_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
   sb_pin_dt_actual <- lookup_pin(2019, sb_pins$pin, stage = "clerk")
   sb_pin_dt_mailed <- lookup_pin(2019, sb_pins$pin, stage = "mailed")
   sb_pin_dt_stage <- lookup_pin(2019, sb_pins$pin, stage = x)
-  
+
   # To recalculate the base, we get two distinct sets of differences:
   # 1. Residential PINs act as normal, the amount back to the base from each
   #    PIN is the difference between the stage EAV and the 2019 final EAV
@@ -394,12 +394,12 @@ sb_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
   ) %>%
     group_by(year, tax_code) %>%
     summarize(diff_total = sum(diff))
-    
+
   sb_agency_dt <- lookup_agency(sb_pin_diff$year, sb_pin_diff$tax_code) %>%
     left_join(sb_pin_diff, by = c("year", "tax_code")) %>%
     mutate(agency_total_eav = agency_total_eav + diff_total) %>%
     select(-diff_total)
-  
+
   # Commercial PINs don't get appeals and so only come from the "mailed" stage
   sb_pin_dt_combo <- rbind(
       sb_pin_dt_stage %>%
@@ -408,7 +408,7 @@ sb_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
         filter(substr(class, 1, 1) %in% c("3", "5"))
     ) %>%
     setkey(year, pin)
-  
+
   tax_bill(
       year = 2019,
       pin = sb_pin_dt_combo$pin,
@@ -445,7 +445,7 @@ sb_cntr_summ <- sb_cntr_all %>%
       levels = c("2019\nmailed", "2019\ncertified", "2019\nboard")
     ),
     idx = (med_bill / med_bill[stage == "2019\nmailed"]) * 100
-  ) 
+  )
 ```
 
 Finally, we again plot the change in the median bill for each stage. The previous plot is shown again (top row) for reference. The earlier AV plot (bottom left) is also recalculated to exclude commercial appeals.
@@ -464,7 +464,7 @@ sb_pins_no_app <- purrr::map_dfr(
     other_pins <- sb_pins %>%
       filter(!substr(class, 1, 1) %in% c("3", "5")) %>%
       pull(pin)
-    
+
     rbind(
       lookup_pin(2019, comm_pins, stage = "mailed") %>%
         mutate(stage = x),
@@ -499,8 +499,10 @@ sb_pins_summ_no_app <- sb_pins_no_app %>%
 sb_cntr_plot <- bind_rows(
   sb_pins_summ %>% mutate(type = "Assessed Values"),
   sb_bills_summ %>% mutate(type = "Tax Bills"),
-  sb_pins_summ_no_app %>% mutate(type = "Assessed Values\n(No Commercial Appeals)"),
-  sb_cntr_summ %>% mutate(type = "Tax Bills\n(No Commercial Appeals)")
+  sb_pins_summ_no_app %>%
+    mutate(type = "Assessed Values\n(No Commercial Appeals)"),
+  sb_cntr_summ %>%
+    mutate(type = "Tax Bills\n(No Commercial Appeals)")
 ) %>%
 ggplot() +
   geom_line(

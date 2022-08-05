@@ -86,7 +86,7 @@ Next, we can get the municipality boundary for Wheeling from [Cook Central](http
 ```{r}
 bound_muni <- st_read(paste0(
   "https://opendata.arcgis.com/api/v3/datasets/",
-  "534226c6b1034985aca1e14a2eb234af_2/downloads/", 
+  "534226c6b1034985aca1e14a2eb234af_2/downloads/",
   "data?format=geojson&spatialRefId=4326&where=1%3D1"
 ), quiet = TRUE) %>%
   filter(MUNICIPALITY == "Wheeling")
@@ -97,8 +97,9 @@ bound_tif <- st_read(paste0(
   "data?format=geojson&spatialRefId=4326&where=1%3D1"
 ), quiet = TRUE) %>%
   # TIF agency ID for the Wheeling TIF, found at:
-  # https://hub-cookcountyil.opendata.arcgis.com/datasets/8aeb00520c544aafb9a22510465c679d_18/explore
-  filter(AGENCY == as.integer("031310506")) 
+  # https://hub-cookcountyil.opendata.arcgis.com/datasets/
+  # 8aeb00520c544aafb9a22510465c679d_18/explore
+  filter(AGENCY == as.integer("031310506"))
 ```
 
 Finally, we can plot the PINs, municipality boundary, and TIF boundary on a map.
@@ -201,7 +202,7 @@ We can determine the amount of increment by comparing the total property value i
 
 ```{r}
 tif_pins_summ <- tif_pins_dt %>%
-  group_by(year) %>% 
+  group_by(year) %>%
   summarize(total_eav = sum(eav)) %>%
   left_join(tif_dists, by = "year") %>%
   mutate(amt_to_tif = total_eav - tax_code_frozen_eav)
@@ -222,7 +223,7 @@ plot_pin_fill <- tibble(
     tif_pins_summ$total_eav[tif_pins_summ$year == 2014]
   )
 )
-  
+
 tif_inc_plot <- ggplot(tif_pins_summ) +
   geom_area(
     aes(x = year, y = total_eav),
@@ -471,7 +472,7 @@ tif_bills_cntr_summ <- wh_bills %>%
   summarize(med_bill = median(value)) %>%
   mutate(
     lt = ifelse(name == "No TIF" & year >= 2015, "s", "d"),
-    name = factor(name, levels = c( "No TIF", "With TIF")),
+    name = factor(name, levels = c("No TIF", "With TIF")),
   )
 
 tif_plot_cntr <- ggplot(tif_bills_cntr_summ) +

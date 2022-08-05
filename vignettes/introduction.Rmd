@@ -99,14 +99,20 @@ print(bills, topn = 3)
 Passing `year_vec` and `pin_vec` of different lengths will yield the Cartesian product of those vectors:
 
 ```{r}
-bills <- tax_bill(2006:2020, c("13264290020000", "07101010391078", "10153080520000"))
+bills <- tax_bill(
+  year_vec = 2006:2020,
+  pin_vec = c("13264290020000", "07101010391078", "10153080520000")
+)
 print(bills, topn = 3)
 ```
 
 Passing `year_vec` and `pin_vec` of the same length will match the vectors element-wise:
 
 ```{r}
-bills <- tax_bill(c(2012, 2006, 2020), c("13264290020000", "07101010391078", "10153080520000"))
+bills <- tax_bill(
+  year_vec = c(2012, 2006, 2020),
+  pin_vec = c("13264290020000", "07101010391078", "10153080520000")
+)
 print(bills, topn = 3)
 ```
 
@@ -144,10 +150,16 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
   * Follows the same recycling rules as `tax_bill()`: input vectors of the same length return an element-wise output, input vectors of different lengths return the Cartesian product.
   
     ```{r}
-    tax_code <- lookup_tax_code(2018:2020, c("13264290020000", "07101010391078", "10153080520000"))
+    tax_code <- lookup_tax_code(
+      year_vec = 2018:2020,
+      pin_vec = c("13264290020000", "07101010391078", "10153080520000")
+    )
     print(tax_code)
-    
-    tax_code <- lookup_tax_code(2006:2020, c("13264290020000", "07101010391078", "10153080520000"))
+
+    tax_code <- lookup_tax_code(
+      year_vec = 2006:2020,
+      pin_vec = c("13264290020000", "07101010391078", "10153080520000")
+    )
     print(tax_code)
     ```
   
@@ -180,7 +192,10 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
   * Note that it returns a distinct set of districts, even if year and tax code are repeated:
   
     ```{r}
-    tax_codes <- lookup_tax_code(2020, c("13264290020000", "13264290020000", "13264290020000"))
+    tax_codes <- lookup_tax_code(
+      year_vec = 2020,
+      pin_vec = c("13264290020000", "13264290020000", "13264290020000")
+    )
     agency <- lookup_agency(c(2020, 2020, 2020), tax_codes)
     print(agency, topn = 3)
     ```
@@ -307,7 +322,7 @@ pin_dt_new <- lookup_pin(2020, "13264290020000") %>%
 rbind(
   tax_bill(2020, "13264290020000") %>% mutate(type = "original"),
   tax_bill(2020, "13264290020000", pin_dt = pin_dt_new) %>%
-    mutate(type = "counterfactual") 
+    mutate(type = "counterfactual")
 ) %>%
   group_by(year, pin, type, av) %>%
   summarize(bill_total = sum(final_tax)) %>%
@@ -328,7 +343,7 @@ pin_dt_new <- lookup_pin(2020, "13264290020000") %>%
 rbind(
   tax_bill(2020, "13264290020000") %>% mutate(type = "original"),
   tax_bill(2020, "13264290020000", pin_dt = pin_dt_new) %>%
-    mutate(type = "counterfactual") 
+    mutate(type = "counterfactual")
 ) %>%
   group_by(year, pin, type, av) %>%
   summarize(bill_total = sum(final_tax)) %>%
@@ -360,7 +375,7 @@ agency_dt_new <- lookup_agency(2020, tax_code) %>%
 rbind(
   tax_bill(2020, "13264290020000") %>% mutate(type = "original"),
   tax_bill(2020, "13264290020000", agency_dt = agency_dt_new) %>%
-    mutate(type = "counterfactual") 
+    mutate(type = "counterfactual")
 ) %>%
   group_by(year, pin, type, av) %>%
   summarize(bill_total = sum(final_tax)) %>%

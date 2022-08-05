@@ -215,7 +215,7 @@ Finally, we add a third line to our plot showing the total tax bill by year afte
 
 ```{r}
 bills_plot_3 <- rbind(
-  bills_w_exe_summ, 
+  bills_w_exe_summ,
   bills_no_exe_summ,
   bills_new_exe_summ
 ) %>%
@@ -372,7 +372,7 @@ t_annot <- tibble(
   y = c(105, 115)
 )
 
-# Plot the change in indexed values over time 
+# Plot the change in indexed values over time
 t_no_exe_summ_plot <- ggplot(data = t_no_exe_summ) +
   geom_line(
     aes(x = year, y = idx_bill, color = class, linetype = stage),
@@ -382,7 +382,7 @@ t_no_exe_summ_plot <- ggplot(data = t_no_exe_summ) +
     data = t_annot,
     aes(x = x, y = y, color = class, label = class),
     hjust = 0
-  ) + 
+  ) +
   scale_y_continuous(name = "Average Tax Bill, Indexed to 2006") +
   scale_x_continuous(name = "Year", n.breaks = 10, limits = c(2006, 2020.4)) +
   scale_linetype_manual(
@@ -505,7 +505,7 @@ t_new_exe_summ_plot <- ggplot(data = t_new_exe_summ) +
     data = t_annot,
     aes(x = x, y = y, color = class, label = class),
     hjust = 0
-  ) + 
+  ) +
   scale_y_continuous(name = "Average Tax Bill, Indexed to 2006") +
   scale_x_continuous(name = "Year", n.breaks = 10, limits = c(2006, 2020.4)) +
   scale_linetype_manual(
