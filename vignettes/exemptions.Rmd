@@ -1,6 +1,5 @@
 ---
 title: "Altering exemptions"
-subtitle: "Or,
 output: html_document
 ---
 
