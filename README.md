@@ -557,8 +557,8 @@ erDiagram
     int     av_clerk
     int     exe_homeowner
     int     exe_senior
-    int     exe_longtime_homeowner
     int     exe_freeze
+    int     exe_longtime_homeowner
     int     exe_disabled
     int     exe_vet_returning
     int     exe_vet_dis_lt50
