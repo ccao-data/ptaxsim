@@ -15,13 +15,14 @@ PTAXSIM is an R package/database to approximate Cook County property tax
 bills. It uses real assessment, exemption, TIF, and levy data to
 generate historic, line-item tax bills (broken out by taxing district)
 for any property from 2006 to 2020. Given some careful assumptions and
-data manipulation, it can also answer questions such as:
+data manipulation, it can also provide hypothetical, but factually
+grounded, answers to questions such as:
 
 -   [What would my property tax bill be if my assessed value was $50K
     lower? What if my school district’s levy goes
     up?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html)
 -   [How do appeals affect tax bills? What if nobody
-    appealed?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/appeals.html)
+    appeals?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/appeals.html)
 -   [How do exemptions affect tax bills? What if a current exemption
     amount is
     increased?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/exemptions.html)
@@ -31,9 +32,9 @@ data manipulation, it can also answer questions such as:
 
 PTAXSIM can generate hundreds, or even millions, of tax bills in a
 single function call, which enables complex tax analysis on a
-municipality or even county level. PTAXSIM is accurate (within $10 of
-the real bill) for \>99% of historic property tax bills. However, it is
-currently an experimental tool only and is *not* recommended for
+municipality or even whole-county level. PTAXSIM is accurate (within $10
+of the real bill) for \>99% of historic property tax bills. However, it
+is currently an experimental tool only and is *not* recommended for
 critical use. See [Notes](#notes) and [Disclaimer](#disclaimer) for more
 information.
 
@@ -696,21 +697,22 @@ erDiagram
 # Notes
 
 -   Currently, the per-district tax calculations for properties in the
-    RPM TIF are slightly flawed. However, the total tax bill per PIN is
-    still accurate. See issue \#11 for more information.
+    Red-Purple Modernization (RPM) TIF are slightly flawed. However, the
+    total tax bill per PIN is still accurate. See issue \#11 for more
+    information.
 -   PTAXSIM is a currently a developer and researcher-focused package.
     It is not intended to predict or explain individual bills. In the
     future, we plan to make PTAXSIM more accessible via a web frontend
     and/or API.
 -   PTAXSIM is relatively memory-efficient and can calculate every
     district line-item for every tax bill for the last 15 years (roughly
-    350 million rows). However, the memory requirements for this
-    calculation are substantial (around 100 GB).
+    350 million rows). However, the memory required for this calculation
+    is substantial (around 100 GB).
 -   PTAXSIM’s accuracy is measured automatically with an [integration
     test](tests/testthat/test-accuracy.R). The test takes a random
     sample of 10,000 PINs from each year, calculates the total bill for
     each PIN, and compares it to the real total bill. The most common
-    source of inaccuracy is tax refunds (e.g. overpaying a previous
+    source of inaccuracy is tax refunds (i.e. overpaying a previous
     bill).
 
 # Disclaimer
@@ -722,8 +724,7 @@ implied. Any data, figures, or amounts contained within the
 package/database, used by the package/database, or produced by the
 package are solely for illustrative purposes.
 
-Any results produced by this package as distributed are not official and
-should not be relied upon for any business or commercial purpose. They
-merely demonstrate the package’s features. The Assessor’s office
-expressly disclaims any liability for any entity’s reliance on this
-package and/or database.
+Any results produced by this package as distributed are not official, as
+they are hypothetical, and should not be relied upon for any business or
+commercial purpose. The Assessor’s office expressly disclaims any
+liability for any entity’s reliance on this package and/or database.
