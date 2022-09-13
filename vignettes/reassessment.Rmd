@@ -81,7 +81,7 @@ p_summ <- p %>%
 <summary><strong>Click here</strong> to show plot code</summary>
 
 ```{r}
-p_summ_plot <- p_summ %>% 
+p_summ_plot <- p_summ %>%
   ggplot() +
   geom_vline(
     xintercept = seq(2006, 2018, 3),
@@ -266,7 +266,7 @@ cw_bills_summ <- cw_bills %>%
 <summary><strong>Click here</strong> to show plot code</summary>
 
 ```{r}
-cw_bills_summ_plot <- cw_bills_summ %>% 
+cw_bills_summ_plot <- cw_bills_summ %>%
   ggplot() +
   geom_vline(
     xintercept = seq(2006, 2018, 3),
@@ -682,7 +682,7 @@ cw_fut_levies <- lookup_agency(
   group_by(agency_num, tax_code) %>%
   arrange(agency_num, tax_code, year) %>%
   mutate(
-    yoy_ext_change = 
+    yoy_ext_change =
       (agency_total_ext - lag(agency_total_ext)) / lag(agency_total_ext),
     avg_pct_change = mean(yoy_ext_change, na.rm = TRUE),
     avg_pct_change = replace(avg_pct_change, is.nan(avg_pct_change), 0),
