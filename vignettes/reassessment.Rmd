@@ -17,7 +17,7 @@ Reassessment is the process of valuing a group of properties, as of a given date
 
 ![](../man/figures/triennial-cycle.png)
 
-Individual property tax bills change the most during a reassessment. However, reassessment typically has only a small impact on the *median* bill (unless reassessment significantly shifts the geographic distribution of the tax base). Showing exactly how bills are affected by reassessment is extremely difficult due to the complexity of Cook County's property tax system.
+Reassessment, along with changes in the amount of tax revenue required by local taxing agencies, drives changes in tax bills each year. Reassessment typically has only a small impact on the *median* bill (unless reassessment significantly shifts the geographic distribution of the tax base). Showing exactly how bills are affected by reassessment is extremely difficult due to the complexity of Cook County's property tax system.
 
 Enter PTAXSIM. PTAXSIM can deconstruct historical tax bills, both from individual properties and large geographies, to help explain how and why bills have changed. PTAXSIM also contains the data and tools necessary to estimate the impact of future reassessments. Both abilities are demonstrated in this vignette.
 
@@ -83,12 +83,16 @@ p_summ <- p %>%
 ```{r}
 p_summ_plot <- p_summ %>%
   ggplot() +
+  geom_hline(yintercept = 100, alpha = 0.5) +
   geom_vline(
     xintercept = seq(2006, 2018, 3),
-    linetype = "dashed",
+    linetype = "dotted",
     alpha = 0.5
   ) +
-  geom_line(aes(x = year, y = value, color = type, group = type), size = 1.1) +
+  geom_line(
+    aes(x = year, y = value, color = type),
+    size = 1.1
+  ) +
   scale_x_continuous(n.breaks = 9) +
   scale_color_brewer(
     name = "",
@@ -97,7 +101,7 @@ p_summ_plot <- p_summ %>%
   ) +
   labs(
     x = "Year", y = "Indexed to 2006",
-    caption = "Dashed lines represent reassessment years"
+    caption = "Dotted lines represent reassessment years"
   ) +
   theme_minimal() +
   theme(
@@ -165,12 +169,16 @@ p_cntr_summ <- p_cntr %>%
 ```{r}
 p_cntr_summ_plot <- bind_rows(p_summ, p_cntr_summ) %>%
   ggplot() +
+  geom_hline(yintercept = 100, alpha = 0.5) +
   geom_vline(
     xintercept = seq(2006, 2018, 3),
-    linetype = "dashed",
+    linetype = "dotted",
     alpha = 0.5
   ) +
-  geom_line(aes(x = year, y = value, color = type, group = type), size = 1.1) +
+  geom_line(
+    aes(x = year, y = value, color = type, linetype = type),
+    size = 1.1
+  ) +
   scale_x_continuous(n.breaks = 9) +
   scale_color_brewer(
     name = "",
@@ -178,13 +186,27 @@ p_cntr_summ_plot <- bind_rows(p_summ, p_cntr_summ) %>%
     labels = c(
       "Assessed Value",
       "Total Tax Bill",
-      "Total Tax Bill (Levies Frozen to 2006)"
+      "Counterfactual Total Tax Bill (Levies Frozen to 2006)"
+    )
+  ) +
+  scale_linetype_manual(
+    name = "",
+    values = c(
+      "av_idx" = "solid",
+      "tb_idx" = "solid",
+      "tbc_idx" = "dashed"
+    ),
+    labels = c(
+      "Assessed Value",
+      "Total Tax Bill",
+      "Counterfactual Total Tax Bill (Levies Frozen to 2006)"
     )
   ) +
   guides(color = guide_legend(ncol = 2, byrow = TRUE)) +
   labs(
     x = "Year", y = "Indexed to 2006",
-    caption = "Dashed lines represent reassessment years") +
+    caption = "Dotted lines represent reassessment years"
+  ) +
   theme_minimal() +
   theme(
     axis.title = element_text(size = 13),
@@ -270,12 +292,16 @@ cw_bills_summ <- cw_bills %>%
 ```{r}
 cw_bills_summ_plot <- cw_bills_summ %>%
   ggplot() +
+  geom_hline(yintercept = 100, alpha = 0.5) +
   geom_vline(
     xintercept = seq(2006, 2018, 3),
-    linetype = "dashed",
+    linetype = "dotted",
     alpha = 0.5
   ) +
-  geom_line(aes(x = year, y = value, color = type, group = type), size = 1.1) +
+  geom_line(
+    aes(x = year, y = value, color = type),
+    size = 1.1
+  ) +
   scale_x_continuous(n.breaks = 9) +
   scale_color_brewer(
     name = "",
@@ -285,7 +311,7 @@ cw_bills_summ_plot <- cw_bills_summ %>%
   guides(color = guide_legend(ncol = 2, byrow = TRUE)) +
   labs(
     x = "Year", y = "Median Value, Indexed to 2006",
-    caption = "Dashed lines represent reassessment years"
+    caption = "Dotted lines represent reassessment years"
   ) +
   theme_minimal() +
   theme(
@@ -347,12 +373,16 @@ cw_cntr_bills_summ <- cw_cntr_bills %>%
 ```{r}
 cw_cntr_bills_summ_plot <- bind_rows(cw_bills_summ, cw_cntr_bills_summ) %>%
   ggplot() +
+  geom_hline(yintercept = 100, alpha = 0.5) +
   geom_vline(
     xintercept = seq(2006, 2018, 3),
-    linetype = "dashed",
+    linetype = "dotted",
     alpha = 0.5
   ) +
-  geom_line(aes(x = year, y = value, color = type, group = type), size = 1.1) +
+  geom_line(
+    aes(x = year, y = value, color = type, linetype = type),
+    size = 1.1
+  ) +
   scale_x_continuous(n.breaks = 9) +
   scale_color_brewer(
     name = "",
@@ -360,13 +390,26 @@ cw_cntr_bills_summ_plot <- bind_rows(cw_bills_summ, cw_cntr_bills_summ) %>%
     labels = c(
       "Assessed Values",
       "Total Tax Bills",
-      "Total Tax Bills (Levies Frozen to 2006)"
+      "Counterfactual Total Tax Bills (Levies Frozen to 2006)"
+    )
+  ) +
+  scale_linetype_manual(
+    name = "",
+    values = c(
+      "av_idx" = "solid",
+      "tb_idx" = "solid",
+      "tbc_idx" = "dashed"
+    ),
+    labels = c(
+      "Assessed Values",
+      "Total Tax Bills",
+      "Counterfactual Total Tax Bills (Levies Frozen to 2006)"
     )
   ) +
   guides(color = guide_legend(ncol = 2, byrow = TRUE)) +
   labs(
     x = "Year", y = "Median Value, Indexed to 2006",
-    caption = "Dashed lines represent reassessment years"
+    caption = "Dotted lines represent reassessment years"
   ) +
   theme_minimal() +
   theme(
@@ -443,12 +486,16 @@ t_bills_summ <- purrr::map_dfr(2006:2020, function(x) {
 ```{r}
 t_bills_summ_plot <- t_bills_summ %>%
   ggplot() +
+  geom_hline(yintercept = 100, alpha = 0.5) +
   geom_vline(
     xintercept = seq(2006, 2018, 3),
-    linetype = "dashed",
+    linetype = "dotted",
     alpha = 0.5
   ) +
-  geom_line(aes(x = year, y = value, color = type, group = type), size = 1.1) +
+  geom_line(
+    aes(x = year, y = value, color = type),
+    size = 1.1
+  ) +
   scale_x_continuous(n.breaks = 9) +
   scale_color_brewer(
     name = "",
@@ -458,7 +505,7 @@ t_bills_summ_plot <- t_bills_summ %>%
   guides(color = guide_legend(ncol = 2, byrow = TRUE)) +
   labs(
     x = "Year", y = "Median Value, Indexed to 2006",
-    caption = "Dashed lines represent reassessment years"
+    caption = "Dotted lines represent reassessment years"
   ) +
   theme_minimal() +
   theme(
@@ -520,12 +567,16 @@ t_cntr_bills_summ <- purrr::map_dfr(2006:2020, function(x) {
 ```{r}
 t_cntr_bills_summ_plot <- bind_rows(t_bills_summ, t_cntr_bills_summ) %>%
   ggplot() +
+  geom_hline(yintercept = 100, alpha = 0.5) +
   geom_vline(
     xintercept = seq(2006, 2018, 3),
-    linetype = "dashed",
+    linetype = "dotted",
     alpha = 0.5
   ) +
-  geom_line(aes(x = year, y = value, color = type, group = type), size = 1.1) +
+  geom_line(
+    aes(x = year, y = value, color = type, linetype = type),
+    size = 1.1
+  ) +
   scale_x_continuous(n.breaks = 9) +
   scale_color_brewer(
     name = "",
@@ -533,13 +584,26 @@ t_cntr_bills_summ_plot <- bind_rows(t_bills_summ, t_cntr_bills_summ) %>%
     labels = c(
       "Assessed Values",
       "Total Tax Bills",
-      "Total Tax Bills (Levies Frozen to 2006)"
+      "Counterfactual Total Tax Bills (Levies Frozen to 2006)"
+    )
+  ) +
+  scale_linetype_manual(
+    name = "",
+    values = c(
+      "av_idx" = "solid",
+      "tb_idx" = "solid",
+      "tbc_idx" = "dashed"
+    ),
+    labels = c(
+      "Assessed Values",
+      "Total Tax Bills",
+      "Counterfactual Total Tax Bills (Levies Frozen to 2006)"
     )
   ) +
   guides(color = guide_legend(ncol = 2, byrow = TRUE)) +
   labs(
     x = "Year", y = "Median Value, Indexed to 2006",
-    caption = "Dashed lines represent reassessment years"
+    caption = "Dotted lines represent reassessment years"
   ) +
   theme_minimal() +
   theme(
@@ -568,7 +632,7 @@ West Chicago shares the same pattern as Ward 22: the median AV has gone down, wh
 
 # Future reassessments
 
-In addition to providing the data and functions necessary for historical analysis, PTAXSIM can also be used to estimate future tax bills. **NOTE** however, that this process is extremely fraught. It requires the user to make assumptions about how levies, AVs, and the state equalizer will change in the future. Proceed with the utmost caution. 
+In addition to providing the data and functions necessary for historical analysis, PTAXSIM can also be used to estimate future tax bills. **NOTE** however, that this process is extremely fraught. It requires the user to make assumptions about how levies, AVs, and the state equalizer will change in the future. Proceed with the utmost caution.
 
 We'll again use Ward 22 as an example. Let's start by getting Ward 22's unaltered `tax_bill()` inputs and tax bills.
 
@@ -769,7 +833,7 @@ cw_fut_bills_summ <- cw_fut_bills %>%
     values_to = "value",
     names_to = "type"
   ) %>%
-  mutate(cntr = "Estimated")
+  mutate(cntr = "Counterfactual")
 
 cw_bills_summ <- cw_bills %>%
   select(pin, year, av, final_tax) %>%
@@ -801,9 +865,10 @@ We'll then plot the median value of AV and total tax bills for both the estimate
 ```{r}
 cw_fut_bills_plot <- bind_rows(cw_bills_summ, cw_fut_bills_summ) %>%
   ggplot() +
+  geom_hline(yintercept = 100, alpha = 0.5) +
   geom_vline(
     xintercept = seq(2006, 2018, 3),
-    linetype = "dashed",
+    linetype = "dotted",
     alpha = 0.5
   ) +
   geom_line(
@@ -812,7 +877,7 @@ cw_fut_bills_plot <- bind_rows(cw_bills_summ, cw_fut_bills_summ) %>%
   ) +
   scale_linetype_manual(
     name = "",
-    values = c("Estimated" = "dotted", "Actual" = "solid")
+    values = c("Counterfactual" = "dashed", "Actual" = "solid")
   ) +
   scale_x_continuous(n.breaks = 9) +
   scale_color_brewer(
@@ -823,7 +888,7 @@ cw_fut_bills_plot <- bind_rows(cw_bills_summ, cw_fut_bills_summ) %>%
   guides(color = guide_legend(ncol = 2, byrow = TRUE)) +
   labs(
     x = "Year", y = "Median Value, Indexed to 2006",
-    caption = "Dashed lines represent reassessment years"
+    caption = "Dotted lines represent reassessment years"
   ) +
   theme_minimal() +
   theme(
