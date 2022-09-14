@@ -97,7 +97,8 @@ p_summ_plot <- p_summ %>%
   ) +
   labs(
     x = "Year", y = "Indexed to 2006",
-    caption = "Dashed lines represent reassessment years") +
+    caption = "Dashed lines represent reassessment years"
+  ) +
   theme_minimal() +
   theme(
     axis.title = element_text(size = 13),
@@ -180,6 +181,7 @@ p_cntr_summ_plot <- bind_rows(p_summ, p_cntr_summ) %>%
       "Total Tax Bill (Levies Frozen to 2006)"
     )
   ) +
+  guides(color = guide_legend(ncol = 2, byrow = TRUE)) +
   labs(
     x = "Year", y = "Indexed to 2006",
     caption = "Dashed lines represent reassessment years") +
@@ -280,9 +282,11 @@ cw_bills_summ_plot <- cw_bills_summ %>%
     palette = "Set2",
     labels = c("Assessed Values", "Total Tax Bills")
   ) +
+  guides(color = guide_legend(ncol = 2, byrow = TRUE)) +
   labs(
     x = "Year", y = "Median Value, Indexed to 2006",
-    caption = "Dashed lines represent reassessment years") +
+    caption = "Dashed lines represent reassessment years"
+  ) +
   theme_minimal() +
   theme(
     axis.title = element_text(size = 13),
@@ -359,9 +363,11 @@ cw_cntr_bills_summ_plot <- bind_rows(cw_bills_summ, cw_cntr_bills_summ) %>%
       "Total Tax Bills (Levies Frozen to 2006)"
     )
   ) +
+  guides(color = guide_legend(ncol = 2, byrow = TRUE)) +
   labs(
     x = "Year", y = "Median Value, Indexed to 2006",
-    caption = "Dashed lines represent reassessment years") +
+    caption = "Dashed lines represent reassessment years"
+  ) +
   theme_minimal() +
   theme(
     axis.title = element_text(size = 13),
@@ -449,9 +455,11 @@ t_bills_summ_plot <- t_bills_summ %>%
     palette = "Set2",
     labels = c("Assessed Values", "Total Tax Bills")
   ) +
+  guides(color = guide_legend(ncol = 2, byrow = TRUE)) +
   labs(
     x = "Year", y = "Median Value, Indexed to 2006",
-    caption = "Dashed lines represent reassessment years") +
+    caption = "Dashed lines represent reassessment years"
+  ) +
   theme_minimal() +
   theme(
     axis.title = element_text(size = 13),
@@ -528,9 +536,11 @@ t_cntr_bills_summ_plot <- bind_rows(t_bills_summ, t_cntr_bills_summ) %>%
       "Total Tax Bills (Levies Frozen to 2006)"
     )
   ) +
+  guides(color = guide_legend(ncol = 2, byrow = TRUE)) +
   labs(
     x = "Year", y = "Median Value, Indexed to 2006",
-    caption = "Dashed lines represent reassessment years") +
+    caption = "Dashed lines represent reassessment years"
+  ) +
   theme_minimal() +
   theme(
     axis.title = element_text(size = 13),
@@ -702,7 +712,7 @@ cw_fut_pins_dt <- cw_fut_pins %>%
   select(year, pin, class, av, eav, starts_with("exe_")) %>%
   mutate(across(c(av, eav), as.integer)) %>%
   filter(pin %in% cw_pins) %>%
-  relocate(exe_longtime_homeowner, .before = "exe_disabled") %>%
+  # relocate(exe_longtime_homeowner, .before = "exe_disabled") %>%
   mutate(year = 2018) %>%
   setDT(key = c("year", "pin"))
 
@@ -810,9 +820,11 @@ cw_fut_bills_plot <- bind_rows(cw_bills_summ, cw_fut_bills_summ) %>%
     palette = "Set2",
     labels = c("Assessed Values", "Total Tax Bills")
   ) +
+  guides(color = guide_legend(ncol = 2, byrow = TRUE)) +
   labs(
     x = "Year", y = "Median Value, Indexed to 2006",
-    caption = "Dashed lines represent reassessment years") +
+    caption = "Dashed lines represent reassessment years"
+  ) +
   theme_minimal() +
   theme(
     axis.title = element_text(size = 13),
