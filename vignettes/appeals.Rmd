@@ -17,18 +17,18 @@ Appeals are a way to contest the assessed value (AV) of a property after it is d
 
 1. **Assessor's Office**
 2. **Board of Review**
-3. **Property Tax Appeal Board (PTAB)**
+3. **Property Tax Appeal Board (PTAB) or Circuit Court**
 
-Due to the nature of Cook County's property tax system, appeals are a zero-sum affair: each successful appeal will increase the property tax bill of other property owners. However, measuring this effect is difficult since it requires recalculating tax bills pre- and post-appeal for many properties.
+Due to the nature of Cook County's property tax system, appeals are a zero-sum affair: each successful appeal with the Assessor's Office or Board of Review will increase the property tax bill of other property owners. However, measuring this effect is difficult since it requires recalculating tax bills pre- and post-appeal for many properties.
 
-Enter PTAXSIM, which can simulate counterfactual tax bills and contains data on assessed values at each "stage" of appeals. The stages are stored in separate columns of the `pin` table in the PTAXSIM database:
+Enter PTAXSIM, which can simulate counterfactual estimated tax bills and contains data on assessed values at each "stage" of appeals. The stages are stored in separate columns of the `pin` table in the PTAXSIM database:
 
 1. **`av_mailed`** - Initial assessed values when mailed to property owners, after Desk Review
 2. **`av_certified`** - Assessed values after Assessor's Office appeals
 3. **`av_board`** - Assessed values after Board of Review appeals
 4. **`av_clerk`** - Final assessed values used by the Clerk and Treasurer to calculate bills. Identical to `av_board` in 99.9% of cases
 
-We can use these values and PTAXSIM's `tax_bill()` function to calculate pre- and post-appeal property tax bills and ultimately determine the impact of appeals. This vignette will cover that process.
+We can use these values and PTAXSIM's `tax_bill()` function to calculate pre- and post-appeal estimated property tax bills and ultimately determine the impact of appeals. This vignette will cover that process.
 
 # Appeals in Schaumburg
 
@@ -219,11 +219,11 @@ sb_pins_av_plot <- ggplot() +
 sb_pins_av_plot
 ```
 
-There's a very significant drop in the median commercial property AV due to appeals, particularly at the Board of Review. However, commercial properties also received much larger AV increases during the 2019 reassessment (not shown, since we're trying to isolate the effect of appeals).
+There's a significant drop in the median commercial property AV due to appeals, particularly after the second level of review (at the Board of Review). However, commercial properties also received much larger AV increases during the 2019 reassessment compared to prior years (not shown, since we're trying to isolate the effect of appeals).
 
 ## Appeals' impact on bills
 
-Now that we've looked at AVs, we can also use PTAXSIM to examine the impact of appeals on 2019 tax bills. To do so, we'll first calculate bills at each stage of assessment. The bills for the `mailed` and `certified` stages are counterfactual; they represent what bills ***would have been*** at each stage if no further appeals were granted. The 2019 board bills are the actual bills received by property owners.
+Now that we've looked at AVs, we can also use PTAXSIM to examine the impact of appeals on 2019 tax bills. To do so, we'll first calculate bills at each stage of assessment. The bills for the `mailed` and `certified` stages are counterfactual; they represent estimates of what bills ***would have been*** at each stage if no further appeals were granted. The 2019 `board` stage bills are the actual bills received by property owners.
 
 ```{r}
 # Grab equalization factors from the PTAXSIM database
@@ -536,8 +536,8 @@ ggplot() +
 sb_cntr_plot
 ```
 
-Holding commercial appeals constant makes their effect on residential tax bills clearer: large commercial appeals shift the property tax burden back to residential property owners. In the case of Schaumburg, the drop in commercial AVs at the Board of Review contributed to a roughly 7% rise in the median residential tax bill.
+Holding commercial appeals constant makes their effect on residential tax bills clearer: large commercial appeals shift the property tax burden back to residential property owners. In the case of Schaumburg, the drop in commercial AVs during the second level of review (at the Board of Review) contributed to a roughly 7% rise in the median residential tax bill.
 
 Whether or not this is correct is mostly a matter of interpretation. If the Assessor's commercial values are accurate, then the subsequent appeals unjustly shifted tax burden back to residential properties. If the Board of Review's post-appeal values are accurate, then their appeals rightly reversed the unjust increase in commercial tax bills resulting from the 2019 reassessment.
 
-PTAXSIM doesn't offer a definitive answer or make any normative claims, but it's an incredibly useful tool for measuring these effects and weighing their potential trade-offs.
+PTAXSIM doesn't offer a definitive answer or make any normative claims, but it's an incredibly useful tool for weighing the effects and trade-offs associated with appeals.

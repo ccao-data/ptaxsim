@@ -35,7 +35,7 @@ By default, PTAXSIM uses the data in the database to estimate historical tax bil
 **Note that:**
 
 - The R package ***cannot*** function without the separate database, as its functions query the database directly.
-- PTAXSIM's output bills are *estimates* which may not be identical to real bills. This is due to differences in rounding, math, and data between PTAXSIM and the real tax calculation program.
+- PTAXSIM's output bills are ***estimates*** which may not be identical to real bills. This is due to differences in rounding, math, and data between PTAXSIM and the real tax calculation program.
 - All of PTAXSIM's inputs and outputs are `data.table`s to facilitate [efficient operation chaining and/or by-reference column updates](https://cran.r-project.org/web/packages/data.table/vignettes/datatable-intro.html). This enables fast and memory-efficient calculations, which are needed to perform large-scale counterfactual simulations.
 - You ***must*** instantiate a database connection object with the name `ptaxsim_db_conn` before using PTAXSIM. Here is an example connection:
 
@@ -147,6 +147,7 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
     tax_code <- lookup_tax_code(2018:2020, "13264290020000")
     print(tax_code)
     ```
+  
   * Follows the same recycling rules as `tax_bill()`: input vectors of the same length return an element-wise output, input vectors of different lengths return the Cartesian product.
   
     ```{r}
@@ -356,7 +357,7 @@ In this case, the percentage change in total tax roughly mirrors the percentage 
 
 Changes in levies are another common cause of increased tax bills. Calculating a levy change is not as straightforward as a change in AV, but a good rule-of-thumb is that levies can only increase by 5% or the rate of inflation, whichever is less.
 
-> **NOTE:** Correctly calculating a levy increase can be extremely complicated. Levies are subject to numerous limiting laws (PTELL, rate limits, tax caps) that can vary by municipality/district
+> **NOTE:** Correctly calculating a levy increase can be extremely complicated. Most levies are subject to numerous limiting laws (PTELL, rate limits, tax caps) that can vary by municipality/district
 
 To change a levy, we need to alter the `agency_total_ext` column of the `agency_dt` input. Let's see what happens if we increase Chicago's levy by 5%.
 
