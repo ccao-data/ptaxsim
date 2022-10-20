@@ -13,11 +13,15 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-Property tax exemptions are savings that lower a homeowner’s property tax bill. They work by multiplying the composite tax rate for the area by a flat amount. For example, in the bill below (PIN = **25-32-114-005-0000**), the local tax rate of 18.898% is multiplied by the Homeowner Exemption flat amount of \$10,000, yielding an exemption amount of \$1,889.80.
+Property tax exemptions are savings that lower a homeowner’s property tax bill. They work by reducing or freezing the taxable value (Equalized Assessed Value, or EAV) of a home. For example, the most common exemption, the Homeowner Exemption, reduces EAV by \$10,000. 
+
+Once the exemption EAV has been subtracted from the property's EAV, the final EAV is multiplied by the local tax rate to get the final property tax bill. Since local tax rates can vary significantly by area, the actual effective value of each exemption likewise varies geographically.
+
+The worth of an exemption can also be calculated directly by multiplying the local tax rate by the exemption amount. In the example bill below (PIN = *25-32-114-005-0000*), the local tax rate of 18.898% is multiplied by the Homeowner Exemption flat amount of \$10,000, yielding an exemption amount of \$1889.80.
 
 ![](../man/figures/exemptions-example_bill.png)
 
-This amount is then deducted from the Equalized Assessed Value (EAV) of the property to get the final taxable value. Exemption amounts can vary significantly from area to area, since they are dependent on each area's local composite tax rate.
+Exemptions affect more than just individual tax bills. Local tax rates are a ratio of the amount requested by a taxing district (the levy) to the total taxable value in that district (the base). If exemptions reduce the taxable value of property in a district, then the tax rate for that district will go up.
 
 PTAXSIM can determine the impact of exemptions both for single properties and large areas, such as municipalities. We demonstrate both in this vignette.
 
@@ -538,6 +542,6 @@ t_new_exe_summ_plot <- ggplot(data = t_new_exe_summ) +
 t_new_exe_summ_plot
 ```
 
-The net effect of increasing the Senior Exemption while removing the Senior Freeze Exemption is a slight decrease in the _average_ bill. However, this is complicated by the fact that the Senior Freeze is means-tested, while the Senior Exemption is not. The reality of our hypothetical change is mostly likely an increase in the property tax bills of poorer seniors, even though the average bill decreased.
+The net effect of increasing the Senior Exemption while removing the Senior Freeze Exemption is a slight decrease in the _average_ bill. However, this conclusion is ambiguous, complicated by the fact that the Senior Freeze is means-tested, while the Senior Exemption is not. The "real-world effect" of our hypothetical policy change would most likely be an increase in the property tax bills of poorer seniors, even though the average bill decreased.
 
 Ultimately, with some careful coding and assumptions, PTAXSIM (and its included data) can be used to test almost any hypothetical change in exemptions.
