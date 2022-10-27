@@ -19,7 +19,7 @@ options(datatable.prettyprint.char = 25L)
 > :warning: NOTE: PTAXSIM relies on a separate SQLite database to function correctly. You must download and decompress the database before using this package!
 > See [Database installation](#database-installation) for details.
 >
-> [**Link to PTAXSIM database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim.db.zst)
+> [**Link to PTAXSIM database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim.db.bz2)
 
 PTAXSIM is an R package/database to approximate Cook County property tax bills. It uses real assessment, exemption, TIF, and levy data to generate historic, line-item tax bills (broken out by taxing district) for any property from 2006 to `r max(ptaxsim::sample_tax_bills_summary$year)`. Given some careful assumptions and data manipulation, it can also provide hypothetical, but factually grounded, answers to questions such as:
 
@@ -61,15 +61,16 @@ remotes::install_gitlab(
 
 ### Database installation
 
-PTAXSIM relies on a separate SQLite database to function correctly. This database contains information about properties, taxing districts, and TIF districts necessary to calculate tax bills. To use this database:
+PTAXSIM relies on a separate SQLite database to function correctly. This database contains the information about properties, taxing districts, and TIF districts necessary to calculate tax bills. To use this database:
 
-1. Download the compressed database file from the CCAO's public S3 bucket. [Link here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim.db.zst).
-2. Decompress the downloaded database file. The file is compressed using [zstd](https://github.com/facebook/zstd), which needs to be installed separately.
-3. Place the decompressed database file in a convenient location, preferably at the root of your R project.
+1. Download the compressed database file from the CCAO's public S3 bucket. [Link here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim.db.bz2).
+2. Decompress the downloaded database file. The file is compressed using [bzip2](https://sourceware.org/bzip2/).
+    - On Windows, you can easily decompress bzip2 files using [7-Zip](https://www.7-zip.org/download.html).
+    - On *nix systems, bzip2 is typically installed by default and can be used via the command line i.e. `bzip2 -d ptaxsim.db.bz2`. If bzip2 is not installed, use the package manager on your system (brew, apt, etc.) to install it first.
+3. Place the decompressed database file (`ptaxsim.db`) in a convenient location, preferably at the root of your R project.
 4. At the beginning of your project, instantiate a [DBI](https://dbi.r-dbi.org/) connection to the database file with the name `ptaxsim_db_conn`. The PTAXSIM R functions look for this connection object name by default. If you wish to change the name, you can pass the custom named object to the `conn` argument of each PTAXSIM function. Below is a sample DBI connection:
 
 ```{r db_conn, message=FALSE}
-library(dplyr)
 library(ptaxsim)
 
 # Create the DB connection with the default name expected by PTAXSIM functions
@@ -97,6 +98,8 @@ single_bill
 To compare this output to a real tax bill, we can reorder the rows and keep only the columns that appear on an actual printed bill.
 
 ```{r single_bill_2, message=FALSE}
+library(dplyr)
+
 single_bill %>%
   select(agency_name, final_tax, agency_tax_rate) %>%
   mutate(agency_tax_rate = agency_tax_rate * 100) %>%

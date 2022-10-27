@@ -44,3 +44,4 @@ pkgdown
 *.parquet
 *.db
 *.zst
+*.bz2

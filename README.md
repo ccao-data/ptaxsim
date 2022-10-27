@@ -9,7 +9,7 @@
 > installation](#database-installation) for details.
 >
 > [**Link to PTAXSIM
-> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim.db.zst)
+> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim.db.bz2)
 
 PTAXSIM is an R package/database to approximate Cook County property tax
 bills. It uses real assessment, exemption, TIF, and levy data to
@@ -18,25 +18,25 @@ for any property from 2006 to 2020. Given some careful assumptions and
 data manipulation, it can also provide hypothetical, but factually
 grounded, answers to questions such as:
 
--   [What would my property tax bill be if my assessed value was $50K
-    lower? What if my school district’s levy goes
-    up?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html)
--   [How do appeals affect tax bills? What if nobody
-    appeals?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/appeals.html)
--   [How do exemptions affect tax bills? What if a current exemption
-    amount is
-    increased?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/exemptions.html)
--   [How do TIF districts affect tax bills? What if a nearby TIF
-    district did not
-    exist?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/tifs.html)
+- [What would my property tax bill be if my assessed value was \$50K
+  lower? What if my school district’s levy goes
+  up?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html)
+- [How do appeals affect tax bills? What if nobody
+  appeals?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/appeals.html)
+- [How do exemptions affect tax bills? What if a current exemption
+  amount is
+  increased?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/exemptions.html)
+- [How do TIF districts affect tax bills? What if a nearby TIF district
+  did not
+  exist?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/tifs.html)
 
 PTAXSIM can generate hundreds, or even millions, of tax bills in a
 single function call, which enables complex tax analysis on a
-municipality or even whole-county level. PTAXSIM is accurate (within $10
-of the real bill) for \>99% of historic property tax bills. However, it
-is currently an experimental tool only and is *not* recommended for
-critical use. See [Notes](#notes) and [Disclaimer](#disclaimer) for more
-information.
+municipality or even whole-county level. PTAXSIM is accurate (within
+\$10 of the real bill) for \>99% of historic property tax bills.
+However, it is currently an experimental tool only and is *not*
+recommended for critical use. See [Notes](#notes) and
+[Disclaimer](#disclaimer) for more information.
 
 For detailed documentation on included functions and data, [**visit the
 full reference
@@ -78,17 +78,23 @@ remotes::install_gitlab(
 ### Database installation
 
 PTAXSIM relies on a separate SQLite database to function correctly. This
-database contains information about properties, taxing districts, and
-TIF districts necessary to calculate tax bills. To use this database:
+database contains the information about properties, taxing districts,
+and TIF districts necessary to calculate tax bills. To use this
+database:
 
 1.  Download the compressed database file from the CCAO’s public S3
     bucket. [Link
-    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim.db.zst).
+    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim.db.bz2).
 2.  Decompress the downloaded database file. The file is compressed
-    using [zstd](https://github.com/facebook/zstd), which needs to be
-    installed separately.
-3.  Place the decompressed database file in a convenient location,
-    preferably at the root of your R project.
+    using [bzip2](https://sourceware.org/bzip2/).
+    - On Windows, you can easily decompress bzip2 files using
+      [7-Zip](https://www.7-zip.org/download.html).
+    - On \*nix systems, bzip2 is typically installed by default and can
+      be used via the command line i.e. `bzip2 -d ptaxsim.db.bz2`. If
+      bzip2 is not installed, use the package manager on your system
+      (brew, apt, etc.) to install it first.
+3.  Place the decompressed database file (`ptaxsim.db`) in a convenient
+    location, preferably at the root of your R project.
 4.  At the beginning of your project, instantiate a
     [DBI](https://dbi.r-dbi.org/) connection to the database file with
     the name `ptaxsim_db_conn`. The PTAXSIM R functions look for this
@@ -97,7 +103,6 @@ TIF districts necessary to calculate tax bills. To use this database:
     PTAXSIM function. Below is a sample DBI connection:
 
 ``` r
-library(dplyr)
 library(ptaxsim)
 
 # Create the DB connection with the default name expected by PTAXSIM functions
@@ -171,6 +176,8 @@ To compare this output to a real tax bill, we can reorder the rows and
 keep only the columns that appear on an actual printed bill.
 
 ``` r
+library(dplyr)
+
 single_bill %>%
   select(agency_name, final_tax, agency_tax_rate) %>%
   mutate(agency_tax_rate = agency_tax_rate * 100) %>%
@@ -696,24 +703,22 @@ erDiagram
 
 # Notes
 
--   Currently, the per-district tax calculations for properties in the
-    Red-Purple Modernization (RPM) TIF are slightly flawed. However, the
-    total tax bill per PIN is still accurate. See issue \#11 for more
-    information.
--   PTAXSIM is a currently a developer and researcher-focused package.
-    It is not intended to predict or explain individual bills. In the
-    future, we plan to make PTAXSIM more accessible via a web frontend
-    and/or API.
--   PTAXSIM is relatively memory-efficient and can calculate every
-    district line-item for every tax bill for the last 15 years (roughly
-    350 million rows). However, the memory required for this calculation
-    is substantial (around 100 GB).
--   PTAXSIM’s accuracy is measured automatically with an [integration
-    test](tests/testthat/test-accuracy.R). The test takes a random
-    sample of 10,000 PINs from each year, calculates the total bill for
-    each PIN, and compares it to the real total bill. The most common
-    source of inaccuracy is tax refunds (i.e. overpaying a previous
-    bill).
+- Currently, the per-district tax calculations for properties in the
+  Red-Purple Modernization (RPM) TIF are slightly flawed. However, the
+  total tax bill per PIN is still accurate. See issue \#11 for more
+  information.
+- PTAXSIM is a currently a developer and researcher-focused package. It
+  is not intended to predict or explain individual bills. In the future,
+  we plan to make PTAXSIM more accessible via a web frontend and/or API.
+- PTAXSIM is relatively memory-efficient and can calculate every
+  district line-item for every tax bill for the last 15 years (roughly
+  350 million rows). However, the memory required for this calculation
+  is substantial (around 100 GB).
+- PTAXSIM’s accuracy is measured automatically with an [integration
+  test](tests/testthat/test-accuracy.R). The test takes a random sample
+  of 10,000 PINs from each year, calculates the total bill for each PIN,
+  and compares it to the real total bill. The most common source of
+  inaccuracy is tax refunds (i.e. overpaying a previous bill).
 
 # Disclaimer
 
