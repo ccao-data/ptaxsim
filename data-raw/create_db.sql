@@ -38,7 +38,9 @@ CREATE TABLE agency (
     total_non_cap_ext       double   CHECK(total_non_cap_ext >= 0)             ,
     total_ext               double   CHECK(total_ext >= 0)             NOT NULL,
     PRIMARY KEY (year, agency_num)
-);
+) WITHOUT ROWID;
+
+CREATE INDEX ix_agency_year ON agency(year);
 CREATE INDEX ix_agency_agency_num ON agency(agency_num);
 CREATE INDEX ix_agency_home_rule_ind ON agency(home_rule_ind);
 
@@ -52,7 +54,8 @@ CREATE TABLE agency_info (
     major_type              varchar(21)                                NOT NULL,
     minor_type              varchar(10)                                NOT NULL,
     PRIMARY KEY (agency_num)
-);
+) WITHOUT ROWID;
+
 CREATE INDEX ix_agency_info_major_type ON agency_info(major_type);
 CREATE INDEX ix_agency_info_minor_type ON agency_info(minor_type);
 
@@ -75,7 +78,9 @@ CREATE TABLE agency_fund (
     final_rate              double   CHECK(final_rate >= 0)            NOT NULL,
     PRIMARY KEY (year, agency_num, fund_num),
     FOREIGN KEY (year, agency_num) REFERENCES agency(year, agency_num)
-);
+) WITHOUT ROWID;
+
+CREATE INDEX ix_agency_fund_year ON agency_fund(year);
 CREATE INDEX ix_agency_fund_agency_num ON agency_fund(agency_num);
 CREATE INDEX ix_agency_fund_fund_num ON agency_fund(fund_num);
 
@@ -86,7 +91,8 @@ CREATE TABLE agency_fund_info (
     fund_name               varchar                                    NOT NULL,
     capped_ind              boolean                                    NOT NULL,
     PRIMARY KEY (fund_num)
-);
+) WITHOUT ROWID;
+
 CREATE INDEX ix_agency_fund_info_capped_ind ON agency_fund_info(capped_ind);
     
 
@@ -97,7 +103,8 @@ CREATE TABLE cpi (
     ptell_cook              double                                     NOT NULL,
     levy_year               int                                        NOT NULL,
     PRIMARY KEY (levy_year)
-);
+) WITHOUT ROWID;
+
 CREATE INDEX ix_cpi_year ON cpi(year);
 
 
@@ -106,7 +113,9 @@ CREATE TABLE eq_factor (
     year                    int                                        NOT NULL,
     eq_factor               double                                     NOT NULL,
     PRIMARY KEY (year)
-);
+) WITHOUT ROWID;
+
+CREATE INDEX ix_eq_factor_year ON eq_factor(year);
 
 
 /** pin **/
@@ -131,9 +140,13 @@ CREATE TABLE pin (
     exe_vet_dis_ge70        int   CHECK(exe_vet_dis_ge70 >= 0)         NOT NULL,
     exe_abate               int   CHECK(exe_abate >= 0)                NOT NULL,
     PRIMARY KEY (year, pin)
-);
+) WITHOUT ROWID;
+
+CREATE INDEX ix_pin_year ON pin(year);
 CREATE INDEX ix_pin_pin ON pin(pin);
 CREATE INDEX ix_pin_tax_code_num ON pin(tax_code_num);
+CREATE INDEX ix_pin_year_tax_code_num ON pin(year, tax_code_num);
+CREATE INDEX ix_pin_pin_tax_code_num ON pin(pin, tax_code_num);
 CREATE INDEX ix_pin_township_code ON pin(substr(tax_code_num, 1, 2));
 CREATE INDEX ix_pin_class ON pin(class);
 
@@ -146,9 +159,13 @@ CREATE TABLE tax_code (
     tax_code_num            varchar(5)                                 NOT NULL,
     tax_code_rate           double   CHECK(tax_code_rate >= 0)         NOT NULL,
     PRIMARY KEY (year, agency_num, tax_code_num)
-);
+) WITHOUT ROWID;
+
+CREATE INDEX ix_tax_code_year ON tax_code(year);
 CREATE INDEX ix_tax_code_agency_num ON tax_code(agency_num);
 CREATE INDEX ix_tax_code_tax_code_num ON tax_code(tax_code_num);
+CREATE INDEX ix_tax_code_year_agency_num ON tax_code(year, agency_num);
+CREATE INDEX ix_tax_code_year_tax_code_num ON tax_code(year, tax_code_num);
 
 
 /** tif **/
@@ -160,7 +177,9 @@ CREATE TABLE tif (
     first_year              int                                        NOT NULL,
     cancelled_this_year     boolean                                    NOT NULL,
     PRIMARY KEY (year, agency_num)
-);
+) WITHOUT ROWID;
+
+CREATE INDEX ix_tif_year ON tif(year);
 CREATE INDEX ix_tif_agency_num ON tif(agency_num);
 
 
@@ -175,6 +194,12 @@ CREATE TABLE tif_distribution (
     tax_code_revenue        bigint   CHECK(tax_code_revenue >= 0)      NOT NULL,
     tax_code_distribution_pct double CHECK(tax_code_distribution_pct >= 0) NOT NULL,
     PRIMARY KEY (year, agency_num, tax_code_num)
-);
+) WITHOUT ROWID;
+
+CREATE INDEX ix_tif_distribution_year ON tif_distribution(year);
 CREATE INDEX ix_tif_distribution_agency_num ON tif_distribution(agency_num);
 CREATE INDEX ix_tif_distribution_tax_code_num ON tif_distribution(tax_code_num);
+CREATE INDEX ix_tif_distribution_year_agency_num
+    ON tif_distribution(year, agency_num);
+CREATE INDEX ix_tif_distribution_year_tax_code_num
+    ON tif_distribution(year, tax_code_num);
