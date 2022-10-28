@@ -76,6 +76,10 @@ stages:
 build:
   stage: build
   script:
+    # Need to remove this file because otherwise it is copied to the
+    # R build directory. This takes forever and causes the CI runners
+    # crash because they run out of space
+    - rm ptaxsim.db
     - R CMD build . --no-build-vignettes --no-manual
   artifacts:
     name: "$CI_JOB_STAGE"
