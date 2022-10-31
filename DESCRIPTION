@@ -1,7 +1,7 @@
 Package: ptaxsim
 Type: Package
 Title: Calculate Cook County Property Tax Bills and Simulate Scenarios
-Version: 0.4.2
+Version: 0.4.3
 Authors@R: c(
     person(given = "Dan", family = "Snow", email="dsnow@cookcountyassessor.com", role=c("aut", "cre")),
     person(given = "Mike", family = "Wu", email="mwu@cookcountyassessor.com", role=c("aut", "ctb")),
@@ -19,7 +19,8 @@ LazyDataCompression: bzip2
 Imports:
     data.table,
     DBI,
-    glue
+    glue,
+    RSQLite
 RoxygenNote: 7.1.2
 Suggests: 
     covr,
@@ -35,7 +36,6 @@ Suggests:
     lintr,
     pkgdown,
     rmarkdown,
-    RSQLite,
     sf,
     stars,
     testthat
