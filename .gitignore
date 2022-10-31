@@ -35,6 +35,7 @@ pkgdown
 
 # Any temp files for windows
 ~*
+.DS_Store
 
 # Any PDF files or conversions
 *.pdf
