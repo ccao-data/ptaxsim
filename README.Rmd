@@ -44,7 +44,17 @@ You can install the released version of `ptaxsim` directly from GitLab by runnin
 remotes::install_gitlab("ccao-data-science---modeling/packages/ptaxsim")
 ```
 
-Occasionally, when using brand-new or source versions of packages, installation [on Windows fails with the following error](https://github.com/rstudio/renv/issues/162):
+Or, using [renv](https://github.com/rstudio/renv/):
+
+```{r, eval=FALSE}
+renv::install("gitlab::ccao-data-science---modeling/packages/ptaxsim")
+```
+
+#### Installation on Windows
+
+> :warning: NOTE: Windows users may need to install Rtools in order to build and use this package. Please follow the [instructions here](https://cran.r-project.org/bin/windows/Rtools/) to install Rtools for your version of R.
+
+Once Rtools is installed, installation can proceed normally using the code above. Occasionally, when using brand-new or source versions of packages, installation [on Windows fails with the following error](https://github.com/rstudio/renv/issues/162):
 
 ```
 DLL 'package_name' not found: maybe not installed for this architecture?
