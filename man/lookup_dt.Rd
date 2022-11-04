@@ -43,21 +43,21 @@ data, you'll need to replicate the format returned by these functions.
 }
 \section{Functions}{
 \itemize{
-\item \code{lookup_agency}: Lookup tax agency (CPS, Cook County, forest preserve)
+\item \code{lookup_agency()}: Lookup tax agency (CPS, Cook County, forest preserve)
 total equalized assessed values. Such values are known as the "base" and
 are used to calculate per agency tax rates. Also returns each agency's
 levy amount. Returns a \code{data.table} with 1 row for each agency
 associated with the input tax code and year.
 
-\item \code{lookup_pin}: Lookup the equalized assessed value and exemptions
+\item \code{lookup_pin()}: Lookup the equalized assessed value and exemptions
 for a specific PIN and year. Returns a \code{data.table} with AV, EAV, and
 a column specifying the EAV value of each received exemption.
 
-\item \code{lookup_tif}: Lookup any TIFs that apply to a given tax code and
+\item \code{lookup_tif()}: Lookup any TIFs that apply to a given tax code and
 year. Returns a \code{data.table} with only 1 row per tax code and year,
 or 0 rows if the tax code is not part of a TIF.
-}}
 
+}}
 \examples{
 \dontrun{
 lookup_agency(2019, "73105")

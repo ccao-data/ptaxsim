@@ -25,13 +25,13 @@ return a vector as an output. The output vector can be used directly in
 }
 \section{Functions}{
 \itemize{
-\item \code{lookup_tax_code}: Lookup the Cook County tax code for a specific PIN and
+\item \code{lookup_tax_code()}: Lookup the Cook County tax code for a specific PIN and
 year. Tax codes represent the unique geographic overlap of different
 taxing districts. If the input vectors are both length N, then the output
 will also be length N. If the input vectors are different lengths, the
 Cartesian product is returned.
-}}
 
+}}
 \examples{
 \dontrun{
 lookup_tax_code(2019, c("20304190020000", "16152090350000"))

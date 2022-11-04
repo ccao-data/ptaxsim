@@ -68,7 +68,7 @@ lookup_agency <- function(year, tax_code, conn = ptaxsim_db_conn) {
     is.character(tax_code),
     all(year >= 2006),
     all(nchar(tax_code) == 5 | is.na(tax_code)),
-    DBI::dbIsValid(conn)
+    check_db_conn(conn)
   )
 
   dt <- DBI::dbGetQuery(
@@ -125,7 +125,7 @@ lookup_pin <- function(year, pin, stage = "clerk", conn = ptaxsim_db_conn) {
     length(stage) == 1,
     all(year >= 2006),
     all(nchar(pin) == 14),
-    DBI::dbIsValid(conn)
+    check_db_conn(conn)
   )
 
   if (!stage %in% c("mailed", "certified", "board", "clerk")) {
@@ -195,7 +195,7 @@ lookup_tax_code <- function(year, pin, conn = ptaxsim_db_conn) {
     is.character(pin),
     all(year >= 2006),
     all(nchar(pin) == 14),
-    DBI::dbIsValid(conn)
+    check_db_conn(conn)
   )
 
   if (length(year) != length(pin)) {
@@ -239,7 +239,7 @@ lookup_tif <- function(year, tax_code, conn = ptaxsim_db_conn) {
     is.character(tax_code),
     all(year >= 2006),
     all(nchar(tax_code) == 5 | is.na(tax_code)),
-    DBI::dbIsValid(conn)
+    check_db_conn(conn)
   )
 
   tif_share <- NULL
