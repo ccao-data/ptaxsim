@@ -1,3 +1,47 @@
+# Run basic checks to make sure the PTAXSIM database is connectable and has
+# the correct tables
+check_db_conn <- function(conn) {
+  if (!DBI::dbIsValid(conn)) {
+    stop(
+      "Database connection object is not valid! ",
+      "Check the path to the PTAXSIM database file, make sure the database ",
+      "file is not compressed, and make sure the connection object is active"
+    )
+  }
+
+  db_size <- DBI::dbGetQuery(
+    conn,
+    "
+    SELECT page_count * page_size AS size
+    FROM pragma_page_count(), pragma_page_size();
+    "
+  )
+  db_size <- db_size$size
+  if (db_size == 0) {
+    stop(
+      "Connected to a database of size 0 Kb. Check the path to the PTAXIM ",
+      "database file"
+    )
+  }
+
+  expected_tables <- c(
+    "agency", "agency_fund", "agency_fund_info", "agency_info", "cpi",
+    "eq_factor", "pin", "tax_code", "tif", "tif_distribution"
+  )
+  actual_tables <- DBI::dbListTables(conn)
+
+  diff <- setdiff(expected_tables, actual_tables)
+  if (length(diff) > 0) {
+    stop(
+      "Database is missing expected table(s): ",
+      paste(diff, collapse = ", "),
+      ". Check the path to the PTAXSIM database file"
+    )
+  }
+
+  return(TRUE)
+}
+
 # Checks to ensure data.tables input to tax_bill() are the same as those
 # returned by the lookup_ functions
 check_agency_dt_str <- function(agency_dt) {
