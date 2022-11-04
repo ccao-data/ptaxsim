@@ -115,14 +115,38 @@ lookup_agency <- function(year, tax_code, conn = ptaxsim_db_conn) {
 #'   from which to pull assessed value (column \code{av}) and equalized assessed
 #'   value (column \code{eav}). Options include \code{"mailed"},
 #'   \code{"certified"}, \code{"board"}, and \code{"clerk"}.
+#' @param eq_version A length 1 character vector indicating the version of the
+#'   equalizer. The Illinois Department of Revenue calculates two equalizers:
+#'
+#'   \enumerate{
+#'     \item{
+#'       \code{"tentative"} -
+#'       The tentative equalizer based on CCAO certified values
+#'     }
+#'     \item{
+#'       \code{"final"} -
+#'       The final equalizer based on Board of Review certified values
+#'     }
+#'   }
+#'
+#'   In general, the \code{"tentative"} value should be used with the
+#'   \code{"mailed"} and \code{"certified"} stage options, while the
+#'   \code{"final"} value should be used with the
+#'   \code{"board"} and \code{"clerk"} stage options.
 #'
 #' @export
-lookup_pin <- function(year, pin, stage = "clerk", conn = ptaxsim_db_conn) {
+lookup_pin <- function(year,
+                       pin,
+                       stage = "clerk",
+                       eq_version = "final",
+                       conn = ptaxsim_db_conn) {
   stopifnot(
     is.numeric(year),
     is.character(pin),
     is.character(stage),
+    is.character(eq_version),
     length(stage) == 1,
+    length(eq_version) == 1,
     all(year >= 2006),
     all(nchar(pin) == 14),
     DBI::dbIsValid(conn)
@@ -130,6 +154,10 @@ lookup_pin <- function(year, pin, stage = "clerk", conn = ptaxsim_db_conn) {
 
   if (!stage %in% c("mailed", "certified", "board", "clerk")) {
     stop("stage must be one of: mailed, certified, board, clerk")
+  }
+
+  if (!eq_version %in% c("tentative", "final")) {
+    stop("eq_version must be one of: final, tentative")
   }
 
   # This lookup uses a temp table since it's faster than putting lots of
@@ -143,7 +171,8 @@ lookup_pin <- function(year, pin, stage = "clerk", conn = ptaxsim_db_conn) {
     temporary = TRUE
   )
 
-  stage <- glue::glue("av_", stage)
+  stage_col <- glue::glue("av_", stage)
+  eq_version_col <- glue::glue(eq_version, "_eq_factor")
   dt <- DBI::dbGetQuery(
     conn,
     statement = glue::glue_sql(
@@ -152,8 +181,8 @@ lookup_pin <- function(year, pin, stage = "clerk", conn = ptaxsim_db_conn) {
           lp.year,
           lp.pin,
           p.class,
-          p.{`stage`} AS av,
-          CAST(ROUND(p.{`stage`} * ef.eq_factor, 0) AS int) AS eav,
+          p.{`stage_col`} AS av,
+          CAST(ROUND(p.{`stage_col`} * ef.{`eq_version_col`}, 0) AS int) AS eav,
           p.exe_homeowner,
           p.exe_senior,
           p.exe_freeze,

@@ -9,7 +9,13 @@
 \usage{
 lookup_agency(year, tax_code, conn = ptaxsim_db_conn)
 
-lookup_pin(year, pin, stage = "clerk", conn = ptaxsim_db_conn)
+lookup_pin(
+  year,
+  pin,
+  stage = "clerk",
+  eq_version = "final",
+  conn = ptaxsim_db_conn
+)
 
 lookup_tif(year, tax_code, conn = ptaxsim_db_conn)
 }
@@ -27,6 +33,25 @@ PTAXSIM database.}
 from which to pull assessed value (column \code{av}) and equalized assessed
 value (column \code{eav}). Options include \code{"mailed"},
 \code{"certified"}, \code{"board"}, and \code{"clerk"}.}
+
+\item{eq_version}{A length 1 character vector indicating the version of the
+  equalizer. The Illinois Department of Revenue calculates two equalizers:
+
+  \enumerate{
+    \item{
+      \code{"tentative"} -
+      The tentative equalizer based on CCAO certified values
+    }
+    \item{
+      \code{"final"} -
+      The final equalizer based on Board of Review certified values
+    }
+  }
+
+  In general, the \code{"tentative"} value should be used with the
+  \code{"mailed"} and \code{"certified"} stage options, while the
+  \code{"final"} value should be used with the
+  \code{"board"} and \code{"clerk"} stage options.}
 }
 \value{
 A \code{data.table} containing the specified tax data.
@@ -43,21 +68,21 @@ data, you'll need to replicate the format returned by these functions.
 }
 \section{Functions}{
 \itemize{
-\item \code{lookup_agency}: Lookup tax agency (CPS, Cook County, forest preserve)
+\item \code{lookup_agency()}: Lookup tax agency (CPS, Cook County, forest preserve)
 total equalized assessed values. Such values are known as the "base" and
 are used to calculate per agency tax rates. Also returns each agency's
 levy amount. Returns a \code{data.table} with 1 row for each agency
 associated with the input tax code and year.
 
-\item \code{lookup_pin}: Lookup the equalized assessed value and exemptions
+\item \code{lookup_pin()}: Lookup the equalized assessed value and exemptions
 for a specific PIN and year. Returns a \code{data.table} with AV, EAV, and
 a column specifying the EAV value of each received exemption.
 
-\item \code{lookup_tif}: Lookup any TIFs that apply to a given tax code and
+\item \code{lookup_tif()}: Lookup any TIFs that apply to a given tax code and
 year. Returns a \code{data.table} with only 1 row per tax code and year,
 or 0 rows if the tax code is not part of a TIF.
-}}
 
+}}
 \examples{
 \dontrun{
 lookup_agency(2019, "73105")
