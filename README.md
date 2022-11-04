@@ -563,7 +563,8 @@ erDiagram
 
   eq_factor {
     int     year               PK
-    double  eq_factor
+    double  tentative_eq_factor
+    double  final_eq_factor
   }
 
   pin {
@@ -670,7 +671,8 @@ erDiagram
 
   eq_factor {
     int     year               PK
-    double  eq_factor
+    double  tentative_eq_factor
+    double  final_eq_factor
   }
 
   pin {
