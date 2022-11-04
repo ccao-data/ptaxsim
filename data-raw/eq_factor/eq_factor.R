@@ -9,8 +9,8 @@ eq_factor <- readr::read_csv(
   file = "data-raw/eq_factor/eq_factor.csv",
   col_types = cols(
     year = col_character(),
-    tentative_eq_factor = col_double(),
-    final_eq_factor = col_double()
+    eq_factor_tentative = col_double(),
+    eq_factor_final = col_double()
   )
 ) %>%
   arrange(year)
