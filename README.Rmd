@@ -14,14 +14,28 @@ knitr::opts_chunk$set(
 options(datatable.prettyprint.char = 25L)
 ```
 
+```{r setup, include = FALSE}
+library(ptaxsim)
+ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), "./ptaxsim.db")
+
+metadata <- DBI::dbGetQuery(ptaxsim_db_conn, "SELECT * FROM metadata")
+ptaxsim::check_db_conn(ptaxsim_db_conn)
+ptaxsim::check_db_sync(ptaxsim_db_conn)
+
+stopifnot(
+  metadata$db_version ==
+    packageDescription("ptaxsim")[["Config/Requires_DB_Version"]]
+)
+```
+
 # PTAXSIM package <a href='https://gitlab.com/ccao-data-science---modeling/packages/ptaxsim'><img src='man/figures/logo.png' align="right" height="139"/></a>
 
 > :warning: NOTE: PTAXSIM relies on a separate SQLite database to function correctly. You must download and decompress the database before using this package!
 > See [Database installation](#database-installation) for details.
 >
-> [**Link to PTAXSIM database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim.db.bz2)
+> [**Link to PTAXSIM database**](`r metadata$source_url_database`) (DB version: `r metadata$db_version`; Last updated: `r metadata$created_at`)
 
-PTAXSIM is an R package/database to approximate Cook County property tax bills. It uses real assessment, exemption, TIF, and levy data to generate historic, line-item tax bills (broken out by taxing district) for any property from 2006 to `r max(ptaxsim::sample_tax_bills_summary$year)`. Given some careful assumptions and data manipulation, it can also provide hypothetical, but factually grounded, answers to questions such as:
+PTAXSIM is an R package/database to approximate Cook County property tax bills. It uses real assessment, exemption, TIF, and levy data to generate historic, line-item tax bills (broken out by taxing district) for any property from `r metadata$data_year_min` to `r metadata$data_year_max`. Given some careful assumptions and data manipulation, it can also provide hypothetical, but factually grounded, answers to questions such as:
 
 * [What would my property tax bill be if my assessed value was $50K lower? What if my school district's levy goes up?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html)
 * [How do appeals affect tax bills? What if nobody appeals?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/appeals.html)
@@ -73,12 +87,13 @@ remotes::install_gitlab(
 
 PTAXSIM relies on a separate SQLite database to function correctly. This database contains the information about properties, taxing districts, and TIF districts necessary to calculate tax bills. To use this database:
 
-1. Download the compressed database file from the CCAO's public S3 bucket. [Link here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim.db.bz2).
-2. Decompress the downloaded database file. The file is compressed using [bzip2](https://sourceware.org/bzip2/).
+1. Download the compressed database file from the CCAO's public S3 bucket. [Link here](`r metadata$source_url_database`).
+2. (Optional) Rename the downloaded database file by removing the version number, i.e. `ptaxsim-0.4.3.db.bz2` becomes `ptaxsim.db.bz2`.
+3. Decompress the downloaded database file. The file is compressed using [bzip2](https://sourceware.org/bzip2/).
     - On Windows, you can easily decompress bzip2 files using [7-Zip](https://www.7-zip.org/download.html).
     - On *nix systems, bzip2 is typically installed by default and can be used via the command line i.e. `bzip2 -d ptaxsim.db.bz2`. If bzip2 is not installed, use the package manager on your system (brew, apt, etc.) to install it first.
-3. Place the decompressed database file (`ptaxsim.db`) in a convenient location, preferably at the root of your R project.
-4. At the beginning of your project, instantiate a [DBI](https://dbi.r-dbi.org/) connection to the database file with the name `ptaxsim_db_conn`. The PTAXSIM R functions look for this connection object name by default. If you wish to change the name, you can pass the custom named object to the `conn` argument of each PTAXSIM function. Below is a sample DBI connection:
+4. Place the decompressed database file (`ptaxsim.db`) in a convenient location, preferably at the root of your R project.
+5. At the beginning of your project, instantiate a [DBI](https://dbi.r-dbi.org/) connection to the database file with the name `ptaxsim_db_conn`. The PTAXSIM R functions look for this connection object name by default. If you wish to change the name, you can pass the custom named object to the `conn` argument of each PTAXSIM function. Below is a sample DBI connection:
 
 ```{r db_conn, message=FALSE}
 library(ptaxsim)
@@ -294,6 +309,20 @@ erDiagram
     double  tentative_eq_factor
     double  final_eq_factor
   }
+  
+  metadata {
+    varchar db_version
+    varchar requires_pkg_version
+    varchar created_with_pkg_version
+    varchar created_at
+    varchar created_by
+    varchar author_name
+    varchar author_email
+    varchar source_url_database
+    varchar source_url_package
+    int     data_year_min
+    int     data_year_max
+  }
 
   pin {
     int     year               PK
@@ -401,6 +430,13 @@ erDiagram
     int     year               PK
     double  tentative_eq_factor
     double  final_eq_factor
+  }
+  
+  metadata {
+    varchar db_version
+    varchar requires_pkg_version
+    int     data_year_min
+    int     data_year_max
   }
 
   pin {

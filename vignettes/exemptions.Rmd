@@ -71,7 +71,7 @@ Finally, we can plot the change in total bill amount over time.
 ```{r, echo=FALSE}
 bills_plot_1 <- bills_w_exe_summ %>%
   ggplot() +
-  geom_line(aes(x = Year, y = `Bill Amt.`, linetype = Type), size = 1.1) +
+  geom_line(aes(x = Year, y = `Bill Amt.`, linetype = Type), linewidth = 1.1) +
   scale_x_continuous(n.breaks = 9) +
   scale_y_continuous(labels = scales::label_dollar(), limits = c(0, 6500)) +
   scale_linetype_manual(
@@ -147,7 +147,7 @@ Finally, we can compare the real bills (with exemptions) to the counterfactual b
 ```{r, echo=FALSE}
 bills_plot_2 <- rbind(bills_w_exe_summ, bills_no_exe_summ) %>%
   ggplot() +
-  geom_line(aes(x = Year, y = `Bill Amt.`, linetype = Type), size = 1.1) +
+  geom_line(aes(x = Year, y = `Bill Amt.`, linetype = Type), linewidth = 1.1) +
   scale_x_continuous(n.breaks = 9) +
   scale_y_continuous(labels = scales::label_dollar(), limits = c(0, 6500)) +
   scale_linetype_manual(
@@ -224,7 +224,7 @@ bills_plot_3 <- rbind(
   bills_new_exe_summ
 ) %>%
   ggplot() +
-  geom_line(aes(x = Year, y = `Bill Amt.`, linetype = Type), size = 1.1) +
+  geom_line(aes(x = Year, y = `Bill Amt.`, linetype = Type), linewidth = 1.1) +
   scale_x_continuous(n.breaks = 9) +
   scale_y_continuous(labels = scales::label_dollar(), limits = c(0, 6500)) +
   scale_linetype_manual(
@@ -380,7 +380,7 @@ t_annot <- tibble(
 t_no_exe_summ_plot <- ggplot(data = t_no_exe_summ) +
   geom_line(
     aes(x = year, y = idx_bill, color = class, linetype = stage),
-    size = 1.1
+    linewidth = 1.1
   ) +
   geom_text(
     data = t_annot,
@@ -503,7 +503,7 @@ Finally, we can plot the original bills against the updated ones.
 t_new_exe_summ_plot <- ggplot(data = t_new_exe_summ) +
   geom_line(
     aes(x = year, y = idx_bill, color = class, linetype = stage),
-    size = 1.1
+    linewidth = 1.1
   ) +
   geom_text(
     data = t_annot,

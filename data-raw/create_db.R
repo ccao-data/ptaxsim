@@ -33,12 +33,81 @@ db_send_queries <- function(conn, sql) {
 }
 
 
+# Set the database version. This gets incremented manually whenever the database
+# changes. This is checked against Config/Requires_DB_Version in the DESCRIPTION
+# file via check_db_version(). Schema is:
+# "MAX_YEAR_OF_DATA.BREAKING_CHANGE.NONBREAKING_CHANGE"
+db_version <- "2020.0.0"
+
+# Set the package version required to use this database. This is checked against
+# Version in the DESCRIPTION file. Basically, we have a two-way check that both
+# the package version and DB version are synced. Schema is SemVer.
+requires_pkg_version <- "0.5.0"
+
+
 
 
 # Create tables ----------------------------------------------------------------
 
 # Create the table definitions from file
 db_send_queries(conn, sql_from_file("data-raw/create_db.sql"))
+
+
+
+
+# Populate metadata ------------------------------------------------------------
+
+# Pull info directly from description file
+desc <- readr::read_file("DESCRIPTION")
+
+desc_version_pkg <- desc %>%
+  str_extract("(?<=Version: )[0-9]*\\.[0-9]*\\.[0-9]*")
+
+desc_first_name <- desc %>%
+  str_extract("(?<=given \\= \").*(?=\", family)")
+desc_last_name <- desc %>%
+  str_extract("(?<=family \\= \").*(?=\", email)")
+desc_name <- paste(desc_first_name, desc_last_name)
+
+desc_email <- desc %>%
+  str_extract("(?<=email \\= \").*gov")
+
+desc_url_package <- desc %>%
+  str_extract("(?<=URL: ).*(?=,)")
+
+db_base_url <- "https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/"
+db_full_url <- paste0(db_base_url, "ptaxsim-", db_version, ".db.bz2")
+
+# Load agency files to get min and max year
+agency_df <- read_parquet(file.path(remote_bucket, "agency", "part-0.parquet"))
+min_year <- min(as.integer(agency_df$year))
+max_year <- max(as.integer(agency_df$year))
+
+# Check max data year against DB version year
+db_version_year <- as.integer(substr(db_version, 1, 4))
+if (db_version_year != max_year) {
+  stop(
+    "Database version year is not equal to max year in the data. Check ",
+    "data and version number synchonization!"
+  )
+}
+
+# Create tibble of metadata table and add to DB
+metadata_df <- tibble(
+  db_version = db_version,
+  requires_pkg_version = requires_pkg_version,
+  created_with_pkg_version = desc_version_pkg,
+  created_at = as.character(format(Sys.time(), tz = "UTC")),
+  created_by = Sys.info()[["user"]],
+  author_name = desc_name,
+  author_email = desc_email,
+  source_url_database = db_full_url,
+  source_url_package = desc_url_package,
+  data_year_min = min_year,
+  data_year_max = max_year
+)
+
+DBI::dbAppendTable(conn, "metadata", metadata_df)
 
 
 

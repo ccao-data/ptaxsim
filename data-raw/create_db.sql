@@ -119,6 +119,22 @@ CREATE TABLE eq_factor (
 CREATE INDEX ix_eq_factor_year ON eq_factor(year);
 
 
+/** metadata **/
+CREATE TABLE metadata (
+    db_version              varchar                                    NOT NULL,
+    requires_pkg_version    varchar                                    NOT NULL,
+    created_with_pkg_version  varchar                                  NOT NULL,
+    created_at              varchar                                    NOT NULL,
+    created_by              varchar                                    NOT NULL,
+    author_name             varchar                                    NOT NULL,
+    author_email            varchar                                    NOT NULL,
+    source_url_database     varchar                                    NOT NULL,
+    source_url_package      varchar                                    NOT NULL,
+    data_year_min           int                                        NOT NULl,
+    data_year_max           int                                        NOT NULL
+);
+
+
 /** pin **/
 CREATE TABLE pin (
     year                    int                                        NOT NULL,

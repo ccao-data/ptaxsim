@@ -1,3 +1,132 @@
+#' Check if a connection object is a valid PTAXSIM database
+#'
+#' @description Checks the size, table names, and validity of a DBI connection
+#'   object for the PTAXSIM database. Throws an error if the size or table names
+#'   are not as expected.
+#'
+#' @param conn A valid DBI connection object pointing to a local PTAXSIM
+#'   SQLite database file.
+#'
+#' @return Returns \code{TRUE} if all requirements are met, otherwise returns
+#'   an error.
+#'
+#' @examples
+#' \dontrun{
+#' ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), "./ptaxsim.db")
+#' check_db_conn(ptaxsim_db_conn)
+#' }
+#' @md
+#' @family check
+#' @export
+check_db_conn <- function(conn) {
+  if (!DBI::dbIsValid(conn)) {
+    stop(
+      "Database connection object is not valid! ",
+      "Check the path to the PTAXSIM database file, make sure the database ",
+      "file is not compressed, and make sure the connection object is active"
+    )
+  }
+
+  db_size <- DBI::dbGetQuery(
+    conn,
+    "
+    SELECT page_count * page_size AS size
+    FROM pragma_page_count(), pragma_page_size();
+    "
+  )
+  db_size <- db_size$size
+  if (db_size == 0) {
+    stop(
+      "Connected to a database of size 0 Kb. Check the path to the PTAXSIM ",
+      "database file"
+    )
+  }
+
+  expected_tables <- c(
+    "agency", "agency_fund", "agency_fund_info", "agency_info", "cpi",
+    "eq_factor", "pin", "tax_code", "tif", "tif_distribution"
+  )
+  actual_tables <- DBI::dbListTables(conn)
+
+  diff <- setdiff(expected_tables, actual_tables)
+  if (length(diff) > 0) {
+    stop(
+      "Database is missing expected table(s): ",
+      paste(diff, collapse = ", "),
+      ". Check the path to the PTAXSIM database file"
+    )
+  }
+
+  return(TRUE)
+}
+
+
+#' Check if the PTAXSIM package and database file are synchronized
+#'
+#' @description Performs a two-way check to synchronize the package and
+#'   database.
+#'
+#'   1. Package version must be \code{>=} the minimum package version recorded
+#'   in the database \code{metadata} table
+#'   2. Database version must be \code{>=} the minimum database version recorded
+#'   in the package \code{DESCRIPTION} file
+#'
+#' @param conn A valid DBI connection object pointing to a local PTAXSIM
+#'   database file.
+#'
+#' @return Returns \code{TRUE} if all requirements are met, otherwise returns
+#'   an error.
+#'
+#' @examples
+#' \dontrun{
+#' ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), "./ptaxsim.db")
+#' check_db_sync(ptaxsim_db_conn)
+#' }
+#' @md
+#' @family check
+#' @export
+check_db_sync <- function(conn) {
+
+  if (!DBI::dbExistsTable(conn, "metadata")) {
+    stop(
+      "The PTAXSIM database file is missing the required metadata table. ",
+      "It is likely that your database file is out-of-date. Please download ",
+      "an updated version of the database file from GitLab"
+    )
+  }
+
+  metadata <- DBI::dbGetQuery(conn, "SELECT * FROM metadata")
+  loaded_db_version <- metadata$db_version
+  req_db_version <-
+    utils::packageDescription("ptaxsim")[["Config/Requires_DB_Version"]]
+
+  loaded_pkg_version <- getNamespaceVersion("ptaxsim")
+  req_pkg_version <- metadata$requires_pkg_version
+
+  db_diff <- utils::compareVersion(loaded_db_version, req_db_version)
+  if (db_diff == -1) {
+     stop(
+       "The PTAXSIM database file does not meet the minimum version ",
+       "requirements of the PTAXSIM package (package requires DB version >= ",
+       req_db_version, ", you have: ", loaded_db_version, "). Please download ",
+       "an updated version of the PTAXSIM database file from GitLab"
+     )
+  }
+
+  pkg_diff <- utils::compareVersion(loaded_pkg_version, req_pkg_version)
+  if (pkg_diff == -1) {
+    stop(
+      "The PTAXSIM package does not meet the minimum version requirements ",
+      "necessary to use the current database file (DB requires package ",
+      "version >= ", req_pkg_version, ", you have ", loaded_pkg_version, "). ",
+      "Please install an updated version of the PTAXSIM package from GitLab"
+    )
+  }
+
+  return(TRUE)
+}
+
+
 # Checks to ensure data.tables input to tax_bill() are the same as those
 # returned by the lookup_ functions
 check_agency_dt_str <- function(agency_dt) {

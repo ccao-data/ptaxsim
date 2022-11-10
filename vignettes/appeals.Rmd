@@ -113,16 +113,16 @@ sb_pins_map <- ggplot() +
   geom_sf(
     data = sb_pins,
     aes(color = major_class, alpha = major_class),
-    size = 0.8
+    size = 0.7
   ) +
-  geom_sf(data = muni, fill = "transparent", size = 1.1) +
+  geom_sf(data = muni, fill = "transparent", linewidth = 1.1) +
   annotation_scale(location = "br") +
   scale_alpha_manual(
     name = "",
     values = c("2 - Residential" = 0.2, "3 & 5 - Commercial" = 0.9)
   ) +
   scale_color_brewer(name = "", palette = "Set1") +
-  guides(color = guide_legend(override.aes = list(size = 5))) +
+  guides(color = guide_legend(override.aes = list(linewidth = 5))) +
   theme_void() +
   theme(
     legend.title = element_text(size = 14),
@@ -191,7 +191,7 @@ sb_pins_av_plot <- ggplot() +
   geom_line(
     data = sb_pins_summ,
     aes(x = stage, y = idx, color = major_class, group = major_class),
-    size = 1.1
+    linewidth = 1.1
   ) +
   scale_color_brewer(name = "", palette = "Set1") +
   labs(x = "Stage", y = "Median AV, Indexed to 2019 Mailed") +
@@ -316,7 +316,7 @@ sb_bills_plot <- bind_rows(
 ggplot() +
   geom_line(
     aes(x = stage, y = idx, color = major_class, group = major_class),
-    size = 1.1
+    linewidth = 1.1
   ) +
   scale_color_brewer(name = "", palette = "Set1") +
   labs(x = "Stage", y = "Median Value, Indexed to 2019 Mailed") +
@@ -507,7 +507,7 @@ sb_cntr_plot <- bind_rows(
 ggplot() +
   geom_line(
     aes(x = stage, y = idx, color = major_class, group = major_class),
-    size = 1.1
+    linewidth = 1.1
   ) +
   scale_color_brewer(name = "", palette = "Set1") +
   labs(x = "Stage", y = "Median Value, Indexed to 2019 Mailed") +

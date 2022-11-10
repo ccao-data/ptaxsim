@@ -46,3 +46,8 @@ pkgdown
 *.db
 *.zst
 *.bz2
+
+# Old and backup files
+*.bak
+*.old
+

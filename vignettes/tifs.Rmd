@@ -114,15 +114,15 @@ wh_pins_map <- ggplot() +
   geom_sf(
     data = wh_pins %>% filter(major_class %in% c("2", "3", "5")),
     aes(color = major_class_fct, alpha = major_class_fct),
-    size = 0.8
+    size = 0.7
   ) +
-  geom_sf(data = bound_muni, fill = "transparent", size = 1.1) +
+  geom_sf(data = bound_muni, fill = "transparent", linewidth = 1.1) +
   geom_sf(
     data = bound_tif,
     fill = "purple2",
     color = "purple4",
     alpha = 0.5,
-    size = 1
+    linewidth = 1
   ) +
   annotation_scale(location = "br") +
   scale_alpha_manual(
@@ -478,7 +478,7 @@ tif_bills_cntr_summ <- wh_bills %>%
 tif_plot_cntr <- ggplot(tif_bills_cntr_summ) +
   geom_line(
     aes(x = year, y = med_bill, color = name, linetype = lt),
-    size = 1.1
+    linewidth = 1.1
   ) +
   geom_vline(xintercept = 2014, linetype = "dashed", alpha = 0.7) +
   annotate(
