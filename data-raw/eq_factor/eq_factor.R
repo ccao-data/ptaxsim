@@ -7,7 +7,7 @@ remote_path <- file.path(remote_bucket, "eq_factor", "part-0.parquet")
 
 eq_factor <- readr::read_csv(
   file = "data-raw/eq_factor/eq_factor.csv",
-  col_types = cols(year = col_character(), equalization_factor = col_double())
+  col_types = cols(year = col_character(), eq_factor = col_double())
 ) %>%
   arrange(year)
 

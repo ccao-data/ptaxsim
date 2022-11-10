@@ -25,6 +25,7 @@ variables:
   RENV_PATHS_LIBRARY: ${CI_PROJECT_DIR}/renv/library
   # Disable checking of long-running examples during build testing
   _R_CHECK_DONTTEST_EXAMPLES_: "FALSE"
+  PTAXSIM_DB_BASE_URL: "s3://ccao-data-public-us-east-1/ptaxsim"
 
 # Cache settings. R libraries are installed into the R_LIBS_USER folder based
 # on the libraries listed in the DESCRIPTION file. These libraries are then
@@ -55,10 +56,12 @@ before_script:
   - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" &&
     unzip -qq awscliv2.zip &&
     ./aws/install
-    
+
   # Download and unpack the PTAXSIM DB from S3 if it doesn't already exist
   # If it does, use the cached version
-  - if [ ! -f ptaxsim.db.bz2 ]; then aws s3 cp s3://ccao-data-public-us-east-1/ptaxsim/ptaxsim.db.bz2 ${CI_PROJECT_DIR}/ptaxsim.db.bz2; fi
+  - >
+      export PTAXSIM_VERSION=$(grep -Po "(?<=Requires_DB_Version: )[0-9]*\.[0-9]*\.[0-9]*" ${CI_PROJECT_DIR}/DESCRIPTION)
+  - if [ ! -f ptaxsim.db.bz2 ]; then aws s3 cp ${PTAXSIM_DB_BASE_URL}/ptaxsim-${PTAXSIM_VERSION}.db.bz2 ${CI_PROJECT_DIR}/ptaxsim.db.bz2; fi
   - bzip2 -k -d ptaxsim.db.bz2
     
   # Install R dependencies listed in DESCRIPTION using renv
