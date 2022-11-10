@@ -174,7 +174,7 @@ lookup_pin <- function(year,
   )
 
   stage_col <- glue::glue("av_", stage)
-  eq_version_col <- glue::glue(eq_version, "_eq_factor")
+  eq_version_col <- glue::glue("eq_factor_", eq_version)
   dt <- DBI::dbGetQuery(
     conn,
     statement = glue::glue_sql(
