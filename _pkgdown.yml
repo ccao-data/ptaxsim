@@ -10,6 +10,9 @@ reference:
 - subtitle: Lookup tax data
 - contents:
   - starts_with("lookup_")
+- subtitle: Check database validity
+- contents:
+  - starts_with("check_")
 
 - title: Data 
 - subtitle: Sample tax bills

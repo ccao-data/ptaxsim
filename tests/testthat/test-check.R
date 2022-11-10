@@ -22,10 +22,6 @@ pins <- c("14081020190000", "09274240240000", "07101010391078")
 years <- c(2019, 2019, 2018)
 tax_codes <- c("73105", "22031", "35011")
 
-test_that("correct database path works as expected", {
-  expect_true(check_db_conn(ptaxsim_db_conn))
-})
-
 test_that("lookups return correct checks", {
   expect_true(check_agency_dt_str(lookup_agency(years, tax_codes)))
   expect_true(check_agency_dt_str(lookup_agency(years[1], tax_codes)))
@@ -35,22 +31,6 @@ test_that("lookups return correct checks", {
   expect_true(check_tif_dt_str(lookup_tif(years[1], tax_codes)))
 })
 
-test_that("bad database path throws error", {
-  expect_error(check_db_conn(ptaxsim_db_conn_wrong), regexp = "0 Kb")
-})
-
-test_that("missing tables throws error", {
-  DBI::dbCreateTable(
-    ptaxsim_db_conn_wrong,
-    "pin",
-    data.frame(
-      "a" = c(1, 2, 3),
-      "b" = c(4, 5, 6)
-    )
-  )
-
-  expect_error(check_db_conn(ptaxsim_db_conn_wrong), regexp = "missing")
-})
 
 test_that("wrong column types throws error", {
   agency <- lookup_agency(years, tax_codes) %>%
@@ -92,9 +72,103 @@ test_that("outputs fail if not keyed data.table", {
   expect_error(check_tif_dt_str(tif))
 })
 
+
+context("test check_db_conn()")
+
+##### TEST check_db_conn() #####
+
+test_that("correct database path works as expected", {
+  expect_true(check_db_conn(ptaxsim_db_conn))
+})
+
+test_that("bad database path throws error", {
+  expect_error(check_db_conn(ptaxsim_db_conn_wrong), regexp = "0 Kb")
+})
+
+test_that("missing tables throws error", {
+  DBI::dbCreateTable(
+    ptaxsim_db_conn_wrong,
+    "pin",
+    data.frame(
+      "a" = c(1, 2, 3),
+      "b" = c(4, 5, 6)
+    )
+  )
+
+  expect_error(check_db_conn(ptaxsim_db_conn_wrong), regexp = "missing")
+})
+
+
+context("test check_db_sync()")
+
+##### TEST check_db_sync() #####
+
+test_that("check fails when database is unversioned", {
+  expect_error(check_db_sync(ptaxsim_db_conn_wrong), regexp = "out-of-date")
+  expect_true(check_db_sync(ptaxsim_db_conn))
+})
+
+test_that("fail when database is out-of-date", {
+  temp_conn <- DBI::dbConnect(RSQLite::SQLite(), tempfile(fileext = ".db"))
+  DBI::dbWriteTable(
+    temp_conn, "metadata",
+    data.frame(
+      db_version = "2019.0.0",
+      requires_pkg_version = getNamespaceVersion("ptaxsim")
+    ),
+    overwrite = TRUE
+  )
+  expect_error(
+    check_db_sync(temp_conn),
+    regexp = "you have: 2019.0.0"
+  )
+})
+
+test_that("fail when package is out-of-date", {
+  temp_conn <- DBI::dbConnect(RSQLite::SQLite(), tempfile(fileext = ".db"))
+  DBI::dbWriteTable(
+    temp_conn, "metadata",
+    data.frame(
+      db_version =
+        utils::packageDescription("ptaxsim")[["Config/Requires_DB_Version"]],
+      requires_pkg_version = "2000.4.0"
+    ),
+    overwrite = TRUE
+  )
+  expect_error(
+    check_db_sync(temp_conn),
+    regexp = ">= 2000.4.0"
+  )
+})
+
+test_that("README links are synchronized with tested DB version", {
+  if (file.exists("../../README.md")) {
+    readme_file <- readr::read_file("../../README.md")
+  } else if (file.exists("../../00_pkg_src/ptaxsim/README.md")) {
+    readme_file <- readr::read_file("../../00_pkg_src/ptaxsim/README.md")
+  } else {
+    skip("Missing README file")
+  }
+
+  readme_db_version <- stringr::str_extract(
+    readme_file,
+    pattern = "(?<=DB version: )[0-9]{4}\\.[0-9]*\\.[0-9]*(?=;)"
+  )
+  desc_db_version <-
+    utils::packageDescription("ptaxsim")[["Config/Requires_DB_Version"]]
+
+  metadata <- DBI::dbGetQuery(ptaxsim_db_conn, "SELECT * FROM metadata")
+  loaded_db_version <- metadata$db_version
+
+  # README ver > req ver from DESCRIPTION
+  expect_gte(utils::compareVersion(readme_db_version, desc_db_version), 0)
+
+  # README ver == installed ver
+  expect_equal(utils::compareVersion(readme_db_version, loaded_db_version), 0)
+})
+
 test_that("invalid or closed connection object throws error", {
   DBI::dbDisconnect(ptaxsim_db_conn)
   DBI::dbDisconnect(ptaxsim_db_conn_wrong)
   expect_error(check_db_conn(ptaxsim_db_conn), regexp = "not valid")
-  expect_error(check_db_conn(ptaxsim_db_conn_wrong), regexp = "not valid")
 })

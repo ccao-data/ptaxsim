@@ -407,7 +407,7 @@ We can plot the total bill over time:
 library(ggplot2)
 
 bills_summ_plot <- ggplot(data = bills_summ) +
-  geom_line(aes(x = year, y = bill_total), size = 1.1) +
+  geom_line(aes(x = year, y = bill_total), linewidth = 1.1) +
   scale_y_continuous(
     name = "Total Tax Amount",
     labels = scales::dollar,

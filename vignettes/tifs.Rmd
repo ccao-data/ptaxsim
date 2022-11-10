@@ -478,7 +478,7 @@ tif_bills_cntr_summ <- wh_bills %>%
 tif_plot_cntr <- ggplot(tif_bills_cntr_summ) +
   geom_line(
     aes(x = year, y = med_bill, color = name, linetype = lt),
-    size = 1.1
+    linewidth = 1.1
   ) +
   geom_vline(xintercept = 2014, linetype = "dashed", alpha = 0.7) +
   annotate(

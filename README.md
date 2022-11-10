@@ -9,7 +9,8 @@
 > installation](#database-installation) for details.
 >
 > [**Link to PTAXSIM
-> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim.db.bz2)
+> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2020.0.0.db.bz2)
+> (DB version: 2020.0.0; Last updated: 2022-11-09 20:03:10)
 
 PTAXSIM is an R package/database to approximate Cook County property tax
 bills. It uses real assessment, exemption, TIF, and levy data to
@@ -98,8 +99,11 @@ database:
 
 1.  Download the compressed database file from the CCAO’s public S3
     bucket. [Link
-    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim.db.bz2).
-2.  Decompress the downloaded database file. The file is compressed
+    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2020.0.0.db.bz2).
+2.  (Optional) Rename the downloaded database file by removing the
+    version number, i.e. `ptaxsim-0.4.3.db.bz2` becomes
+    `ptaxsim.db.bz2`.
+3.  Decompress the downloaded database file. The file is compressed
     using [bzip2](https://sourceware.org/bzip2/).
     - On Windows, you can easily decompress bzip2 files using
       [7-Zip](https://www.7-zip.org/download.html).
@@ -107,9 +111,9 @@ database:
       be used via the command line i.e. `bzip2 -d ptaxsim.db.bz2`. If
       bzip2 is not installed, use the package manager on your system
       (brew, apt, etc.) to install it first.
-3.  Place the decompressed database file (`ptaxsim.db`) in a convenient
+4.  Place the decompressed database file (`ptaxsim.db`) in a convenient
     location, preferably at the root of your R project.
-4.  At the beginning of your project, instantiate a
+5.  At the beginning of your project, instantiate a
     [DBI](https://dbi.r-dbi.org/) connection to the database file with
     the name `ptaxsim_db_conn`. The PTAXSIM R functions look for this
     connection object name by default. If you wish to change the name,
@@ -565,6 +569,20 @@ erDiagram
     int     year               PK
     double  eq_factor
   }
+  
+  metadata {
+    varchar db_version
+    varchar requires_pkg_version
+    varchar created_with_pkg_version
+    varchar created_at
+    varchar created_by
+    varchar author_name
+    varchar author_email
+    varchar source_url_database
+    varchar source_url_package
+    int     data_year_min
+    int     data_year_max
+  }
 
   pin {
     int     year               PK
@@ -671,6 +689,13 @@ erDiagram
   eq_factor {
     int     year               PK
     double  eq_factor
+  }
+  
+  metadata {
+    varchar db_version
+    varchar requires_pkg_version
+    int     data_year_min
+    int     data_year_max
   }
 
   pin {
