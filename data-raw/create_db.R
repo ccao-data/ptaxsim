@@ -37,7 +37,7 @@ db_send_queries <- function(conn, sql) {
 # changes. This is checked against Config/Requires_DB_Version in the DESCRIPTION
 # file via check_db_version(). Schema is:
 # "MAX_YEAR_OF_DATA.BREAKING_CHANGE.NONBREAKING_CHANGE"
-db_version <- "2020.0.1"
+db_version <- "2020.1.0"
 
 # Set the package version required to use this database. This is checked against
 # Version in the DESCRIPTION file. Basically, we have a two-way check that both

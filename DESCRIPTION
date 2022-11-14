@@ -23,7 +23,7 @@ Imports:
     RSQLite,
     utils
 RoxygenNote: 7.2.1
-Suggests: 
+Suggests:
     covr,
     devtools,
     dplyr,
@@ -42,6 +42,6 @@ Suggests:
     stars,
     stringr,
     testthat
-Depends: 
+Depends:
     R (>= 2.10)
-Config/Requires_DB_Version: 2020.0.1
+Config/Requires_DB_Version: 2020.1.0
