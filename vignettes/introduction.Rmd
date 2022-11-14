@@ -302,12 +302,12 @@ mkt_value <- 800000
 # For residential properties, AV is 10% of market value
 assmt_value <- mkt_value * 0.1
 
-# Get the equalization factor for 2020 to get the equalized assessed value
+# Get the final equalization factor for 2020 to get the equalized assessed value
 eq_factor <- DBI::dbGetQuery(
   ptaxsim_db_conn,
   "SELECT * FROM eq_factor WHERE year = 2020"
 ) %>%
-  pull(eq_factor)
+  pull(eq_factor_final)
 
 eq_value <- assmt_value * eq_factor
 ```
