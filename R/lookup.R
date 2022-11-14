@@ -159,7 +159,7 @@ lookup_pin <- function(year,
   }
 
   if (!eq_version %in% c("tentative", "final")) {
-    stop("eq_version must be one of: final, tentative")
+    stop("eq_version must be one of: tentative, final")
   }
 
   # This lookup uses a temp table since it's faster than putting lots of
