@@ -119,6 +119,8 @@ test:
 # to GitLab Pages
 pages:
   stage: pages
+  only:
+    - master
   script:
     - Rscript -e 'pkgdown::build_site()'
   artifacts:
