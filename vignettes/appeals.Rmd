@@ -122,7 +122,7 @@ sb_pins_map <- ggplot() +
     values = c("2 - Residential" = 0.2, "3 & 5 - Commercial" = 0.9)
   ) +
   scale_color_brewer(name = "", palette = "Set1") +
-  guides(color = guide_legend(override.aes = list(linewidth = 5))) +
+  guides(color = guide_legend(override.aes = list(size = 5))) +
   theme_void() +
   theme(
     legend.title = element_text(size = 14),
@@ -226,7 +226,7 @@ sb_pins_av_plot <- ggplot() +
   theme(
     axis.title = element_text(size = 13),
     axis.title.x = element_text(margin = margin(t = 6)),
-    axis.title.y = element_text(margin = margin(r = 6)),
+    axis.title.y = element_text(margin = margin(r = 6), size = 12),
     axis.text = element_text(size = 11),
     axis.text.x = element_text(color = stage_labs),
     strip.text = element_text(size = 16),
@@ -398,7 +398,7 @@ ggplot() +
   lims(y = c(95, 170)) +
   labs(
     x = "Stage",
-    y = "Median AV, Indexed to 2018 Board",
+    y = "Median Value, Indexed to 2018 Board",
     caption = "Highlighted stage is a reassessment"
   ) +
   facet_wrap(vars(type)) +
@@ -406,7 +406,7 @@ ggplot() +
   theme(
     axis.title = element_text(size = 13),
     axis.title.x = element_text(margin = margin(t = 6)),
-    axis.title.y = element_text(margin = margin(r = 6)),
+    axis.title.y = element_text(margin = margin(r = 6), size = 12),
     axis.text = element_text(size = 11),
     axis.text.x = element_text(color = stage_labs),
     strip.text = element_text(size = 16),
@@ -665,10 +665,10 @@ ggplot() +
   ) +
   scale_color_brewer(name = "", palette = "Set1") +
   facet_wrap(vars(type), nrow = 2, ncol = 2, dir = "v") +
-  # lims(y = c(95, 170)) +
+  lims(y = c(95, 170)) +
   labs(
     x = "Stage",
-    y = "Median AV, Indexed to 2018 Board",
+    y = "Median Value, Indexed to 2018 Board",
     caption = "Highlighted stage is a reassessment"
   ) +
   theme_minimal() +
