@@ -306,7 +306,8 @@ erDiagram
 
   eq_factor {
     int     year               PK
-    double  eq_factor
+    double  eq_factor_tentative
+    double  eq_factor_final
   }
   
   metadata {
@@ -427,7 +428,8 @@ erDiagram
 
   eq_factor {
     int     year               PK
-    double  eq_factor
+    double  eq_factor_tentative
+    double  eq_factor_final
   }
   
   metadata {

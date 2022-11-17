@@ -134,6 +134,16 @@ test_that("lookup values/data are correct", {
     lookup_pin(2016:2020, pins[2], stage = "board")$av,
     c(106400, 106400, 106400, 137998, 137998)
   )
+  expect_equal(
+    lookup_pin(
+      2016:2020, pins[2], stage = "board",
+      eq_version = "tentative")$av,
+    c(106400, 106400, 106400, 137998, 137998)
+  )
+  expect_equal(
+    lookup_pin(2016:2020, pins[2], eq_version = "tentative")$eav,
+    c(292121, 309454, 301814, 379812, 425876)
+  )
 
   # Match all values in real data to lookup values
   expect_equivalent(
@@ -180,6 +190,8 @@ test_that("bad/incorrect inputs throw errors", {
   expect_error(lookup_pin(2019, "73105"))
   expect_error(lookup_pin(c(2000, 2019), pins[1]))
   expect_error(lookup_pin(2019, as.numeric(pins[1])))
+  expect_error(lookup_pin(2019, pins[1], eq_version = "BOARD"))
+  expect_error(lookup_pin(2019, pins[1], eq_version = 1))
 })
 
 

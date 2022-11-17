@@ -111,7 +111,8 @@ CREATE INDEX ix_cpi_year ON cpi(year);
 /** eq_factor **/
 CREATE TABLE eq_factor (
     year                    int                                        NOT NULL,
-    eq_factor               double                                     NOT NULL,
+    eq_factor_tentative     double                                     NOT NULL,
+    eq_factor_final         double                                     NOT NULL,
     PRIMARY KEY (year)
 ) WITHOUT ROWID;
 

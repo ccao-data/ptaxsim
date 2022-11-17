@@ -9,8 +9,8 @@
 > installation](#database-installation) for details.
 >
 > [**Link to PTAXSIM
-> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2020.0.0.db.bz2)
-> (DB version: 2020.0.0; Last updated: 2022-11-09 20:03:10)
+> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2020.1.0.db.bz2)
+> (DB version: 2020.1.0; Last updated: 2022-11-14 14:29:37)
 
 PTAXSIM is an R package/database to approximate Cook County property tax
 bills. It uses real assessment, exemption, TIF, and levy data to
@@ -99,7 +99,7 @@ database:
 
 1.  Download the compressed database file from the CCAO’s public S3
     bucket. [Link
-    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2020.0.0.db.bz2).
+    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2020.1.0.db.bz2).
 2.  (Optional) Rename the downloaded database file by removing the
     version number, i.e. `ptaxsim-0.4.3.db.bz2` becomes
     `ptaxsim.db.bz2`.
@@ -567,7 +567,8 @@ erDiagram
 
   eq_factor {
     int     year               PK
-    double  eq_factor
+    double  eq_factor_tentative
+    double  eq_factor_final
   }
   
   metadata {
@@ -688,7 +689,8 @@ erDiagram
 
   eq_factor {
     int     year               PK
-    double  eq_factor
+    double  eq_factor_tentative
+    double  eq_factor_final
   }
   
   metadata {

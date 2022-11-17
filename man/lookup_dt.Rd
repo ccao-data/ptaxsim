@@ -9,7 +9,13 @@
 \usage{
 lookup_agency(year, tax_code, conn = ptaxsim_db_conn)
 
-lookup_pin(year, pin, stage = "clerk", conn = ptaxsim_db_conn)
+lookup_pin(
+  year,
+  pin,
+  stage = "clerk",
+  eq_version = "final",
+  conn = ptaxsim_db_conn
+)
 
 lookup_tif(year, tax_code, conn = ptaxsim_db_conn)
 }
@@ -27,6 +33,25 @@ PTAXSIM database.}
 from which to pull assessed value (column \code{av}) and equalized assessed
 value (column \code{eav}). Options include \code{"mailed"},
 \code{"certified"}, \code{"board"}, and \code{"clerk"}.}
+
+\item{eq_version}{A length 1 character vector indicating the version of the
+  equalizer. The Illinois Department of Revenue calculates two equalizers:
+
+  \enumerate{
+    \item{
+      \code{"tentative"} -
+      The tentative equalizer based on CCAO certified values
+    }
+    \item{
+      \code{"final"} -
+      The final equalizer based on Board of Review certified values
+    }
+  }
+
+  In general, the \code{"tentative"} value should be used with the
+  \code{"mailed"} and \code{"certified"} stage options, while the
+  \code{"final"} value should be used with the
+  \code{"board"} and \code{"clerk"} stage options.}
 }
 \value{
 A \code{data.table} containing the specified tax data.

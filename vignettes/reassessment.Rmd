@@ -675,7 +675,7 @@ First up, the state equalizer. This number is used to make Cook County assessmen
 We'll set the 2018 equalizer to be the same as the 2017 equalizer.
 
 ```{r}
-# Pull the equalizer directly from the table included in the
+# Pull the final equalizer directly from the table included in the
 # PTAXSIM database
 cw_fut_eq_fct <- DBI::dbGetQuery(
   ptaxsim_db_conn,
@@ -683,7 +683,7 @@ cw_fut_eq_fct <- DBI::dbGetQuery(
   FROM eq_factor
   WHERE year = 2017"
 ) %>%
-  pull(eq_factor)
+  pull(eq_factor_final)
 ```
 
 ## Assessed values
