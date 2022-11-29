@@ -88,6 +88,13 @@ bills_df <- bills_df %>%
   filter(!is.na(agency_num), row_number() == 1) %>%
   ungroup()
 
+# Round numeric values to nearest hundredth
+bills_df <- bills_df %>%
+  mutate(
+    across(c(final_tax, percent, pension, prev_tax), round, 2),
+    across(c(rate), round, 3),
+  )
+
 # Write detail results to file for safekeeping
 bills_df %>%
   readr::write_csv("data-raw/sample_tax_bills/sample_tax_bills_detail.csv")
