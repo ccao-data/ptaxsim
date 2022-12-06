@@ -14,7 +14,7 @@
 #'
 #'   Most of the data necessary to answer these questions is built into the
 #'   included database. Data for the most current tax year is usually available
-#'   the following year (i.e. 2020 data is available in 2021). If needed, users
+#'   the following year (i.e. 2021 data is available in 2022). If needed, users
 #'   can supply current tax year data manually. See vignettes for more
 #'   information.
 #'
