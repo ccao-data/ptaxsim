@@ -12,7 +12,7 @@ knitr::opts_chunk$set(
 options(datatable.prettyprint.char = 25L)
 ```
 
-This vignette introduces the PTAXSIM package, including its: main function, primary inputs, basic abilities, and common uses. Advanced use cases are described in separate vignettes. Familiarity with the Cook County tax system is useful, but not essential to follow this vignette.
+This vignette introduces the PTAXSIM package, including its: main function, primary inputs, basic abilities, and common uses. Advanced use cases are described in separate vignettes. Familiarity with the Cook County property tax system is useful, but not essential to follow this vignette.
 
 In this vignette, we will:
 
@@ -25,7 +25,7 @@ In this vignette, we will:
 
 ## What is PTAXSIM?
 
-PTAXSIM is a utility to estimate Cook County property tax bills. It has two parts:
+PTAXSIM is a software package to estimate Cook County property tax bills. It has two parts:
 
 1. A database file containing the historical data (>= 2006) necessary to estimate individual property tax bills
 2. A highly-optimized R package that utilizes the database to quickly and efficiently estimate tax bills
@@ -59,7 +59,7 @@ PTAXSIM has a single primary function - `tax_bill()` - with two *required* argum
 The output is a `data.table` containing the tax amount directed to each taxing district, by PIN and year. Let's look at an example using just one property and year:
 
 ```{r}
-bill <- tax_bill(year_vec = 2020, pin_vec = "13264290020000")
+bill <- tax_bill(year_vec = 2021, pin_vec = "13264290020000")
 print(bill)
 ```
 
@@ -85,14 +85,14 @@ print(bill)
 The `tax_bill()` function can take multiple years in the `year_vec` argument:
 
 ```{r}
-bills <- tax_bill(2010:2020, "13264290020000")
+bills <- tax_bill(2010:2021, "13264290020000")
 print(bills, topn = 3)
 ```
 
 And multiple PINs in the `pin_vec` argument:
 
 ```{r}
-bills <- tax_bill(2020, c("13264290020000", "07101010391078", "10153080520000"))
+bills <- tax_bill(2021, c("13264290020000", "07101010391078", "10153080520000"))
 print(bills, topn = 3)
 ```
 
@@ -100,7 +100,7 @@ Passing `year_vec` and `pin_vec` of different lengths will yield the Cartesian p
 
 ```{r}
 bills <- tax_bill(
-  year_vec = 2006:2020,
+  year_vec = 2006:2021,
   pin_vec = c("13264290020000", "07101010391078", "10153080520000")
 )
 print(bills, topn = 3)
@@ -110,7 +110,7 @@ Passing `year_vec` and `pin_vec` of the same length will match the vectors eleme
 
 ```{r}
 bills <- tax_bill(
-  year_vec = c(2012, 2006, 2020),
+  year_vec = c(2012, 2006, 2021),
   pin_vec = c("13264290020000", "07101010391078", "10153080520000")
 )
 print(bills, topn = 3)
@@ -123,7 +123,7 @@ These basic arguments can even be used to calculate line-item bills for all PINs
 pins <- DBI::dbGetQuery(ptaxsim_db_conn, "SELECT DISTINCT pin FROM pin")
 
 # Calculate all bills for all years (~350M rows, takes about 10 minutes)
-bills <- tax_bill(2006:2020, pins$pin)
+bills <- tax_bill(2006:2021, pins$pin)
 print(bills, topn = 3)
 #> NOT RUN, takes too long on GitLab CI and requires ~90 GB of RAM
 ```
@@ -144,7 +144,7 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
   * Takes PINs and years as inputs and outputs a character vector of tax codes. Here is an example:
   
     ```{r}
-    tax_code <- lookup_tax_code(2018:2020, "13264290020000")
+    tax_code <- lookup_tax_code(2018:2021, "13264290020000")
     print(tax_code)
     ```
   
@@ -152,13 +152,13 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
   
     ```{r}
     tax_code <- lookup_tax_code(
-      year = 2018:2020,
+      year = 2018:2021,
       pin = c("13264290020000", "07101010391078", "10153080520000")
     )
     print(tax_code)
 
     tax_code <- lookup_tax_code(
-      year = 2006:2020,
+      year = 2006:2021,
       pin = c("13264290020000", "07101010391078", "10153080520000")
     )
     print(tax_code)
@@ -185,8 +185,8 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
   * Takes years and tax codes as inputs and outputs a keyed `data.table` of taxing districts, including their identifying information, extension, and base. Here is an example:
   
     ```{r}
-    tax_code <- lookup_tax_code(2020, "13264290020000")
-    agency <- lookup_agency(2020, tax_code)
+    tax_code <- lookup_tax_code(2021, "13264290020000")
+    agency <- lookup_agency(2021, tax_code)
     print(agency, topn = 3)
     ```
   
@@ -194,10 +194,10 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
   
     ```{r}
     tax_codes <- lookup_tax_code(
-      year = 2020,
+      year = 2021,
       pin = c("13264290020000", "13264290020000", "13264290020000")
     )
-    agency <- lookup_agency(c(2020, 2020, 2020), tax_codes)
+    agency <- lookup_agency(c(2021, 2021, 2021), tax_codes)
     print(agency, topn = 3)
     ```
 
@@ -229,14 +229,14 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
   * Takes years and PINs as inputs and outputs a keyed `data.table` of PINs, including their class, assessed value, and individual exemptions. Here is an example:
 
     ```{r}
-    pin <- lookup_pin(2020, "13264290020000")
+    pin <- lookup_pin(2021, "13264290020000")
     print(pin)
     ```
     
   * Repeat inputs will yield distinct outputs:
 
     ```{r}
-    pin <- lookup_pin(2020, c("13264290020000", "13264290020000"))
+    pin <- lookup_pin(2021, c("13264290020000", "13264290020000"))
     print(pin)
     ```
     
@@ -247,8 +247,8 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
     * `"clerk"` - Assessed values used by the Clerk to calculate the base and by the Treasurer to calculate bills. Identical to `"board"` in the huge majority of cases
     
     ```{r}
-    pin_mailed <- lookup_pin(2020, "13264290020000", stage = "mailed")
-    pin_board <- lookup_pin(2020, "13264290020000", stage = "board")
+    pin_mailed <- lookup_pin(2021, "13264290020000", stage = "mailed")
+    pin_board <- lookup_pin(2021, "13264290020000", stage = "board")
     print(rbind(pin_mailed, pin_board))
     ```
 
@@ -271,16 +271,16 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
   * Takes years and tax codes as inputs and outputs a keyed `data.table` of TIF districts, including their identifying information and distribution percentage/TIF share. Here is an example:
 
     ```{r}
-    tax_code <- lookup_tax_code(2020, "14172270080000")
-    tif <- lookup_tif(2020, tax_code)
+    tax_code <- lookup_tax_code(2021, "14172270080000")
+    tif <- lookup_tif(2021, tax_code)
     print(tif, topn = 3)
     ```
   
   * Returns a `data.table` with zero rows if the specified `tax_code` is not within a TIF district:
   
     ```{r}
-    tax_code <- lookup_tax_code(2020, "13264290020000")
-    tif <- lookup_tif(2020, tax_code)
+    tax_code <- lookup_tax_code(2021, "13264290020000")
+    tif <- lookup_tif(2021, tax_code)
     print(tif, topn = 3)
     ``` 
     
@@ -390,7 +390,7 @@ A 5% increase in the Chicago levy leads to a roughly $100 increase in taxes for 
 We can also use PTAXSIM to look at how tax bills have changed over time. To do so, simply use `tax_bill()` to get multiple years' worth of bills. The PTAXSIM database starts in 2006, so we can use that as our earliest year.
 
 ```{r}
-bills <- tax_bill(2006:2020, "13264290020000")
+bills <- tax_bill(2006:2021, "13264290020000")
 
 bills_summ <- bills %>%
   group_by(pin, year) %>%
@@ -411,7 +411,7 @@ bills_summ_plot <- ggplot(data = bills_summ) +
   scale_y_continuous(
     name = "Total Tax Amount",
     labels = scales::dollar,
-    limits = c(0, 11000),
+    limits = c(0, 13000),
     n.breaks = 7
   ) +
   scale_x_continuous(name = "Year", n.breaks = 9) +
@@ -458,7 +458,7 @@ bills_summ_plot2 <- ggplot(data = bills_summ2) +
     name = "Total Tax Amount",
     labels = scales::dollar,
     expand = c(0, 0),
-    limits = c(0, 11000),
+    limits = c(0, 13000),
     n.breaks = 7
   ) +
   scale_x_continuous(name = "Year", n.breaks = 9) +
@@ -485,7 +485,7 @@ bills_summ_plot2 <- ggplot(data = bills_summ2) +
 bills_summ_plot2
 ```
 
-This PIN's bill has increased nearly 2.5x since 2006. A significant portion of that increase due to increases in the Chicago Public Schools levy.
+This PIN's bill has increased nearly 3x since 2006. A significant portion of that increase due to increases in the Chicago Public Schools levy.
 
 ## Advanced scenarios
 

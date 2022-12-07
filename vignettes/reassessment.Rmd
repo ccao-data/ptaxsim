@@ -48,10 +48,10 @@ library(tidyr)
 ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.db"))
 ```
 
-The example PIN we’ll use is **16-26-406-015-0000**. This is a small, single-family property in West Chicago without any exemptions. We can use the `tax_bill()` function to get every bill for this PIN from 2006 to 2020. 
+The example PIN we’ll use is **16-26-406-015-0000**. This is a small, single-family property in West Chicago without any exemptions. We can use the `tax_bill()` function to get every bill for this PIN from 2006 to 2021. 
 
 ```{r}
-p <- tax_bill(2006:2020, "16264060150000")
+p <- tax_bill(2006:2021, "16264060150000")
 ```
 
 Next, we can use `dplyr` to collapse the line-item bills into totals by year, then plot the change in assessed value and total tax bill amount over time.
@@ -85,7 +85,7 @@ p_summ_plot <- p_summ %>%
   ggplot() +
   geom_hline(yintercept = 100, alpha = 0.5) +
   geom_vline(
-    xintercept = seq(2006, 2018, 3),
+    xintercept = seq(2006, 2021, 3),
     linetype = "dotted",
     alpha = 0.5
   ) +
@@ -126,7 +126,7 @@ p_summ_plot <- p_summ %>%
 p_summ_plot
 ```
 
-This PIN’s assessed value (AV) and total tax bill both decreased from 2006 to 2015 and then subsequently increased. However, the tax bill amount has diverged from the PIN's assessed value and is now near its 2006 high. Why?
+This PIN’s assessed value (AV) and total tax bill both decreased from 2006 to 2015 and then subsequently increased. However, the tax bill amount has diverged from the PIN's assessed value and is now above its 2006 high. Why?
 
 To find out, we can isolate the impact of *reassessment alone* by freezing the other source of tax bill changes: levies.
 
@@ -135,17 +135,17 @@ Levies are the amount requested by each taxing district each year. They typicall
 Freezing these levies and recalculating the PIN's tax bills will help disentangle the source of the divergence seen in the plot above.
 
 ```{r}
-p_tc <- lookup_tax_code(2006:2020, "16264060150000")
+p_tc <- lookup_tax_code(2006:2021, "16264060150000")
 
 # Get historical levies for each district, then set them all to their 2006 level
-p_levies <- lookup_agency(2006:2020, p_tc) %>%
+p_levies <- lookup_agency(2006:2021, p_tc) %>%
   arrange(agency_num, year) %>%
   group_by(agency_num) %>%
   mutate(agency_total_ext = first(agency_total_ext)) %>%
   setDT(key = c("year", "tax_code", "agency_num"))
 
 # Recalculate bills with the frozen levies
-p_cntr <- tax_bill(2006:2020, "16264060150000", agency_dt = p_levies)
+p_cntr <- tax_bill(2006:2021, "16264060150000", agency_dt = p_levies)
 p_cntr_summ <- p_cntr %>%
   select(year, av, final_tax) %>%
   group_by(year) %>%
@@ -171,7 +171,7 @@ p_cntr_summ_plot <- bind_rows(p_summ, p_cntr_summ) %>%
   ggplot() +
   geom_hline(yintercept = 100, alpha = 0.5) +
   geom_vline(
-    xintercept = seq(2006, 2018, 3),
+    xintercept = seq(2006, 2021, 3),
     linetype = "dotted",
     alpha = 0.5
   ) +
@@ -259,7 +259,7 @@ Next, we convert the response from the API to a `data.frame` and gather the AV a
 ```{r}
 cw_pins <- fromJSON(rawToChar(cw_pins$content))$pin
 
-cw_bills <- tax_bill(2006:2020, cw_pins)
+cw_bills <- tax_bill(2006:2021, cw_pins)
 ```
 
 Then, we can make the same plot we made for the single PIN example, this time using the *median* AV and tax bill for the ward, indexed to 2006.
@@ -294,7 +294,7 @@ cw_bills_summ_plot <- cw_bills_summ %>%
   ggplot() +
   geom_hline(yintercept = 100, alpha = 0.5) +
   geom_vline(
-    xintercept = seq(2006, 2018, 3),
+    xintercept = seq(2006, 2021, 3),
     linetype = "dotted",
     alpha = 0.5
   ) +
@@ -336,20 +336,20 @@ cw_bills_summ_plot <- cw_bills_summ %>%
 cw_bills_summ_plot
 ```
 
-Assessed values in Ward 22 have significantly diverged from tax bills, with AVs decreasing nearly 50% while tax bills have climbed around 25%.
+Assessed values in Ward 22 have significantly diverged from tax bills, with AVs decreasing nearly 25% while tax bills have climbed around 50%.
 
 To find out why, we can again generate counterfactual bills with levies held constant, this time for all of Ward 22.
 
 ```{r}
-cw_tc <- lookup_tax_code(2006:2020, cw_pins)
+cw_tc <- lookup_tax_code(2006:2021, cw_pins)
 
-cw_levies <- lookup_agency(2006:2020, cw_tc) %>%
+cw_levies <- lookup_agency(2006:2021, cw_tc) %>%
   arrange(agency_num, year) %>%
   group_by(agency_num) %>%
   mutate(agency_total_ext = first(agency_total_ext)) %>%
   setDT(key = c("year", "tax_code", "agency_num"))
 
-cw_cntr_bills <- tax_bill(2006:2020, cw_pins, agency_dt = cw_levies)
+cw_cntr_bills <- tax_bill(2006:2021, cw_pins, agency_dt = cw_levies)
 cw_cntr_bills_summ <- cw_cntr_bills %>%
   select(pin, year, av, final_tax) %>%
   group_by(pin, year) %>%
@@ -375,7 +375,7 @@ cw_cntr_bills_summ_plot <- bind_rows(cw_bills_summ, cw_cntr_bills_summ) %>%
   ggplot() +
   geom_hline(yintercept = 100, alpha = 0.5) +
   geom_vline(
-    xintercept = seq(2006, 2018, 3),
+    xintercept = seq(2006, 2021, 3),
     linetype = "dotted",
     alpha = 0.5
   ) +
@@ -436,7 +436,7 @@ cw_cntr_bills_summ_plot
 
 Now the picture becomes a bit more complex. The tax bills *with frozen levies* tracked actual bills until around 2012, after which they diverged significantly. This indicates that levies likely increased more substantially after 2012.
 
-Ultimately, we can say that without levy increases, Ward 22 would have a median tax bill amount roughly 40% lower than it currently does.
+Ultimately, we can say that without levy increases, Ward 22's median tax bill would be roughly 50% lower.
 
 ## West Chicago township
 
@@ -457,7 +457,7 @@ t_pins <- fromJSON(rawToChar(t_pins$content))$pin
 
 # Iterating through years instead of calculating all bills at once. This is to
 # avoid memory constraints on the GitLab CI runners that create this vignette
-t_bills_summ <- purrr::map_dfr(2006:2020, function(x) {
+t_bills_summ <- purrr::map_dfr(2006:2021, function(x) {
   tax_bill(x, t_pins) %>%
     select(pin, year, av, final_tax) %>%
     group_by(pin, year) %>%
@@ -488,7 +488,7 @@ t_bills_summ_plot <- t_bills_summ %>%
   ggplot() +
   geom_hline(yintercept = 100, alpha = 0.5) +
   geom_vline(
-    xintercept = seq(2006, 2018, 3),
+    xintercept = seq(2006, 2021, 3),
     linetype = "dotted",
     alpha = 0.5
   ) +
@@ -533,15 +533,15 @@ t_bills_summ_plot
 We again recalculate counterfactual bills using the levies from 2006.
 
 ```{r}
-t_tc <- lookup_tax_code(2006:2020, t_pins)
+t_tc <- lookup_tax_code(2006:2021, t_pins)
 
-t_levies <- lookup_agency(2006:2020, t_tc) %>%
+t_levies <- lookup_agency(2006:2021, t_tc) %>%
   arrange(agency_num, year) %>%
   group_by(agency_num) %>%
   mutate(agency_total_ext = first(agency_total_ext)) %>%
   setDT(key = c("year", "tax_code", "agency_num"))
 
-t_cntr_bills_summ <- purrr::map_dfr(2006:2020, function(x) {
+t_cntr_bills_summ <- purrr::map_dfr(2006:2021, function(x) {
   tax_bill(x, t_pins, agency_dt = t_levies) %>%
     select(pin, year, av, final_tax) %>%
     group_by(pin, year) %>%
@@ -569,7 +569,7 @@ t_cntr_bills_summ_plot <- bind_rows(t_bills_summ, t_cntr_bills_summ) %>%
   ggplot() +
   geom_hline(yintercept = 100, alpha = 0.5) +
   geom_vline(
-    xintercept = seq(2006, 2018, 3),
+    xintercept = seq(2006, 2021, 3),
     linetype = "dotted",
     alpha = 0.5
   ) +
@@ -637,7 +637,7 @@ In addition to providing the data and functions necessary for historical analysi
 We'll again use Ward 22 as an example. Let's start by getting Ward 22's unaltered `tax_bill()` inputs and tax bills.
 
 ```{r}
-cw_years <- 2006:2018
+cw_years <- 2006:2021
 
 # Grab unaltered components to feed to tax_bill()
 cw_pins_dt <- lookup_pin(cw_years, cw_pins)
@@ -656,13 +656,13 @@ cw_bills <- tax_bill(
 )
 ```
 
-To demonstrate the process of estimating future bills, we can pretend we're in 2017 and try to estimate how the 2018 Chicago reassessment will change bills in Ward 22. We can then compare the *actual* 2018 bills to our estimate.
+To demonstrate the process of estimating future bills, we can pretend we're in 2020 and try to estimate how the 2021 Chicago reassessment will change bills in Ward 22. We can then compare the *actual* 2021 bills to our estimate.
 
 Let's start by listing our assumptions:
 
-- The 2018 state equalizer will be the same as the 2017 equalizer
-- All City triad property AVs will increase by 15% during the 2018 reassessment (3 years of growth + correction from appeals)
-- Ward 22 is a hot area so AVs will increase by 25% 
+- The 2021 state equalizer will be slightly less than the 2020 equalizer due to increasing AVs
+- All City triad property AVs will increase by 15% during the 2021 reassessment (3 years of growth + correction from appeals + previously low assessments)
+- Ward 22 is a hot area and potentially underassessed, so AVs will increase by 40%
 - All levies will change by their average change of the last 3 years
 - Though TIF distributions technically change due to changes in the tax base, we can ignore TIFs for this problem
 
@@ -672,7 +672,7 @@ Each of these assumptions corresponds to an input (or set of inputs) to the `tax
 
 First up, the state equalizer. This number is used to make Cook County assessments comparable to other Illinois counties. For our purposes, this number is effectively a constant that cancels out of most of our calculations. As long as it's used consistently when calculating bills, its actual value is largely irrelevant.
 
-We'll set the 2018 equalizer to be the same as the 2017 equalizer.
+We'll set the 2021 equalizer to be slightly less than the 2020 equalizer.
 
 ```{r}
 # Pull the final equalizer directly from the table included in the
@@ -681,29 +681,31 @@ cw_fut_eq_fct <- DBI::dbGetQuery(
   ptaxsim_db_conn,
   "SELECT *
   FROM eq_factor
-  WHERE year = 2017"
+  WHERE year = 2020"
 ) %>%
   pull(eq_factor_final)
+
+cw_fut_eq_fct <- cw_fut_eq_fct - 0.1
 ```
 
 ## Assessed values
 
 Next, we'll recalculate the equalized assessed value of all City triad PINs based on the assumptions from before:
 
-- All City PINs increase 15% from their 2017 AV
-- Ward 22 PINs increase 25% from their 2017 AV
+- All City PINs increase 15% from their 2020 AV
+- Ward 22 PINs increase 40% from their 2020 AV
 
 ```{r}
 # Get all township codes in the City triad
 cw_town_codes <- c("70", "71", "72", "73", "74", "75", "76", "77")
 
-# Pull ALL PINs (whole county) for 2017 from the DB. We'll manually
+# Pull ALL PINs (whole county) for 2020 from the DB. We'll manually
 # format this into the format returned by lookup_pin()
 cw_fut_pins <- DBI::dbGetQuery(
   ptaxsim_db_conn,
   "SELECT *
   FROM pin
-  WHERE year = 2017"
+  WHERE year = 2020"
 )
 
 # Change the AVs of all PINs according to the assumptions above, then
@@ -712,7 +714,7 @@ cw_fut_pins <- cw_fut_pins %>%
   as_tibble() %>%
   mutate(
     av = case_when(
-      pin %in% cw_pins ~ av_clerk + (av_clerk * 0.25), # Ward up 25%
+      pin %in% cw_pins ~ av_clerk + (av_clerk * 0.40), # Ward up 40%
       substr(tax_code_num, 1, 2) %in% cw_town_codes ~
         av_clerk + (av_clerk * 0.15), # City up 15%
       TRUE ~ as.numeric(av_clerk)
@@ -723,19 +725,19 @@ cw_fut_pins <- cw_fut_pins %>%
 
 ## Bases
 
-Next, we need to recalculate the tax base of each taxing district using our new estimated 2018 AVs. To do so, we sum the EAV of the PINs in each tax code, then sum the tax code totals to the taxing district (agency) level.
+Next, we need to recalculate the tax base of each taxing district using our new estimated 2021 AVs. To do so, we sum the EAV of the PINs in each tax code, then sum the tax code totals to the taxing district (agency) level.
 
 ```{r}
 cw_fut_tax_codes <- cw_fut_pins %>%
   group_by(year, tax_code_num) %>%
   summarize(total_eav = sum(eav))
 
-# Get the total estimated tax base for each agency for 2018
+# Get the total estimated tax base for each agency for 2021
 cw_fut_agency_tots <- DBI::dbGetQuery(
   ptaxsim_db_conn,
   "SELECT *
   FROM tax_code
-  WHERE year = 2017"
+  WHERE year = 2020"
 ) %>%
   left_join(cw_fut_tax_codes, by = c("year", "tax_code_num")) %>%
   group_by(year, agency_num) %>%
@@ -750,7 +752,7 @@ We also need to recalculate levies for the whole county based on our assumption:
 
 ```{r}
 cw_fut_levies <- lookup_agency(
-  2014:2017, # Get last 3 years of agency levies
+  2017:2020, # Get last 3 years of agency levies
   cw_fut_tax_codes$tax_code_num # For all tax codes we pulled from PINs
 ) %>%
   group_by(agency_num, tax_code) %>%
@@ -763,7 +765,7 @@ cw_fut_levies <- lookup_agency(
     avg_pct_change = replace(avg_pct_change, is.infinite(avg_pct_change), 0),
     agency_total_ext = agency_total_ext + (avg_pct_change * agency_total_ext)
   ) %>%
-  filter(year == 2017)
+  filter(year == 2020)
 ```
 
 ## Preparing inputs
@@ -777,7 +779,7 @@ cw_fut_pins_dt <- cw_fut_pins %>%
   mutate(across(c(av, eav), as.integer)) %>%
   filter(pin %in% cw_pins) %>%
   # relocate(exe_longtime_homeowner, .before = "exe_disabled") %>%
-  mutate(year = 2018) %>%
+  mutate(year = 2021) %>%
   setDT(key = c("year", "pin"))
 
 # Prep agency_dt. Combine base and levy for each agency
@@ -785,21 +787,21 @@ cw_fut_agencies_dt <- cw_fut_levies %>%
   select(-ends_with("_change"), -agency_total_eav) %>%
   left_join(cw_fut_agency_tots, by = c("year", "agency_num")) %>%
   relocate(agency_total_eav, .before = "agency_total_ext") %>%
-  mutate(year = 2018) %>%
+  mutate(year = 2021) %>%
   setDT(key = c("year", "tax_code", "agency_num"))
 ```
 
 ## Estimate future bills
 
-Finally, we can use our formatted inputs to estimate what 2018 tax bills would be in Ward 22 given our assumptions. We can then compare the estimated bills to the actual ones to see how close we actually were.
+Finally, we can use our formatted inputs to estimate what 2021 tax bills would be in Ward 22 given our assumptions. We can then compare the estimated bills to the actual ones to see how close we actually were.
 
-Start by getting all the estimated 2018 bills.
+Start by getting all the estimated 2021 bills.
 
 ```{r}
 cw_fut_bills <- tax_bill(
-  year_vec = 2018,
+  year_vec = 2021,
   pin_vec = cw_pins,
-  tax_code_vec = lookup_tax_code(2018, cw_pins),
+  tax_code_vec = lookup_tax_code(2021, cw_pins),
   agency_dt = cw_fut_agencies_dt,
   pin_dt = cw_fut_pins_dt
 )
@@ -811,7 +813,7 @@ Then, perform the same aggregation as before for all PINs in Ward 22: get the me
 cw_fut_bills_summ <- cw_fut_bills %>%
   bind_rows(
     cw_bills %>%
-      filter(year != 2018)
+      filter(year != 2021)
   ) %>%
   select(pin, year, av, final_tax) %>%
   group_by(pin, year) %>%
@@ -867,7 +869,7 @@ cw_fut_bills_plot <- bind_rows(cw_bills_summ, cw_fut_bills_summ) %>%
   ggplot() +
   geom_hline(yintercept = 100, alpha = 0.5) +
   geom_vline(
-    xintercept = seq(2006, 2018, 3),
+    xintercept = seq(2006, 2021, 3),
     linetype = "dotted",
     alpha = 0.5
   ) +
@@ -913,6 +915,6 @@ cw_fut_bills_plot <- bind_rows(cw_bills_summ, cw_fut_bills_summ) %>%
 cw_fut_bills_plot
 ```
 
-The dotted lines show 2018 AVs and tax bills given our assumptions. Both AVs and tax bills to go up significantly, much more than they actually did for Ward 22. Estimated tax bills go up *more* than estimated AVs, indicating that we may have underestimated the AV increase for the rest of the city (or overestimated the growth in Ward 22).
+The dotted lines show counterfactual 2021 AVs and tax bills given our assumptions. The counterfactual values increase significantly, but still increase less than the actual 2021 values. However, the counterfactual tax bills go up *less* than counterfactual AVs, indicating that we may have overestimated the AV increase for the rest of the city (or underestimated the growth in Ward 22).
 
 Ultimately, the results show the power, and peril, of PTAXSIM. It *can* be used to estimate hypothetical future tax bill changes, but it is also very sensitive to the user's assumptions. Use with caution.
