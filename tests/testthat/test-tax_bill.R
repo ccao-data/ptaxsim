@@ -140,12 +140,12 @@ test_that("returned amount/output correct for all sample bills", {
   expect_equal(
     tax_bill(sum_dt$year, sum_dt$pin, simplify = FALSE) %>%
       nrow(),
-    371
+    508
   )
   expect_equal(
     tax_bill(sum_dt$year, sum_dt$pin, simplify = TRUE) %>%
       nrow(),
-    385
+    525
   )
 
   # District level tax amounts
