@@ -9,13 +9,13 @@
 > installation](#database-installation) for details.
 >
 > [**Link to PTAXSIM
-> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2020.1.0.db.bz2)
-> (DB version: 2020.1.0; Last updated: 2022-11-14 14:29:37)
+> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.0.db.bz2)
+> (DB version: 2021.0.0; Last updated: 2022-12-30 19:46:15)
 
 PTAXSIM is an R package/database to approximate Cook County property tax
 bills. It uses real assessment, exemption, TIF, and levy data to
 generate historic, line-item tax bills (broken out by taxing district)
-for any property from 2006 to 2020. Given some careful assumptions and
+for any property from 2006 to 2021. Given some careful assumptions and
 data manipulation, it can also provide hypothetical, but factually
 grounded, answers to questions such as:
 
@@ -99,7 +99,7 @@ database:
 
 1.  Download the compressed database file from the CCAO’s public S3
     bucket. [Link
-    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2020.1.0.db.bz2).
+    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.0.db.bz2).
 2.  (Optional) Rename the downloaded database file by removing the
     version number, i.e. `ptaxsim-0.4.3.db.bz2` becomes
     `ptaxsim.db.bz2`.
@@ -360,7 +360,7 @@ broken out by taxing district. To do so, pass a vector of multiple years
 to the `year_vec` argument of `tax_bill()`:
 
 ``` r
-multiple_years <- tax_bill(2010:2020, "14081020210000")
+multiple_years <- tax_bill(2010:2021, "14081020210000")
 multiple_years
 #>      year            pin class tax_code    av    eav agency_num
 #>   1: 2010 14081020210000   206    73001 69062 227905  010010000
@@ -369,11 +369,11 @@ multiple_years
 #>   4: 2010 14081020210000   206    73001 69062 227905  030210001
 #>   5: 2010 14081020210000   206    73001 69062 227905  030210002
 #>  ---                                                           
-#> 111: 2020 14081020210000   206    73105 61605 198578  043030000
-#> 112: 2020 14081020210000   206    73105 61605 198578  044060000
-#> 113: 2020 14081020210000   206    73105 61605 198578  050200000
-#> 114: 2020 14081020210000   206    73105 61605 198578  050200001
-#> 115: 2020 14081020210000   206    73105 61605 198578  080180000
+#> 122: 2021 14081020210000   206    73105 70000 210189  043030000
+#> 123: 2021 14081020210000   206    73105 70000 210189  044060000
+#> 124: 2021 14081020210000   206    73105 70000 210189  050200000
+#> 125: 2021 14081020210000   206    73105 70000 210189  050200001
+#> 126: 2021 14081020210000   206    73105 70000 210189  080180000
 #>                       agency_name     agency_major_type agency_minor_type
 #>   1:               COUNTY OF COOK           COOK COUNTY              COOK
 #>   2: FOREST PRESERVE DISTRICT ...           COOK COUNTY              COOK
@@ -381,11 +381,11 @@ multiple_years
 #>   4: CITY OF CHICAGO LIBRARY F... MUNICIPALITY/TOWNSHIP           LIBRARY
 #>   5: CITY OF CHICAGO SCHOOL BL... MUNICIPALITY/TOWNSHIP              MUNI
 #>  ---                                                                     
-#> 111: CHICAGO COMMUNITY COLLEGE...                SCHOOL            SCHOOL
-#> 112:           BOARD OF EDUCATION                SCHOOL            SCHOOL
-#> 113:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
-#> 114: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
-#> 115: METRO WATER RECLAMATION D...         MISCELLANEOUS             WATER
+#> 122: CHICAGO COMMUNITY COLLEGE...                SCHOOL            SCHOOL
+#> 123:           BOARD OF EDUCATION                SCHOOL            SCHOOL
+#> 124:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
+#> 125: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
+#> 126: METRO WATER RECLAMATION D...         MISCELLANEOUS             WATER
 #>      agency_tax_rate final_tax
 #>   1:         0.00423    964.04
 #>   2:         0.00051    116.23
@@ -393,11 +393,11 @@ multiple_years
 #>   4:         0.00102    232.46
 #>   5:         0.00116    264.37
 #>  ---                          
-#> 111:         0.00151    240.64
-#> 112:         0.03656   5468.12
-#> 113:         0.00329    524.32
-#> 114:         0.00000      0.00
-#> 115:         0.00378    602.41
+#> 122:         0.00145    225.36
+#> 123:         0.03517   4984.70
+#> 124:         0.00311    483.37
+#> 125:         0.00000      0.00
+#> 126:         0.00382    593.71
 ```
 
 The `tax_bill()` function will automatically combine the years and PIN
