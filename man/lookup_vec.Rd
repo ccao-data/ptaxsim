@@ -35,7 +35,7 @@ Cartesian product is returned.
 \examples{
 \dontrun{
 lookup_tax_code(2019, c("20304190020000", "16152090350000"))
-lookup_tax_code(2006:2020, c("20304190020000", "16152090350000"))
+lookup_tax_code(2006:2021, c("20304190020000", "16152090350000"))
 }
 }
 \seealso{

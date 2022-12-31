@@ -9,6 +9,12 @@ ptaxsim_db_conn <- DBI::dbConnect(
 )
 assign("ptaxsim_db_conn", ptaxsim_db_conn, envir = .GlobalEnv)
 
+max_year <- DBI::dbGetQuery(
+  ptaxsim_db_conn,
+  "SELECT data_year_max FROM metadata"
+) %>%
+  pull()
+
 # Create a vector of PINs with known, correct lookup values
 pins <- c("14081020190000", "09274240240000", "07101010391078")
 years <- c(2019, 2019, 2018)
@@ -123,16 +129,16 @@ test_that("lookup values/data are correct", {
     c(10000, 100000, 10000)
   )
   expect_equal(
-    lookup_pin(2014:2019, pins[2])$exe_senior,
-    c(15000, 15000, 10000, 24000, 32000, 32000)
+    lookup_pin(2014:2021, pins[2])$exe_senior,
+    c(15000, 15000, 10000, 24000, 32000, 32000, 32000, 32000)
   )
   expect_equal(
-    lookup_pin(2016:2020, pins[2], stage = "mailed")$av,
-    c(171414, 106400, 106400, 163489, 137998)
+    lookup_pin(2016:2021, pins[2], stage = "mailed")$av,
+    c(171414, 106400, 106400, 163489, 137998, 137998)
   )
   expect_equal(
-    lookup_pin(2016:2020, pins[2], stage = "board")$av,
-    c(106400, 106400, 106400, 137998, 137998)
+    lookup_pin(2016:2021, pins[2], stage = "board")$av,
+    c(106400, 106400, 106400, 137998, 137998, 137998)
   )
   expect_equal(
     lookup_pin(
@@ -147,7 +153,7 @@ test_that("lookup values/data are correct", {
 
   # Match all values in real data to lookup values
   expect_equivalent(
-    lookup_pin(2018:2020, sum_df$pin) %>%
+    lookup_pin(2018:max_year, sum_df$pin) %>%
       mutate(
         exe_vet_dis = exe_vet_dis_lt50 + exe_vet_dis_50_69 + exe_vet_dis_ge70,
         across(starts_with("exe_"), ~ .x != 0)
@@ -223,7 +229,7 @@ test_that("lookup values/data are correct", {
   )
   expect_known_hash(
     lookup_agency(sum_df$year, sum_df$tax_code),
-    "5b583e7300"
+    "e53ff7ac12"
   )
 })
 

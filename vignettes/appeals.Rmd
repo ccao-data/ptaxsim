@@ -453,7 +453,7 @@ sb_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
       x %in% c("board", "clerk") ~ "final"
     )
   )
-  
+
   # Again use tentative equalizer for any non-final (board) values
   eq_dt_stage <- eq_dt %>%
     mutate(stage_eq_factor = case_when(
@@ -461,7 +461,7 @@ sb_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
       x %in% c("board", "clerk") ~ eq_factor_final
     )) %>%
     select(year, stage_eq_factor, eq_factor_final)
-  
+
   # To recalculate the base, we get two distinct sets of differences:
   # 1. Residential PINs act normally, the amount back to the base from each
   #    PIN is the difference between the stage EAV and the 2019 final EAV
@@ -503,7 +503,7 @@ sb_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
       eav_diff_total = sum(eav_diff),
       exe_diff_total = sum(exe_diff, na.rm = TRUE)
     )
-  
+
   # Aggregate the PIN EAV and exemption differences into a new agency
   # data table with an adjusted base
   sb_agency_dt <- lookup_agency(sb_pin_diff$year, sb_pin_diff$tax_code) %>%
@@ -534,7 +534,7 @@ sb_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
         ) %>%
         select(-starts_with("eq_factor_"))
   }
-  
+
   # Combine residential and adjusted into a single PIN input data table
   sb_pin_dt_combo <- rbind(
       sb_pin_dt_stage %>%

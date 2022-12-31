@@ -198,6 +198,10 @@ tif_main <- bind_rows(
     prev_year_revenue = ifelse(
       agency_num == "030130504" & year == 2011,
       25155.10, prev_year_revenue
+    ),
+    first_year = ifelse(
+      agency_num == "030600504" & year == 2011,
+      2011, first_year
     )
   ) %>%
   filter(!(agency_num == "030330500" & first_year == 2012)) %>%
@@ -257,6 +261,11 @@ tif_distribution_xls <- map_dfr(dist_file_names_xls, function(file) {
       )
     ) %>%
     rename_with(~ str_remove(.x, "_tif"), starts_with("tax_code_tif_")) %>%
+    rename_with(
+      ~ "tax_code_distribution_percent",
+      starts_with("tax_code_distribution")
+    ) %>%
+    mutate(tif_tax_code = str_pad(tif_tax_code, "5", "left", "0")) %>%
     select(
       year,
       agency_num = tif_agency, tax_code_num = tif_tax_code,
