@@ -1678,10 +1678,16 @@
     },
     "tabulizer": {
       "Package": "tabulizer",
-      "Version": "0.2.2",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "3185156f8249ee6dad0af5a9cd7f39a7",
+      "Version": "0.2.3",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "ropensci",
+      "RemoteRepo": "tabulizer",
+      "RemoteRef": "main",
+      "RemoteSha": "08e3d763b7bb2becfe5fc95f800b3767ea704439",
+      "Remotes": "ropensci/tabulizerjars",
+      "Hash": "01527cacd09f8bb752f7049c0c19acd5",
       "Requirements": [
         "png",
         "rJava",
@@ -1691,9 +1697,14 @@
     "tabulizerjars": {
       "Package": "tabulizerjars",
       "Version": "1.0.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "f8e259f00c9fe116a167c838575d7d49",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "ropensci",
+      "RemoteRepo": "tabulizerjars",
+      "RemoteRef": "master",
+      "RemoteSha": "d1924e01db15b75251e4eb8f558e6e1a81e1c270",
+      "Hash": "2119acf2c46a72b25355d0a4e7148833",
       "Requirements": [
         "rJava"
       ]
