@@ -100,6 +100,8 @@ build:
 # This output gets scraped by GitLab and turned into a coverage badge
 test:
   stage: test
+  tags: 
+    - saas-linux-medium-amd64
   script:
     - R CMD check $(ls -1t *.tar.gz | head -n 1) --no-manual --no-build-vignettes --no-tests
     - Rscript -e 'devtools::test(reporter = testthat::JunitReporter$new(file = "test-out.xml"))'
