@@ -93,7 +93,6 @@ tax_bill <- function(year_vec,
                      pin_dt = lookup_pin(year_vec, pin_vec),
                      tif_dt = lookup_tif(year_vec, tax_code_vec),
                      simplify = TRUE) {
-
   # Basic type/input checking for vector inputs
   stopifnot(
     is.numeric(year_vec),
@@ -147,18 +146,14 @@ tax_bill <- function(year_vec,
   dt[, tax_code := tax_code_vec]
   data.table::setDT(dt, key = c("year", "pin", "tax_code"))
 
-  # Shrink the PIN data prior to join by collapsing exemptions into a total
-  # exempt amount
+  # Join PIN-level data (exemptions, eav) to the input data. eav_total is equal
+  # to the sum of all exemptions
   exe_total <- .SD <- class <- av <- eav <- NULL
-  exe_cols <- names(pin_dt)[startsWith(names(pin_dt), "exe_")]
-  pin_dt[, exe_total := rowSums(.SD), .SDcols = exe_cols]
-  pin_dt[class == "239", eav := av] # farmland is taxed on AV, not EAV
-  pin_dt[, (exe_cols) := NULL]
-
-  # Join PIN-level data (exemptions, eav) to the input data
   year <- pin <- i.av <- i.eav <- i.class <- i.exe_total <- NULL
+  exe_cols <- paste0("i.", names(pin_dt)[startsWith(names(pin_dt), "exe_")])
   dt[pin_dt, on = .(year, pin), c("av", "eav", "class", "exe_total") :=
-    .(i.av, i.eav, i.class, i.exe_total)]
+    .(i.av, i.eav, i.class, rowSums(data.table::as.data.table(mget(exe_cols))))]
+  dt[class == "239", eav := av] # farmland is taxed on AV, not EAV
 
   # Fetch TIF for a given tax code. There should only be one TIF per tax code (
   # with a few exceptions)
@@ -253,7 +248,6 @@ tax_bill <- function(year_vec,
   dt[, in_rpm_tif := NULL]
 
   if (simplify) {
-
     # Collapse per-district TIF amounts into a single row, just like on a
     # real tax bill
     tif_row <- dt[
