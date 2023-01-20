@@ -86,7 +86,6 @@ check_db_conn <- function(conn) {
 #' @family check
 #' @export
 check_db_sync <- function(conn) {
-
   if (!DBI::dbExistsTable(conn, "metadata")) {
     stop(
       "The PTAXSIM database file is missing the required metadata table. ",
@@ -105,12 +104,12 @@ check_db_sync <- function(conn) {
 
   db_diff <- utils::compareVersion(loaded_db_version, req_db_version)
   if (db_diff == -1) {
-     stop(
-       "The PTAXSIM database file does not meet the minimum version ",
-       "requirements of the PTAXSIM package (package requires DB version >= ",
-       req_db_version, ", you have: ", loaded_db_version, "). Please download ",
-       "an updated version of the PTAXSIM database file from GitLab"
-     )
+    stop(
+      "The PTAXSIM database file does not meet the minimum version ",
+      "requirements of the PTAXSIM package (package requires DB version >= ",
+      req_db_version, ", you have: ", loaded_db_version, "). Please download ",
+      "an updated version of the PTAXSIM database file from GitLab"
+    )
   }
 
   pkg_diff <- utils::compareVersion(loaded_pkg_version, req_pkg_version)

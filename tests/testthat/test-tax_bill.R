@@ -188,7 +188,7 @@ test_pin_dt <- lookup_pin(years, pins)
 test_agency_dt <- lookup_agency(years, test_tax_codes)
 test_tif_dt <- lookup_tif(years, test_tax_codes)
 
-test_tax_codes_og <- copy(test_tax_codes) 
+test_tax_codes_og <- copy(test_tax_codes)
 test_pin_dt_og <- copy(test_pin_dt)
 test_agency_dt_og <- copy(test_agency_dt)
 test_tif_dt_og <- copy(test_tif_dt)

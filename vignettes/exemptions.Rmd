@@ -111,7 +111,7 @@ First, we retrieve the `pin_dt` input to `tax_bill()` by using the `lookup_pin()
 
 ```{r}
 exe_dt <- lookup_pin(2006:2020, "25321140050000") %>%
-  mutate(across(starts_with("exe_"), ~ 0)) %>%
+  mutate(across(starts_with("exe_"), ~0)) %>%
   setDT(key = c("year", "pin"))
 ```
 
@@ -349,17 +349,21 @@ Mode <- function(x) {
 }
 
 t_no_exe_summ <- rbind(t_bills_w_exe, t_bills_no_exe)[
-  , class := Mode(substr(class, 1, 1)), by = pin
+  , class := Mode(substr(class, 1, 1)),
+  by = pin
 ][
   class %in% c("2", "3", "5"),
 ][
   , class := ifelse(class == "2", "Residential", "Commercial")
 ][
-  , .(total_bill = sum(final_tax)), by = .(year, pin, class, stage)
+  , .(total_bill = sum(final_tax)),
+  by = .(year, pin, class, stage)
 ][
-  , .(avg_bill = mean(total_bill)), by = .(year, class, stage)
+  , .(avg_bill = mean(total_bill)),
+  by = .(year, class, stage)
 ][
-  , idx_bill := (avg_bill / avg_bill[year == 2006]) * 100, by = .(class, stage)
+  , idx_bill := (avg_bill / avg_bill[year == 2006]) * 100,
+  by = .(class, stage)
 ]
 ```
 
@@ -479,17 +483,21 @@ Then, do the same aggregation and indexing we did previously, this time using th
 
 ```{r}
 t_new_exe_summ <- rbind(t_bills_w_exe, t_bills_new_exe)[
-  , class := Mode(substr(class, 1, 1)), by = pin
+  , class := Mode(substr(class, 1, 1)),
+  by = pin
 ][
   class %in% c("2", "3", "5"),
 ][
   , class := ifelse(class == "2", "Residential", "Commercial")
 ][
-  , .(total_bill = sum(final_tax)), by = .(year, pin, class, stage)
+  , .(total_bill = sum(final_tax)),
+  by = .(year, pin, class, stage)
 ][
-  , .(avg_bill = mean(total_bill)), by = .(year, class, stage)
+  , .(avg_bill = mean(total_bill)),
+  by = .(year, class, stage)
 ][
-  , idx_bill := (avg_bill / avg_bill[year == 2006]) * 100, by = .(class, stage)
+  , idx_bill := (avg_bill / avg_bill[year == 2006]) * 100,
+  by = .(class, stage)
 ]
 ```
 

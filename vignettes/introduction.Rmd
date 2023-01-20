@@ -40,13 +40,13 @@ By default, PTAXSIM uses the data in the database to estimate historical tax bil
 - You ***must*** instantiate a database connection object with the name `ptaxsim_db_conn` before using PTAXSIM. Here is an example connection:
 
   ```{r db_conn}
-  library(data.table)
-  library(dplyr)
-  library(here)
-  library(ptaxsim)
+library(data.table)
+library(dplyr)
+library(here)
+library(ptaxsim)
 
-  # Create the DB connection with the default name expected by PTAXSIM functions
-  ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("ptaxsim.db"))
+# Create the DB connection with the default name expected by PTAXSIM functions
+ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("ptaxsim.db"))
   ```
 
 ## The main function - `tax_bill()` {#main-arguments}
@@ -144,24 +144,24 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
   * Takes PINs and years as inputs and outputs a character vector of tax codes. Here is an example:
   
     ```{r}
-    tax_code <- lookup_tax_code(2018:2021, "13264290020000")
-    print(tax_code)
+tax_code <- lookup_tax_code(2018:2021, "13264290020000")
+print(tax_code)
     ```
   
   * Follows the same recycling rules as `tax_bill()`: input vectors of the same length return an element-wise output, input vectors of different lengths return the Cartesian product.
   
     ```{r}
-    tax_code <- lookup_tax_code(
-      year = 2018:2021,
-      pin = c("13264290020000", "07101010391078", "10153080520000")
-    )
-    print(tax_code)
+tax_code <- lookup_tax_code(
+  year = 2018:2021,
+  pin = c("13264290020000", "07101010391078", "10153080520000")
+)
+print(tax_code)
 
-    tax_code <- lookup_tax_code(
-      year = 2006:2021,
-      pin = c("13264290020000", "07101010391078", "10153080520000")
-    )
-    print(tax_code)
+tax_code <- lookup_tax_code(
+  year = 2006:2021,
+  pin = c("13264290020000", "07101010391078", "10153080520000")
+)
+print(tax_code)
     ```
   
 ### `agency_dt` {#agency_dt}
@@ -185,20 +185,20 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
   * Takes years and tax codes as inputs and outputs a keyed `data.table` of taxing districts, including their identifying information, extension, and base. Here is an example:
   
     ```{r}
-    tax_code <- lookup_tax_code(2021, "13264290020000")
-    agency <- lookup_agency(2021, tax_code)
-    print(agency, topn = 3)
+tax_code <- lookup_tax_code(2021, "13264290020000")
+agency <- lookup_agency(2021, tax_code)
+print(agency, topn = 3)
     ```
   
   * Note that it returns a distinct set of districts, even if year and tax code are repeated:
   
     ```{r}
-    tax_codes <- lookup_tax_code(
-      year = 2021,
-      pin = c("13264290020000", "13264290020000", "13264290020000")
-    )
-    agency <- lookup_agency(c(2021, 2021, 2021), tax_codes)
-    print(agency, topn = 3)
+tax_codes <- lookup_tax_code(
+  year = 2021,
+  pin = c("13264290020000", "13264290020000", "13264290020000")
+)
+agency <- lookup_agency(c(2021, 2021, 2021), tax_codes)
+print(agency, topn = 3)
     ```
 
 ### `pin_dt` {#pin_dt}
@@ -229,15 +229,15 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
   * Takes years and PINs as inputs and outputs a keyed `data.table` of PINs, including their class, assessed value, and individual exemptions. Here is an example:
 
     ```{r}
-    pin <- lookup_pin(2021, "13264290020000")
-    print(pin)
+pin <- lookup_pin(2021, "13264290020000")
+print(pin)
     ```
     
   * Repeat inputs will yield distinct outputs:
 
     ```{r}
-    pin <- lookup_pin(2021, c("13264290020000", "13264290020000"))
-    print(pin)
+pin <- lookup_pin(2021, c("13264290020000", "13264290020000"))
+print(pin)
     ```
     
   * By default, will return the final assessed value for the year *after all appeals are processed*. This can be changed using an additional argument: `stage`. The options for `stage` include:
@@ -247,9 +247,9 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
     * `"clerk"` - Assessed values used by the Clerk to calculate the base and by the Treasurer to calculate bills. Identical to `"board"` in the huge majority of cases
     
     ```{r}
-    pin_mailed <- lookup_pin(2021, "13264290020000", stage = "mailed")
-    pin_board <- lookup_pin(2021, "13264290020000", stage = "board")
-    print(rbind(pin_mailed, pin_board))
+pin_mailed <- lookup_pin(2021, "13264290020000", stage = "mailed")
+pin_board <- lookup_pin(2021, "13264290020000", stage = "board")
+print(rbind(pin_mailed, pin_board))
     ```
 
 ### `tif_dt` {#tif_dt}
@@ -271,17 +271,17 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
   * Takes years and tax codes as inputs and outputs a keyed `data.table` of TIF districts, including their identifying information and distribution percentage/TIF share. Here is an example:
 
     ```{r}
-    tax_code <- lookup_tax_code(2021, "14172270080000")
-    tif <- lookup_tif(2021, tax_code)
-    print(tif, topn = 3)
+tax_code <- lookup_tax_code(2021, "14172270080000")
+tif <- lookup_tif(2021, tax_code)
+print(tif, topn = 3)
     ```
   
   * Returns a `data.table` with zero rows if the specified `tax_code` is not within a TIF district:
   
     ```{r}
-    tax_code <- lookup_tax_code(2021, "13264290020000")
-    tif <- lookup_tif(2021, tax_code)
-    print(tif, topn = 3)
+tax_code <- lookup_tax_code(2021, "13264290020000")
+tif <- lookup_tif(2021, tax_code)
+print(tif, topn = 3)
     ``` 
     
 # 2. Common scenarios

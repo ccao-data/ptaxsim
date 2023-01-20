@@ -22,7 +22,6 @@ file_names <- list.files(
 
 # Load each file and cleanup columns, then combine into single df
 tax_code <- map_dfr(file_names, function(file) {
-
   # Extract year from file name
   year_ext <- str_extract(file, "\\d{4}")
 

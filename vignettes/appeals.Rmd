@@ -260,7 +260,6 @@ eq_dt <- DBI::dbGetQuery(ptaxsim_db_conn, "SELECT * FROM eq_factor")
 # bills with counterfactual AVs also requires recalculating the base of each
 # taxing district
 sb_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
-
   sb_pin_dt_actual <- lookup_pin(2019, sb_pins$pin, stage = "clerk")
   sb_pin_dt_stage <- lookup_pin(
     2019,
@@ -327,12 +326,12 @@ sb_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
     setkey(year, tax_code, agency_num)
 
   tax_bill(
-      year = 2019,
-      pin = sb_pin_dt_stage$pin,
-      pin_dt = sb_pin_dt_stage,
-      agency_dt = sb_agency_dt
-    ) %>%
-      mutate(stage = x)
+    year = 2019,
+    pin = sb_pin_dt_stage$pin,
+    pin_dt = sb_pin_dt_stage,
+    agency_dt = sb_agency_dt
+  ) %>%
+    mutate(stage = x)
 })
 
 # Append unaltered 2018 bills, again as a starting point for our index
@@ -384,7 +383,7 @@ sb_bills_plot <- bind_rows(
   sb_pins_summ %>% mutate(type = "Assessed Values"),
   sb_bills_summ %>% mutate(type = "Tax Bills")
 ) %>%
-ggplot() +
+  ggplot() +
   geom_vline(
     xintercept = "2019\nmailed",
     linetype = "dotted",
@@ -436,7 +435,6 @@ The plot above shows the zero-sum nature of assessment appeals. The large AV dec
 # Again we need to calculate bills at each stage of appeal. This time it's more
 # complicated since we need to exclude commercial appeals
 sb_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
-
   sb_pin_dt_actual <- lookup_pin(2019, sb_pins$pin, stage = "clerk")
   sb_pin_dt_mailed <- lookup_pin(
     2019,
@@ -528,29 +526,29 @@ sb_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
   # (only for the final/board stage)
   if (x == "board") {
     sb_pin_dt_mailed <- sb_pin_dt_mailed %>%
-        left_join(eq_dt, by = "year") %>%
-        mutate(
-          eav = round((eav / eq_factor_tentative) * eq_factor_final)
-        ) %>%
-        select(-starts_with("eq_factor_"))
+      left_join(eq_dt, by = "year") %>%
+      mutate(
+        eav = round((eav / eq_factor_tentative) * eq_factor_final)
+      ) %>%
+      select(-starts_with("eq_factor_"))
   }
 
   # Combine residential and adjusted into a single PIN input data table
   sb_pin_dt_combo <- rbind(
-      sb_pin_dt_stage %>%
-        filter(!substr(class, 1, 1) %in% c("3", "5")),
-      sb_pin_dt_mailed %>%
-        filter(substr(class, 1, 1) %in% c("3", "5"))
-      ) %>%
-      setkey(year, pin)
+    sb_pin_dt_stage %>%
+      filter(!substr(class, 1, 1) %in% c("3", "5")),
+    sb_pin_dt_mailed %>%
+      filter(substr(class, 1, 1) %in% c("3", "5"))
+  ) %>%
+    setkey(year, pin)
 
   tax_bill(
-      year = 2019,
-      pin = sb_pin_dt_combo$pin,
-      pin_dt = sb_pin_dt_combo,
-      agency_dt = sb_agency_dt
-    ) %>%
-      mutate(stage = x)
+    year = 2019,
+    pin = sb_pin_dt_combo$pin,
+    pin_dt = sb_pin_dt_combo,
+    agency_dt = sb_agency_dt
+  ) %>%
+    mutate(stage = x)
 })
 
 sb_cntr_all <- tax_bill(2018, sb_pins$pin) %>%
@@ -653,7 +651,7 @@ sb_cntr_plot <- bind_rows(
   sb_cntr_summ %>%
     mutate(type = "Tax Bills\n(No Commercial Appeals)")
 ) %>%
-ggplot() +
+  ggplot() +
   geom_vline(
     xintercept = "2019\nmailed",
     linetype = "dotted",

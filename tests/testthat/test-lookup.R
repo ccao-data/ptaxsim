@@ -142,8 +142,10 @@ test_that("lookup values/data are correct", {
   )
   expect_equal(
     lookup_pin(
-      2016:2020, pins[2], stage = "board",
-      eq_version = "tentative")$av,
+      2016:2020, pins[2],
+      stage = "board",
+      eq_version = "tentative"
+    )$av,
     c(106400, 106400, 106400, 137998, 137998)
   )
   expect_equal(

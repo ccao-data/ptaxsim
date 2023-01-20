@@ -63,7 +63,6 @@ summ_file_names_xls <- list.files(
 
 # Load each file and cleanup columns, then combine into single df
 tif_main_xls <- map_dfr(summ_file_names_xls, function(file) {
-
   # Extract year from file name
   year_ext <- as.integer(str_extract(file, "\\d{4}"))
 
@@ -239,7 +238,6 @@ dist_file_names_xls <- list.files(
 
 # Load each Excel file and cleanup columns, then combine into single df
 tif_distribution_xls <- map_dfr(dist_file_names_xls, function(file) {
-
   # Extract year from file name
   year_ext <- str_extract(file, "\\d{4}")
 
@@ -262,7 +260,7 @@ tif_distribution_xls <- map_dfr(dist_file_names_xls, function(file) {
     ) %>%
     rename_with(~ str_remove(.x, "_tif"), starts_with("tax_code_tif_")) %>%
     rename_with(
-      ~ "tax_code_distribution_percent",
+      ~"tax_code_distribution_percent",
       starts_with("tax_code_distribution")
     ) %>%
     mutate(tif_tax_code = str_pad(tif_tax_code, "5", "left", "0")) %>%

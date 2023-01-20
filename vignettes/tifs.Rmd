@@ -241,7 +241,7 @@ tif_inc_plot <- ggplot(tif_pins_summ) +
     "text",
     x = 2013.7,
     y = 7.5e7,
-    label =  "Wheeling Town Center II\nTIF created",
+    label = "Wheeling Town Center II\nTIF created",
     hjust = 1,
     size = 3.5,
     alpha = 0.5
@@ -250,7 +250,7 @@ tif_inc_plot <- ggplot(tif_pins_summ) +
     "text",
     x = 2017.9,
     y = 5.5e7,
-    label =  "Increment to TIF",
+    label = "Increment to TIF",
     hjust = 1,
     size = 5,
     color = "purple2",
@@ -337,7 +337,7 @@ tif_dist_plot <- ggplot(data = tif_bills_summ) +
     "text",
     x = 2013.7,
     y = 8e6,
-    label =  "Wheeling Town Center II\nTIF created",
+    label = "Wheeling Town Center II\nTIF created",
     hjust = 1,
     size = 3.5,
     alpha = 0.5
@@ -485,7 +485,7 @@ tif_plot_cntr <- ggplot(tif_bills_cntr_summ) +
     "text",
     x = 2013.7,
     y = 4.6e3,
-    label =  "Wheeling Town Center II\nTIF created",
+    label = "Wheeling Town Center II\nTIF created",
     hjust = 1,
     size = 3.5,
     alpha = 0.5
