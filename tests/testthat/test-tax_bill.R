@@ -182,4 +182,31 @@ test_that("all differences are less than $25", {
   )
 })
 
+# tax_bill inputs should not be modified by the tax_bill function
+test_tax_codes <- lookup_tax_code(years, pins)
+test_pin_dt <- lookup_pin(years, pins)
+test_agency_dt <- lookup_agency(years, test_tax_codes)
+test_tif_dt <- lookup_tif(years, test_tax_codes)
+
+test_tax_codes_og <- copy(test_tax_codes) 
+test_pin_dt_og <- copy(test_pin_dt)
+test_agency_dt_og <- copy(test_agency_dt)
+test_tif_dt_og <- copy(test_tif_dt)
+
+tax_bill(
+  year_vec = years,
+  pin_vec = pins,
+  tax_code_vec = test_tax_codes,
+  agency_dt = test_agency_dt,
+  pin_dt = test_pin_dt,
+  tif_dt = test_tif_dt
+)
+
+test_that("No tax_bill inputs modified by reference", {
+  expect_identical(test_tax_codes, test_tax_codes_og)
+  expect_identical(test_pin_dt, test_pin_dt_og)
+  expect_identical(test_agency_dt, test_agency_dt_og)
+  expect_identical(test_tif_dt, test_tif_dt_og)
+})
+
 DBI::dbDisconnect(ptaxsim_db_conn)
