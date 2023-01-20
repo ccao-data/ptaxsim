@@ -12,19 +12,13 @@ assign("ptaxsim_db_conn", ptaxsim_db_conn, envir = .GlobalEnv)
 # This test measures the accuracy of PTAXSIM be calculating the tax bill for a
 # sample of PINs and comparing to the known tax bill amount. The goal is to be
 # within $10 of each bill 97.5% of the time
-
 pins <- DBI::dbGetQuery(
   ptaxsim_db_conn,
   "
   SELECT year, pin, tax_bill_total
-  FROM (
-    SELECT
-      year,
-      pin,
-      tax_bill_total,
-      row_number() OVER (PARTITION BY year ORDER BY random()) AS row_num
-    FROM pin)
-  WHERE row_num <= 100000
+  FROM pin
+  ORDER BY random()
+  LIMIT 2000000
   "
 )
 
