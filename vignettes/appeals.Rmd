@@ -64,7 +64,7 @@ sb_res <- GET(
   base_url,
   query = list(
     year = 2021,
-    municipality_name = "Schaumburg",
+    municipality_name = "Village Of Schaumburg",
     `$select` = paste0(c("pin", "lat", "lon", "class"), collapse = ","),
     `$limit` = 500000L
   )

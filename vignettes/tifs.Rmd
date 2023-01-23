@@ -55,7 +55,7 @@ wh_res <- GET(
   base_url,
   query = list(
     year = 2021,
-    municipality_name = "Wheeling",
+    municipality_name = "Village Of Wheeling",
     `$select` = paste0(
       c("pin", "lat", "lon", "class", "tax_code"),
       collapse = ","
