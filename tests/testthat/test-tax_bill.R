@@ -182,31 +182,59 @@ test_that("all differences are less than $25", {
   )
 })
 
-# tax_bill inputs should not be modified by the tax_bill function
-test_tax_codes <- lookup_tax_code(years, pins)
-test_pin_dt <- lookup_pin(years, pins)
-test_agency_dt <- lookup_agency(years, test_tax_codes)
-test_tif_dt <- lookup_tif(years, test_tax_codes)
+test_that("no tax_bill inputs modified by reference", {
+  test_tax_codes <- lookup_tax_code(years, pins)
+  test_pin_dt <- lookup_pin(years, pins)
+  test_agency_dt <- lookup_agency(years, test_tax_codes)
+  test_tif_dt <- lookup_tif(years, test_tax_codes)
 
-test_tax_codes_og <- copy(test_tax_codes)
-test_pin_dt_og <- copy(test_pin_dt)
-test_agency_dt_og <- copy(test_agency_dt)
-test_tif_dt_og <- copy(test_tif_dt)
+  test_tax_codes_og <- copy(test_tax_codes)
+  test_pin_dt_og <- copy(test_pin_dt)
+  test_agency_dt_og <- copy(test_agency_dt)
+  test_tif_dt_og <- copy(test_tif_dt)
 
-tax_bill(
-  year_vec = years,
-  pin_vec = pins,
-  tax_code_vec = test_tax_codes,
-  agency_dt = test_agency_dt,
-  pin_dt = test_pin_dt,
-  tif_dt = test_tif_dt
-)
+  tax_bill(
+    year_vec = years,
+    pin_vec = pins,
+    tax_code_vec = test_tax_codes,
+    agency_dt = test_agency_dt,
+    pin_dt = test_pin_dt,
+    tif_dt = test_tif_dt
+  )
 
-test_that("No tax_bill inputs modified by reference", {
   expect_identical(test_tax_codes, test_tax_codes_og)
   expect_identical(test_pin_dt, test_pin_dt_og)
   expect_identical(test_agency_dt, test_agency_dt_og)
   expect_identical(test_tif_dt, test_tif_dt_og)
+})
+
+test_that("agnostic to input data.table row order", {
+  tax_codes <- lookup_tax_code(2018:2021, sum_dt$pin)
+
+  agency_dt_original <- lookup_agency(2018:2021, tax_codes)
+  agency_dt_arranged <- lookup_agency(2018:2021, tax_codes) %>%
+    arrange(agency_num, year)
+
+  tif_dt_original <- lookup_tif(2018:2021, tax_codes)
+  tif_dt_arranged <- lookup_tif(2018:2021, tax_codes) %>%
+    arrange(agency_num, year)
+
+  pin_dt_original <- lookup_pin(2018:2021, sum_dt$pin)
+  pin_dt_arranged <- lookup_pin(2018:2021, sum_dt$pin) %>%
+    arrange(pin, year)
+
+  expect_identical(
+    tax_bill(years, pins, agency_dt = agency_dt_original),
+    tax_bill(years, pins, agency_dt = agency_dt_arranged)
+  )
+  expect_identical(
+    tax_bill(years, pins, tif_dt = tif_dt_original),
+    tax_bill(years, pins, tif_dt = tif_dt_arranged)
+  )
+  expect_identical(
+    tax_bill(years, pins, pin_dt = pin_dt_original),
+    tax_bill(years, pins, pin_dt = pin_dt_arranged)
+  )
 })
 
 DBI::dbDisconnect(ptaxsim_db_conn)
