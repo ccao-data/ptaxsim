@@ -101,7 +101,7 @@ database:
     bucket. [Link
     here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.0.db.bz2).
 2.  (Optional) Rename the downloaded database file by removing the
-    version number, i.e. `ptaxsim-0.4.3.db.bz2` becomes
+    version number, i.e. ptaxsim-2021.0.0.db.bz2 becomes
     `ptaxsim.db.bz2`.
 3.  Decompress the downloaded database file. The file is compressed
     using [bzip2](https://sourceware.org/bzip2/).
@@ -746,8 +746,13 @@ erDiagram
 
 - Currently, the per-district tax calculations for properties in the
   Red-Purple Modernization (RPM) TIF are slightly flawed. However, the
-  total tax bill per PIN is still accurate. See issue \#11 for more
-  information.
+  total tax bill per PIN is still accurate. See issue
+  [\#11](https://gitlab.com/ccao-data-science---modeling/packages/ptaxsim/-/issues/11)
+  for more information.
+- Special Service Area (SSA) rates must be calculated manually when
+  creating counterfactual bills. See issue
+  [\#31](https://gitlab.com/ccao-data-science---modeling/packages/ptaxsim/-/issues/31)
+  for more information.
 - PTAXSIM is a currently a developer and researcher-focused package. It
   is not intended to predict or explain individual bills. In the future,
   we plan to make PTAXSIM more accessible via a web frontend and/or API.
@@ -757,9 +762,8 @@ erDiagram
   is substantial (around 100 GB).
 - PTAXSIM’s accuracy is measured automatically with an [integration
   test](tests/testthat/test-accuracy.R). The test takes a random sample
-  of 10,000 PINs from each year, calculates the total bill for each PIN,
-  and compares it to the real total bill. The most common source of
-  inaccuracy is tax refunds (i.e. overpaying a previous bill).
+  of 2 million PINs, calculates the total bill for each PIN, and
+  compares it to the real total bill.
 
 # Disclaimer
 
