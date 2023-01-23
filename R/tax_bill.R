@@ -151,15 +151,21 @@ tax_bill <- function(year_vec,
   exe_total <- .SD <- class <- av <- eav <- NULL
   year <- pin <- i.av <- i.eav <- i.class <- i.exe_total <- NULL
   exe_cols <- paste0("i.", names(pin_dt)[startsWith(names(pin_dt), "exe_")])
-  dt[pin_dt, on = .(year, pin), c("av", "eav", "class", "exe_total") :=
-    .(i.av, i.eav, i.class, rowSums(data.table::as.data.table(mget(exe_cols))))]
+  dt[
+    pin_dt,
+    on = .(year, pin),
+    c("av", "eav", "class", "exe_total") := .(
+      i.av, i.eav, i.class,
+      rowSums(data.table::as.data.table(mget(exe_cols)))
+    )
+  ]
   dt[class == "239", eav := av] # farmland is taxed on AV, not EAV
 
   # Fetch TIF for a given tax code. There should only be one TIF per tax code (
   # with a few exceptions)
   i.agency_num <- i.agency_name <- i.tif_share <- NULL
   dt[
-    tif_dt,
+    tif_dt[order(year, tax_code, agency_num), ],
     on = .(year, tax_code),
     c("tif_agency_num", "tif_agency_name", "tif_share") :=
       .(i.agency_num, i.agency_name, i.tif_share)
@@ -175,13 +181,18 @@ tax_bill <- function(year_vec,
   # Fetch levy for all agencies of a tax code, this will expand the number of
   # rows from 1 per PIN per year, to N per PIN per year, where N is the number
   # of agencies associated with a PIN's tax code
-  dt <- merge(dt, agency_dt, by = c("year", "tax_code"), allow.cartesian = TRUE)
-
-  # Calculate the exemption effect by subtracting the exempt amount from
-  # the total taxable EAV
   agency_num <- agency_tax_rate <- agency_total_ext <- agency_total_eav <-
     tax_amt_exe <- tax_amt_pre_exe <- tax_amt_post_exe <-
     final_tax_to_tif <- NULL
+  dt <- merge(
+    x = dt,
+    y = agency_dt[order(year, tax_code, agency_num), ],
+    by = c("year", "tax_code"),
+    allow.cartesian = TRUE
+  )
+
+  # Calculate the exemption effect by subtracting the exempt amount from
+  # the total taxable EAV
   dt[, agency_tax_rate := agency_total_ext / agency_total_eav]
   dt[, tax_amt_exe := exe_total * agency_tax_rate]
   dt[, tax_amt_pre_exe := round(eav * agency_tax_rate, 2)]
