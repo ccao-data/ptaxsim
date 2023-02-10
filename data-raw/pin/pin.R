@@ -18,7 +18,11 @@ ccaodata <- dbConnect(
 )
 
 # Pull AV and class from the Clerk and HEAD tables, giving preference to values
-# from the Clerk table in case of mismatch (except for property class)
+# from the Clerk table in case of mismatch (except for property class).
+# These tables are pulled from the AS/400 and will be pulled from iasWorld
+# in the future. The corresponding AS/400 files are:
+# CLERKVALUES = Library: FOIPRD; File: CLRK_VALUE; Member Y<year>
+# TAXBILLAMOUNTS = Library: TXPRD, File: TRESBILL; Member: Y<year>
 pin <- dbGetQuery(
   ccaodata, "
   SELECT
