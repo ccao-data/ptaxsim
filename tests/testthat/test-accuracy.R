@@ -22,7 +22,8 @@ pins <- DBI::dbGetQuery(
   "
 )
 
-bills <- tax_bill(pins$year, pins$pin) %>%
+bills_raw <- tax_bill(pins$year, pins$pin)
+bills_summ <- bills_raw %>%
   group_by(year, pin) %>%
   summarize(calced_bill = sum(final_tax)) %>%
   left_join(pins, by = c("year", "pin")) %>%
@@ -31,8 +32,15 @@ bills <- tax_bill(pins$year, pins$pin) %>%
 
 test_that("random sample of bills is >97.5% accurate", {
   expect_gte(
-    sum(abs(bills$bill_diff) < 10) / length(bills$bill_diff),
+    sum(abs(bills_summ$bill_diff) < 10) / length(bills_summ$bill_diff),
     0.975
+  )
+})
+
+test_that("no agency names are missing from the sample of bills", {
+  expect_equal(
+    sum(!is.na(bills_raw$agency_name)),
+    nrow(bills_raw)
   )
 })
 
