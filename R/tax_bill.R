@@ -149,7 +149,7 @@ tax_bill <- function(year_vec,
   # Join PIN-level data (exemptions, eav) to the input data. eav_total is equal
   # to the sum of all exemptions
   exe_total <- .SD <- class <- av <- eav <- NULL
-  year <- pin <- i.av <- i.eav <- i.class <- i.exe_total <- NULL
+  year <- pin <- i.av <- i.eav <- i.class <- NULL
   exe_cols <- paste0("i.", names(pin_dt)[startsWith(names(pin_dt), "exe_")])
   dt[
     pin_dt,

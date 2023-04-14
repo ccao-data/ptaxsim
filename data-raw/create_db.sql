@@ -200,6 +200,21 @@ CREATE INDEX ix_tif_year ON tif(year);
 CREATE INDEX ix_tif_agency_num ON tif(agency_num);
 
 
+/** tif_crosswalk **/
+CREATE TABLE tif_crosswalk (
+    year                    int                                        NOT NULL,
+    agency_num_dist         varchar(9)                                 NOT NULL,
+    agency_num_final        varchar(9)                                 NOT NULL,
+    PRIMARY KEY (year, agency_num_dist)
+    FOREIGN KEY (year, agency_num_final) REFERENCES tif(year, agency_num)
+) WITHOUT ROWID;
+
+CREATE INDEX ix_tif_crosswalk_year ON tif_crosswalk(year);
+CREATE INDEX ix_tif_crosswalk_agency_num_dist ON tif_crosswalk(agency_num_dist);
+CREATE INDEX ix_tif_crosswalk_agency_num_final
+    ON tif_crosswalk(agency_num_final);
+
+
 /** tif_distribution **/
 CREATE TABLE tif_distribution (
     year                    int                                        NOT NULL,
@@ -211,6 +226,7 @@ CREATE TABLE tif_distribution (
     tax_code_revenue        bigint   CHECK(tax_code_revenue >= 0)      NOT NULL,
     tax_code_distribution_pct double CHECK(tax_code_distribution_pct >= 0) NOT NULL,
     PRIMARY KEY (year, agency_num, tax_code_num)
+    FOREIGN KEY (year, agency_num) REFERENCES tif_crosswalk(year, agency_num_dist)
 ) WITHOUT ROWID;
 
 CREATE INDEX ix_tif_distribution_year ON tif_distribution(year);

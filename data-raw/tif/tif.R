@@ -46,6 +46,9 @@ remote_path_main <- file.path(remote_bucket, "tif", "part-0.parquet")
 remote_path_dist <- file.path(
   remote_bucket, "tif_distribution", "part-0.parquet"
 )
+remote_path_crosswalk <- file.path(
+  remote_bucket, "tif_crosswalk", "part-0.parquet"
+)
 
 
 
@@ -133,12 +136,30 @@ tif_main_pdf <- map_dfr(summ_file_names_pdf, function(file) {
       cancelled_this_year =
         year == str_extract(tif_name, "\\d{4}"),
       tif_name =
-        str_trim(str_squish(str_remove(tif_name, "City of|Village of")))
+        str_trim(str_squish(str_remove(tif_name, "City of|Village of"))),
+      # Kludge for bad OCR/table extraction for certain cells
+      agency_num = case_when(
+        str_detect(tif_name, "Country Club Hills - 175th") & year == 2008 ~
+          "030240501",
+        str_detect(tif_name, "Thornton - Downtown") & year == 2009 ~
+          "031260501",
+        str_detect(tif_name, "Evanston - Dempster / Dodge") & year == 2012 ~
+          "030380506",
+        str_detect(tif_name, "Homewood - East CBD") & year == 2012 ~
+          "030600505",
+        str_detect(tif_name, "East Dundee") & year %in% 2012 ~
+          "030320500",
+        str_detect(agency_num, "Homewood East CBD") & year == 2012 ~
+          "030600505",
+        TRUE ~ agency_num
+      ),
+      first_year = ifelse(
+        tif_name == "2011" & agency_num == "030600505",
+        2011,
+        first_year
+      )
     ) %>%
-    filter(
-      cancelled_this_year | is.na(cancelled_this_year),
-      !is.na(agency_num)
-    ) %>%
+    filter(!is.na(agency_num)) %>%
     mutate(
       tif_name = str_remove_all(tif_name, "\\ *Cancel.*"),
       tif_name = str_remove_all(tif_name, "\\ *CANCEL.*"),
@@ -164,6 +185,16 @@ tif_main <- bind_rows(
   filter(!is.na(tif_name)) %>%
   # Manual fixes for misread values
   mutate(
+    agency_num = ifelse(
+      tif_name == "Village of East Dundee" & year == 2013,
+      "030320500",
+      agency_num
+    ),
+    agency_num = ifelse(
+      agency_num == "030770502/507" & year %in% 2011:2012,
+      "030770502",
+      agency_num
+    ),
     agency_num = ifelse(
       tif_name == "Melrose Park - Mid Metro Industrial Area",
       "030770500",
@@ -204,7 +235,16 @@ tif_main <- bind_rows(
     )
   ) %>%
   filter(!(agency_num == "030330500" & first_year == 2012)) %>%
-  mutate(across(c(year, first_year), as.character)) %>%
+  mutate(across(c(year, first_year), as.character))
+
+# More kludges to fill missing Homewood CBD records
+tif_main <- tif_main %>%
+  bind_rows(
+    tif_main %>%
+      filter(agency_num == "030370500", year == "2011") %>%
+      uncount(2) %>%
+      mutate(year = as.character(2012:2013))
+  ) %>%
   arrange(year, agency_num)
 
 # Save TIF names to a separate file that gets attached to the agency_info table
@@ -265,7 +305,7 @@ tif_distribution_xls <- map_dfr(dist_file_names_xls, function(file) {
     ) %>%
     mutate(tif_tax_code = str_pad(tif_tax_code, "5", "left", "0")) %>%
     select(
-      year,
+      year, agency_name = tif_name,
       agency_num = tif_agency, tax_code_num = tif_tax_code,
       tax_code_rate, tax_code_eav, tax_code_frozen_eav, tax_code_revenue,
       tax_code_distribution_percent
@@ -366,11 +406,84 @@ tif_distribution <- bind_rows(tif_distribution_xls, tif_distribution_pdf) %>%
   mutate(
     across(c(tax_code_eav, tax_code_frozen_eav, tax_code_revenue), as.integer64)
   ) %>%
-  rename(tax_code_distribution_pct = tax_code_distribution_percent)
+  rename(tax_code_distribution_pct = tax_code_distribution_percent) %>%
+  select(-agency_name)
 
 # Write to S3
 arrow::write_parquet(
   x = tif_distribution,
   sink = remote_path_dist,
+  compression = "zstd"
+)
+
+
+
+
+# tif_crosswalk ----------------------------------------------------------------
+
+# Some TIFs will have more than 1 agency number. This happens when TIFs are
+# expanded or when another TIF is created on top of an existing one. The
+# multiple agency_num records still aggregate up to one "main" TIF record (in
+# the agency_info and tif tables). This crosswalk is used to determine which
+# TIFs aggregate to which agency_nums. See issue #39 for more information
+tif_crosswalk_post_2013 <- tif_distribution_xls %>%
+  distinct(year, agency_name, agency_num) %>%
+  group_by(year, agency_name) %>%
+  mutate(count = n()) %>%
+  filter(count > 1) %>%
+  # Whichever record exists in the summary reports is assumed to be the
+  # "main" record
+  left_join(
+    tif_main %>%
+      select(year, agency_num, tif_name) %>%
+      mutate(agency_num_final = agency_num),
+    by = c("year", "agency_num")
+  ) %>%
+  group_by(year, agency_name) %>%
+  tidyr::fill(tif_name, agency_num_final, .direction = "downup") %>%
+  ungroup() %>%
+  distinct(year, agency_num_dist = agency_num, agency_num_final) %>%
+  filter(agency_num_dist != agency_num_final)
+
+tif_crosswalk_pre_2013 <- tif_distribution_pdf %>%
+  anti_join(
+    tif_main %>%
+      select(year, agency_num, tif_name) %>%
+      mutate(agency_num_final = agency_num),
+    by = c("year", "agency_num")
+  ) %>%
+  # Recycling the "main" agency number from post-2013 years to populate
+  # pre-2013 years
+  left_join(
+    tif_crosswalk_post_2013 %>%
+      distinct(agency_num_dist, agency_num_final),
+    by = c("agency_num" = "agency_num_dist")
+  ) %>%
+  # Manually fill in any remaining pre-2013 missing values
+  mutate(
+    agency_num_final = case_when(
+      agency_num == "030210645" ~ "030210646",
+      agency_num == "030360501" ~ "030350501",
+      TRUE ~ agency_num_final
+    )
+  ) %>%
+  distinct(year, agency_num_dist = agency_num, agency_num_final) %>%
+  filter(agency_num_dist != agency_num_final)
+
+# Combine single-record TIFs with multi-record TIFs in one crosswalk that can
+# be used to join the tif_distribution table to the tif table
+tif_crosswalk <- tif_main %>%
+  distinct(year, agency_num_dist = agency_num) %>%
+  mutate(agency_num_final = agency_num_dist) %>%
+  bind_rows(
+    tif_crosswalk_pre_2013,
+    tif_crosswalk_post_2013
+  ) %>%
+  arrange(year, agency_num_dist)
+
+# Write to S3
+arrow::write_parquet(
+  x = tif_crosswalk,
+  sink = remote_path_crosswalk,
   compression = "zstd"
 )

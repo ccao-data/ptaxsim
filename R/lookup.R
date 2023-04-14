@@ -288,8 +288,11 @@ lookup_tif <- function(year, tax_code, conn = ptaxsim_db_conn) {
           ai.minor_type AS agency_minor_type,
           td.tax_code_distribution_pct / 100 AS tif_share
       FROM tif_distribution td
+      LEFT JOIN tif_crosswalk tc
+          ON td.year = tc.year
+          AND td.agency_num = tc.agency_num_dist
       LEFT JOIN agency_info ai
-          ON td.agency_num = ai.agency_num
+          ON tc.agency_num_final = ai.agency_num
       WHERE td.year IN ({years*})
       AND td.tax_code_num IN ({tax_codes*})
       ORDER BY td.year, td.tax_code_num, td.agency_num

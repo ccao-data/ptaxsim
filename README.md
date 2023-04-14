@@ -9,8 +9,8 @@
 > installation](#database-installation) for details.
 >
 > [**Link to PTAXSIM
-> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.0.db.bz2)
-> (DB version: 2021.0.0; Last updated: 2022-12-30 19:46:15)
+> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.1.db.bz2)
+> (DB version: 2021.0.1; Last updated: 2023-04-14 19:05:17)
 
 PTAXSIM is an R package/database to approximate Cook County property tax
 bills. It uses real assessment, exemption, TIF, and levy data to
@@ -99,9 +99,9 @@ database:
 
 1.  Download the compressed database file from the CCAO’s public S3
     bucket. [Link
-    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.0.db.bz2).
+    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.1.db.bz2).
 2.  (Optional) Rename the downloaded database file by removing the
-    version number, i.e. ptaxsim-2021.0.0.db.bz2 becomes
+    version number, i.e. ptaxsim-2021.0.1.db.bz2 becomes
     `ptaxsim.db.bz2`.
 3.  Decompress the downloaded database file. The file is compressed
     using [bzip2](https://sourceware.org/bzip2/).
@@ -623,6 +623,12 @@ erDiagram
     int     first_year
     boolean cancelled_this_year
   }
+  
+  tif_crosswalk {
+    int     year
+    varchar agency_num_dist
+    varchar agency_num_final
+  }
 
   tif_distribution {
     int     year               PK
@@ -638,13 +644,15 @@ erDiagram
   eq_factor ||--|{ pin : "applies to"
   pin ||--|{ tax_code : "within"
   cpi ||--|{ agency : "applies to"
-  tax_code ||--|| agency : "has"
+  tax_code }|--|| agency : "has"
   tax_code ||--o| tif_distribution : "may have"
   agency ||--|{ agency_fund : "contains"
   agency_info ||--|{ agency : "describes"
   agency_fund_info ||--|{ agency_fund : "describes"
-  tif ||--|{ tif_distribution : "has"
-  tax_code ||--o| tif : "may have"
+  tif ||--|| tif_crosswalk : "in"
+  tif_distribution }|--|| tif_crosswalk : "in"
+  agency_info ||--o{ tif: "describes"
+  tax_code }|--o| tif : "may have"
 ```
 
 </details>
@@ -723,6 +731,12 @@ erDiagram
     boolean cancelled_this_year
   }
 
+  tif_crosswalk {
+    int     year
+    varchar agency_num_dist
+    varchar agency_num_final
+  }
+
   tif_distribution {
     int     year               PK
     varchar agency_num         PK
@@ -733,25 +747,30 @@ erDiagram
   eq_factor ||--|{ pin : "applies to"
   pin ||--|{ tax_code : "within"
   cpi ||--|{ agency : "applies to"
-  tax_code ||--|| agency : "has"
+  tax_code }|--|| agency : "has"
   tax_code ||--o| tif_distribution : "may have"
   agency ||--|{ agency_fund : "contains"
   agency_info ||--|{ agency : "describes"
   agency_fund_info ||--|{ agency_fund : "describes"
-  tif ||--|{ tif_distribution : "has"
-  tax_code ||--o| tif : "may have"
+  tif ||--|| tif_crosswalk : "in"
+  tif_distribution }|--|| tif_crosswalk : "in"
+  agency_info ||--o{ tif: "describes"
+  tax_code }|--o| tif : "may have"
 ```
 
-# Notes
+# Notes and Caveats
 
 - Currently, the per-district tax calculations for properties in the
   Red-Purple Modernization (RPM) TIF are slightly flawed. However, the
-  total tax bill per PIN is still accurate. See issue
-  [\#11](https://gitlab.com/ccao-data-science---modeling/packages/ptaxsim/-/issues/11)
-  for more information.
+  total tax bill per PIN is still accurate. See issue [\#11](#11) for
+  more information.
 - Special Service Area (SSA) rates must be calculated manually when
-  creating counterfactual bills. See issue
-  [\#31](https://gitlab.com/ccao-data-science---modeling/packages/ptaxsim/-/issues/31)
+  creating counterfactual bills. See issue [\#31](#31) for more
+  information.
+- In rare instances, a TIF can have multiple `agency_num` identifiers
+  (usually there’s only one per TIF). The `tif_crosswalk` table
+  determines what the “main” `agency_num` is for each TIF and pulls the
+  name and TIF information using that identifier. See issue [\#39](#39)
   for more information.
 - PTAXSIM is a currently a developer and researcher-focused package. It
   is not intended to predict or explain individual bills. In the future,
