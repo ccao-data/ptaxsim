@@ -245,7 +245,7 @@ tif_main <- tif_main %>%
       uncount(2) %>%
       mutate(year = as.character(2012:2013))
   ) %>%
-  arrange(year, agency_num) 
+  arrange(year, agency_num)
 
 # Save TIF names to a separate file that gets attached to the agency_info table
 tif_info <- tif_main %>%
@@ -487,4 +487,3 @@ arrow::write_parquet(
   sink = remote_path_crosswalk,
   compression = "zstd"
 )
- 
