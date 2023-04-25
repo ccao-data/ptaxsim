@@ -1,14 +1,19 @@
 library(arrow)
 library(DBI)
 library(dplyr)
+library(geoarrow)
 library(odbc)
 library(tidyr)
 
-# Paths for local raw data storage and remote storage on S3. Local storage is
-# tracked via Git LFS
-local_path <- "data-raw/pin/pin.parquet"
+# Paths for remote storage on S3
 remote_bucket <- Sys.getenv("S3_REMOTE_BUCKET")
-remote_path <- file.path(remote_bucket, "pin")
+remote_path_pin <- file.path(remote_bucket, "pin")
+remote_path_pin_geometry <- file.path(remote_bucket, "pin_geometry")
+
+
+
+
+# pin --------------------------------------------------------------------------
 
 # Get data frame of all AVs, tax codes, and exemptions per PIN since 2006. These
 # values come from the legacy CCAO database, which mirrors the county mainframe
@@ -92,9 +97,66 @@ pin_fill <- pin %>%
 # Write to S3
 arrow::write_dataset(
   dataset = pin_fill,
-  path = remote_path,
+  path = remote_path_pin,
   format = "parquet",
   partitioning = "year",
   hive_style = TRUE,
   compression = "zstd"
 )
+
+
+
+
+# pin_geometry -----------------------------------------------------------------
+
+# Grab the maximum year of agency data so we can limit the scope of the parcel
+# file query
+agency_df <- read_parquet(file.path(remote_bucket, "agency", "part-0.parquet"))
+max_year <- max(as.integer(agency_df$year))
+
+
+remote_bucket_geometry <- "s3://ccao-data-warehouse-us-east-1/spatial/parcel"
+pin_geometry_df_raw <- arrow::open_dataset(remote_bucket_geometry) %>%
+  filter(year >= 2006 & year < max_year) %>%
+  select(year, pin10, longitude = lon, latitude = lat, geometry) %>%
+  geoarrow_collect_sf()
+
+pin_geometry_df_raw %>%
+  sf::st_drop_geometry() %>%
+  count(year)
+
+
+test_db <- DBI::dbConnect(RSQLite::SQLite(), "test-db.db")
+
+test_df <- dplyr::tribble(
+  ~ "pin", ~ "start_year", ~ "end_year", ~ "geom",
+  123, 2006, 2009, "x",
+  123, 2010, 2014, "y",
+  124, 2006, 2014, "x2",
+  124, 2015, 2015, "y2"
+)
+
+dbCreateTable(test_db, "pin_raw")
+dbAppendTable(test_db, "pin_raw", test_df)
+
+years <- dplyr::tibble(year = 2006:2015)
+dbCreateTable(test_db, "years", years)
+dbAppendTable(test_db, "years", years)
+
+dbGetQuery(
+  test_db,
+  "SELECT * FROM pin_raw"
+)
+
+dbGetQuery(
+  test_db,
+  "SELECT * 
+  FROM years y
+  CROSS JOIN pin_raw pr
+  ON y.year >= start_year AND y.year <= end_year
+  ORDER BY pin, year
+  "
+)
+
+# TODO: Get raw pin geos in to DB
+# TODO: test different spatialite formats and their interaction with sf
