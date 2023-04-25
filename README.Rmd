@@ -23,8 +23,10 @@ ptaxsim::check_db_conn(ptaxsim_db_conn)
 ptaxsim::check_db_sync(ptaxsim_db_conn)
 
 stopifnot(
-  metadata$db_version ==
+  utils::compareVersion(
+    metadata$db_version,
     packageDescription("ptaxsim")[["Config/Requires_DB_Version"]]
+  ) >= 0
 )
 ```
 
@@ -159,7 +161,7 @@ multiple_years_summ <- multiple_years %>%
       agency_minor_type,
       levels = c(
         "TIF", "BOND", "COOK", "LIBRARY",
-        "MUNI", "PARK", "SCHOOL", "WATER"
+        "MUNI", "PARK", "UNIFIED", "COMM COLL", "WATER"
       )
     )
   )
@@ -189,7 +191,7 @@ multiple_years_plot <- ggplot(data = multiple_years_summ) +
     expand = c(0, 0)
   ) +
   scale_x_continuous(name = "Year", n.breaks = 7) +
-  scale_fill_manual(values = scales::hue_pal()(8)) +
+  scale_fill_manual(values = scales::hue_pal()(9)) +
   theme_minimal() +
   guides(fill = guide_legend(title = "District Type"))
 ```

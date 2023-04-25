@@ -37,7 +37,7 @@ db_send_queries <- function(conn, sql) {
 # changes. This is checked against Config/Requires_DB_Version in the DESCRIPTION
 # file via check_db_version(). Schema is:
 # "MAX_YEAR_OF_DATA.BREAKING_CHANGE.NONBREAKING_CHANGE"
-db_version <- "2021.0.1"
+db_version <- "2021.0.2"
 
 # Set the package version required to use this database. This is checked against
 # Version in the DESCRIPTION file. Basically, we have a two-way check that both
@@ -143,6 +143,6 @@ dbExecute(conn, "VACUUM;")
 dbDisconnect(conn)
 
 # Compress with bzip2, since SQLite db files are uncompressed
-system(paste("bzip2", "-7", db_path))
+system(paste("pbzip2", "-7", db_path))
 
 # The final compressed DB file is manually uploaded to S3

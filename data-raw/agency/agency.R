@@ -524,6 +524,16 @@ agency_info <- bind_rows(agency_name, tif_name) %>%
   ) %>%
   arrange(agency_num)
 
+# Load and attach manually-created school sub type
+school_types <- readr::read_csv(
+  file = "data-raw/agency/school_agency_types.csv",
+  col_types = cols(agency_num = col_character(), school_type = col_character())
+)
+agency_info <- agency_info %>%
+  left_join(school_types, by = "agency_num") %>%
+  mutate(minor_type = ifelse(is.na(school_type), minor_type, school_type)) %>%
+  select(-school_type)
+
 # Write both data sets to S3
 arrow::write_parquet(
   x = agency %>% select(-agency_name),

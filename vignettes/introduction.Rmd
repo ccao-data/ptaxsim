@@ -76,7 +76,7 @@ print(bill)
 | **`agency_num`**        | Unique numeric identifier for each taxing body/district. Each `pin` is typically taxed by multiple taxing districts. `tax_bill()` will output 1 row for each district for each PIN and year. The PIN above is being taxed by 11 districts. |                                                                                                                             |
 | **`agency_name`**       | Name of the taxing district.                                                                                                                                                                                                               |                                                                                                                             |
 | **`agency_major_type`** | Type of taxing district. Similar to the grouping used on real tax bills.                                                                                                                                                                   | COOK COUNTY, MISCELLANEOUS, MUNICIPALITY/TOWNSHIP, SCHOOL                                                                   |
-| **`agency_minor_type`** | Sub-type of taxing district. Much more fine-grained.                                                                                                                                                                                       | BOND, COOK, FIRE, GEN ASST, HEALTH, INFRA, LIBRARY, MISC, MOSQUITO, MUNI, PARK, POLICE, SANITARY, SCHOOL, SSA, TIF, WATER   |
+| **`agency_minor_type`** | Sub-type of taxing district. Much more fine-grained.                                                                                                                                                                                       | BOND, COOK, COMM COLL, ELEMENTARY, FIRE, GEN ASST, HEALTH, INFRA, LIBRARY, MISC, MOSQUITO, MUNI, PARK, POLICE, SANITARY, SECONDARY, SSA, TIF, UNIFIED, WATER   |
 | **`agency_tax_rate`**   | The tax rate for the PIN and district, which calculated from each district's levy and total tax base.                                                                                                                                      |                                                                                                                             |
 | **`final_tax`**         | The final tax (in dollars) the PIN owes to the taxing district. Equal to `agency_tax_rate * eav` in most cases.                                                                                                                            |                                                                                                                             |
 
@@ -462,7 +462,7 @@ bills_summ_plot2 <- ggplot(data = bills_summ2) +
     n.breaks = 7
   ) +
   scale_x_continuous(name = "Year", n.breaks = 9) +
-  scale_fill_manual(name = "District Type", values = scales::hue_pal()(8)) +
+  scale_fill_manual(name = "District Type", values = scales::hue_pal()(10)) +
   theme_minimal() +
   theme(
     axis.title = element_text(size = 13),

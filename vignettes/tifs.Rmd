@@ -313,7 +313,10 @@ tif_bills_summ <- tif_bills %>%
     ),
     agency_minor_type = factor(
       agency_minor_type,
-      levels = c("TIF", "COOK", "MUNI", "MISC", "SCHOOL")
+      levels = c(
+        "TIF", "COOK", "MUNI", "MISC",
+        "COMM COLL", "ELEMENTARY", "SECONDARY"
+      )
     )
   ) %>%
   group_by(year, agency_minor_type) %>%
@@ -349,7 +352,7 @@ tif_dist_plot <- ggplot(data = tif_bills_summ) +
   scale_x_continuous(n.breaks = 9, expand = c(0, 0.4)) +
   scale_fill_manual(
     name = "",
-    values = c("#7d26cd", RColorBrewer::brewer.pal(4, "Set2"))
+    values = c("#7d26cd", RColorBrewer::brewer.pal(7, "Set2"))
   ) +
   labs(x = "Year", y = "Total Tax Revenue from WTC2 PINs") +
   theme_minimal() +
