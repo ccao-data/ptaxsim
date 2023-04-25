@@ -10,7 +10,7 @@
 >
 > [**Link to PTAXSIM
 > database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.2.db.bz2)
-> (DB version: 2021.0.2; Last updated: 2023-04-25 17:43:17)
+> (DB version: 2021.0.2; Last updated: 2023-04-25 19:04:56)
 
 PTAXSIM is an R package/database to approximate Cook County property tax
 bills. It uses real assessment, exemption, TIF, and levy data to
@@ -171,7 +171,7 @@ single_bill
 #>  4: CITY OF CHICAGO LIBRARY F... MUNICIPALITY/TOWNSHIP           LIBRARY
 #>  5: CITY OF CHICAGO SCHOOL BL... MUNICIPALITY/TOWNSHIP              MUNI
 #>  6: TIF - CHICAGO - BRONZEVIL... MUNICIPALITY/TOWNSHIP               TIF
-#>  7: CHICAGO COMMUNITY COLLEGE...                SCHOOL COMMUNITY COLLEGE
+#>  7: CHICAGO COMMUNITY COLLEGE...                SCHOOL         COMM COLL
 #>  8:           BOARD OF EDUCATION                SCHOOL           UNIFIED
 #>  9:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
 #> 10: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
@@ -381,7 +381,7 @@ multiple_years
 #>   4: CITY OF CHICAGO LIBRARY F... MUNICIPALITY/TOWNSHIP           LIBRARY
 #>   5: CITY OF CHICAGO SCHOOL BL... MUNICIPALITY/TOWNSHIP              MUNI
 #>  ---                                                                     
-#> 122: CHICAGO COMMUNITY COLLEGE...                SCHOOL COMMUNITY COLLEGE
+#> 122: CHICAGO COMMUNITY COLLEGE...                SCHOOL         COMM COLL
 #> 123:           BOARD OF EDUCATION                SCHOOL           UNIFIED
 #> 124:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
 #> 125: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
@@ -414,7 +414,7 @@ multiple_years_summ <- multiple_years %>%
       agency_minor_type,
       levels = c(
         "TIF", "BOND", "COOK", "LIBRARY",
-        "MUNI", "PARK", "SCHOOL", "WATER"
+        "MUNI", "PARK", "UNIFIED", "COMM COLL", "WATER"
       )
     )
   )
@@ -445,7 +445,7 @@ multiple_years_plot <- ggplot(data = multiple_years_summ) +
     expand = c(0, 0)
   ) +
   scale_x_continuous(name = "Year", n.breaks = 7) +
-  scale_fill_manual(values = scales::hue_pal()(8)) +
+  scale_fill_manual(values = scales::hue_pal()(9)) +
   theme_minimal() +
   guides(fill = guide_legend(title = "District Type"))
 ```
