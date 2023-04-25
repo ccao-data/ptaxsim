@@ -23,8 +23,10 @@ ptaxsim::check_db_conn(ptaxsim_db_conn)
 ptaxsim::check_db_sync(ptaxsim_db_conn)
 
 stopifnot(
-  metadata$db_version ==
+  utils::compareVersion(
+    metadata$db_version,
     packageDescription("ptaxsim")[["Config/Requires_DB_Version"]]
+  ) >= 0
 )
 ```
 

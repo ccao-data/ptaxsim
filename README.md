@@ -9,8 +9,8 @@
 > installation](#database-installation) for details.
 >
 > [**Link to PTAXSIM
-> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.1.db.bz2)
-> (DB version: 2021.0.1; Last updated: 2023-04-14 19:05:17)
+> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.2.db.bz2)
+> (DB version: 2021.0.2; Last updated: 2023-04-25 17:43:17)
 
 PTAXSIM is an R package/database to approximate Cook County property tax
 bills. It uses real assessment, exemption, TIF, and levy data to
@@ -99,9 +99,9 @@ database:
 
 1.  Download the compressed database file from the CCAO’s public S3
     bucket. [Link
-    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.1.db.bz2).
+    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.2.db.bz2).
 2.  (Optional) Rename the downloaded database file by removing the
-    version number, i.e. ptaxsim-2021.0.1.db.bz2 becomes
+    version number, i.e. ptaxsim-2021.0.2.db.bz2 becomes
     `ptaxsim.db.bz2`.
 3.  Decompress the downloaded database file. The file is compressed
     using [bzip2](https://sourceware.org/bzip2/).
@@ -171,8 +171,8 @@ single_bill
 #>  4: CITY OF CHICAGO LIBRARY F... MUNICIPALITY/TOWNSHIP           LIBRARY
 #>  5: CITY OF CHICAGO SCHOOL BL... MUNICIPALITY/TOWNSHIP              MUNI
 #>  6: TIF - CHICAGO - BRONZEVIL... MUNICIPALITY/TOWNSHIP               TIF
-#>  7: CHICAGO COMMUNITY COLLEGE...                SCHOOL            SCHOOL
-#>  8:           BOARD OF EDUCATION                SCHOOL            SCHOOL
+#>  7: CHICAGO COMMUNITY COLLEGE...                SCHOOL COMMUNITY COLLEGE
+#>  8:           BOARD OF EDUCATION                SCHOOL           UNIFIED
 #>  9:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
 #> 10: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
 #> 11: METRO WATER RECLAMATION D...         MISCELLANEOUS             WATER
@@ -381,8 +381,8 @@ multiple_years
 #>   4: CITY OF CHICAGO LIBRARY F... MUNICIPALITY/TOWNSHIP           LIBRARY
 #>   5: CITY OF CHICAGO SCHOOL BL... MUNICIPALITY/TOWNSHIP              MUNI
 #>  ---                                                                     
-#> 122: CHICAGO COMMUNITY COLLEGE...                SCHOOL            SCHOOL
-#> 123:           BOARD OF EDUCATION                SCHOOL            SCHOOL
+#> 122: CHICAGO COMMUNITY COLLEGE...                SCHOOL COMMUNITY COLLEGE
+#> 123:           BOARD OF EDUCATION                SCHOOL           UNIFIED
 #> 124:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
 #> 125: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
 #> 126: METRO WATER RECLAMATION D...         MISCELLANEOUS             WATER
