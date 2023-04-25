@@ -45,3 +45,4 @@ Suggests:
 Depends:
     R (>= 2.10)
 Config/Requires_DB_Version: 2021.0.1
+Config/Wants_DB_Version: 2021.0.2
