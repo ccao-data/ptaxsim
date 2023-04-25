@@ -143,6 +143,6 @@ dbExecute(conn, "VACUUM;")
 dbDisconnect(conn)
 
 # Compress with bzip2, since SQLite db files are uncompressed
-system(paste("bzip2", "-7", db_path))
+system(paste("pbzip2", "-7", db_path))
 
 # The final compressed DB file is manually uploaded to S3
