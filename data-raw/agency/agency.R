@@ -524,6 +524,33 @@ agency_info <- bind_rows(agency_name, tif_name) %>%
   ) %>%
   arrange(agency_num)
 
+# Load and attach manually-created school sub type
+school_types <- readr::read_csv(
+  file = "data-raw/agency/school_agency_types.csv",
+  col_types = cols(agency_num = col_character(), school_type = col_character())
+)
+agency_info <- agency_info %>%
+  left_join(school_types, by = "agency_num") %>%
+  mutate(minor_type = ifelse(is.na(school_type), minor_type, school_type)) %>%
+  select(-school_type)
+
+# Load and attach township identifiers from file
+township_agency_nums <- readr::read_csv(
+  file = "data-raw/agency/township_agency_nums.csv",
+  col_types = cols(agency_num = col_character(), agency_name = col_character())
+)
+agency_info <- agency_info %>%
+  mutate(minor_type = ifelse(
+    agency_num %in% township_agency_nums$agency_num, "TOWNSHIP", minor_type
+  )) %>%
+  mutate(
+    minor_type = case_when(
+      agency_num == "030210002" ~ "MISC",
+      agency_num == "030380002" ~ "GEN ASST",
+      TRUE ~ minor_type
+    )
+  )
+
 # Write both data sets to S3
 arrow::write_parquet(
   x = agency %>% select(-agency_name),

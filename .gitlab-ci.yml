@@ -60,7 +60,7 @@ before_script:
   # Download and unpack the PTAXSIM DB from S3 if it doesn't already exist
   # If it does, use the cached version
   - >
-      export PTAXSIM_VERSION=$(grep -Po "(?<=Requires_DB_Version: )[0-9]*\.[0-9]*\.[0-9]*" ${CI_PROJECT_DIR}/DESCRIPTION)
+      export PTAXSIM_VERSION=$(grep -Po "(?<=Wants_DB_Version: )[0-9]*\.[0-9]*\.[0-9]*" ${CI_PROJECT_DIR}/DESCRIPTION)
   - if [ ! -f ptaxsim.db.bz2 ]; then aws s3 cp ${PTAXSIM_DB_BASE_URL}/ptaxsim-${PTAXSIM_VERSION}.db.bz2 ${CI_PROJECT_DIR}/ptaxsim.db.bz2; fi
   - bzip2 -k -d ptaxsim.db.bz2
     

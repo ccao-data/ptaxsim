@@ -37,12 +37,12 @@ db_send_queries <- function(conn, sql) {
 # changes. This is checked against Config/Requires_DB_Version in the DESCRIPTION
 # file via check_db_version(). Schema is:
 # "MAX_YEAR_OF_DATA.BREAKING_CHANGE.NONBREAKING_CHANGE"
-db_version <- "2021.0.0"
+db_version <- "2021.0.3"
 
 # Set the package version required to use this database. This is checked against
 # Version in the DESCRIPTION file. Basically, we have a two-way check that both
 # the package version and DB version are synced. Schema is SemVer.
-requires_pkg_version <- "0.5.2"
+requires_pkg_version <- "0.5.4"
 
 
 
@@ -117,7 +117,7 @@ DBI::dbAppendTable(conn, "metadata", metadata_df)
 # Load tables contained in a single file
 files <- c(
   "agency", "agency_info", "agency_fund", "agency_fund_info",
-  "cpi", "eq_factor", "tif", "tif_distribution"
+  "cpi", "eq_factor", "tif", "tif_crosswalk", "tif_distribution"
 )
 for (file in files) {
   message("Now loading: ", file)
@@ -143,6 +143,6 @@ dbExecute(conn, "VACUUM;")
 dbDisconnect(conn)
 
 # Compress with bzip2, since SQLite db files are uncompressed
-system(paste("bzip2", "-7", db_path))
+system(paste("pbzip2", "-7", db_path))
 
 # The final compressed DB file is manually uploaded to S3
