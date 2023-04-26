@@ -227,11 +227,11 @@ test_that("lookup values/data are correct", {
   )
   expect_known_hash(
     lookup_agency(2014:2019, "12064"),
-    "3e0367a500"
+    "cf6dcb93bf"
   )
   expect_known_hash(
     lookup_agency(sum_df$year, sum_df$tax_code),
-    "790cd5aadb"
+    "b0b8d1fbca"
   )
 })
 

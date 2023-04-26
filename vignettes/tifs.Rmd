@@ -314,7 +314,7 @@ tif_bills_summ <- tif_bills %>%
     agency_minor_type = factor(
       agency_minor_type,
       levels = c(
-        "TIF", "COOK", "MUNI", "MISC",
+        "TIF", "COOK", "MUNI", "TOWNSHIP", "MISC",
         "COMM COLL", "ELEMENTARY", "SECONDARY"
       )
     )
