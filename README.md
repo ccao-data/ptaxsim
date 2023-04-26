@@ -1,7 +1,36 @@
+Table of Contents
+================
+
+- <a href="#ptaxsim-package" id="toc-ptaxsim-package">PTAXSIM package</a>
+- <a href="#faqs" id="toc-faqs">FAQs</a>
+- <a href="#installation" id="toc-installation">Installation</a>
+  - <a href="#package-installation" id="toc-package-installation">Package
+    installation</a>
+  - <a href="#database-installation" id="toc-database-installation">Database
+    installation</a>
+- <a href="#usage" id="toc-usage">Usage</a>
+  - <a href="#single-bill-single-year"
+    id="toc-single-bill-single-year">Single bill, single year</a>
+  - <a href="#single-bill-multiple-years"
+    id="toc-single-bill-multiple-years">Single bill, multiple years</a>
+- <a href="#data" id="toc-data">Data</a>
+  - <a href="#data-sources" id="toc-data-sources">Data sources</a>
+  - <a href="#database-diagram" id="toc-database-diagram">Database
+    diagram</a>
+- <a href="#notes-and-caveats" id="toc-notes-and-caveats">Notes and
+  caveats</a>
+- <a href="#disclaimer" id="toc-disclaimer">Disclaimer</a>
+- <a href="#release-procedures" id="toc-release-procedures">Release
+  procedures</a>
+  - <a href="#schema" id="toc-schema">Schema</a>
+  - <a href="#timing" id="toc-timing">Timing</a>
+  - <a href="#checklists" id="toc-checklists">Checklists</a>
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# PTAXSIM package <a href='https://gitlab.com/ccao-data-science---modeling/packages/ptaxsim'><img src='man/figures/logo.png' align="right" height="139"/></a>
+## PTAXSIM package
+
+<a href='https://gitlab.com/ccao-data-science---modeling/packages/ptaxsim'><img src='man/figures/logo.png' align="right" height="139"/></a>
 
 > :warning: NOTE: PTAXSIM relies on a separate SQLite database to
 > function correctly. You must download and decompress the database
@@ -36,7 +65,7 @@ single function call, which enables complex tax analysis on a
 municipality or even whole-county level. PTAXSIM is accurate (within
 \$10 of the real bill) for \>99% of historic property tax bills.
 However, it is currently an experimental tool only and is *not*
-recommended for critical use. See [Notes](#notes) and
+recommended for critical use. See [Notes](#notes-and-caveats) and
 [Disclaimer](#disclaimer) for more information.
 
 For detailed documentation on included functions and data, [**visit the
@@ -48,6 +77,64 @@ vignette**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/arti
 For examples of PTAXSIM’s functionality and usage, click one of the
 questions above or see the [**vignettes
 page**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/index.html).
+
+## FAQs
+
+**Q: Who is the target audience for PTAXSIM?**
+
+PTAXSIM is a currently a developer and researcher-focused tool. Its
+intended audience is academics and policymakers interested in tax policy
+analysis or the history of the property tax system. It is not intended
+to predict or explain individual bills. In the future, we plan to make
+PTAXSIM more accessible via a web frontend and/or API.
+
+**Q: I got my Assessment Notice with a *new* assessed value. Can I input
+the *new* assessed value into PTAXSIM to predict next year’s property
+tax bill?**
+
+*No.* Assessments sent by the Assessor are not final. A property’s
+assessed value can change at multiple stages: at the Assessor’s Office
+due to a reassessment, at the Assessor’s Office due to an appeal, and at
+the Board of Review due to an appeal. Assessments are not finalized
+until these stages are complete/certified, and only finalized
+assessments are used to calculate bills.
+
+Additionally, an increased assessed value does not necessarily result in
+an increased bill. There are many other factors that contribute to a
+property’s tax bill – including the assessed value of other properties.
+
+**Q: I know my property’s *final* assessed value. Can I input the
+*final* assessed value into PTAXSIM to predict next year’s property tax
+bill?**
+
+*No.* Even if you know your property’s final assessed value with
+certainty, precisely predicting a future tax bill in Cook County is
+difficult because tax rates stem from multiple agencies (and the numbers
+they produce each year). These agencies include various taxing districts
+(typically 10 to 14 per property, including school districts,
+municipal/township/city governments, and Cook County), multiple Cook
+County property tax offices (Assessor, Board of Review, and Clerk), and
+the Illinois Department of Revenue (IDOR).
+
+It is true, however, that PTAXSIM is technically capable of predicting
+bills. To do this, you must have technical competency in the R
+programming language, and must make explicit predictions for each of the
+numeric inputs listed in the table below.
+
+**Q: I can code in R. What other numbers, besides assessed value, do I
+need to input into PTAXSIM to generate predictions?**
+
+To predict next year’s bill for one property (PIN), you must predict the
+PIN’s taxable value (EAV), as well as what will happen to the individual
+levies and tax bases of all taxing districts associated with the PIN.
+The table below lists each input, along with some complications and
+options:
+
+|                                                             Input                                                              |                                                                               What this means                                                                                |                                                                                                                                                                                                            Complications and possible implementation option(s)                                                                                                                                                                                                             |
+|:------------------------------------------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
+|                                                  The PIN’s **taxable value**                                                   |                              The PIN’s Equalized Assessed Value (EAV), which incorporates the assessed value, exemptions, and IDOR’s equalizer.                              |                                                                                     *Complications*: In a tax year, AVs can change at the Assessor’s Office and at the Board of Review. Also, IDOR calculates a new equalizer every year. <br><br> *Option*: Predict what you think is an accurate AV, apply what exemptions you qualify for, and use past equalizers issued by IDOR.                                                                                      |
+| **Tax Extensions**, also called levies, for each taxing agency associated with that PIN’s tax code (typically, 10-14 agencies) |               The total extension is the total dollar amount each taxing agency decides to collect from property owners within the boundaries of its district.               |                                                                                                                              *Complication*: Each agency sets their own tax levy. <br><br> *Option*: For each agency associated with that PIN’s tax code, you might use the past year extension, and apply a percentage increase or decrease.                                                                                                                              |
+|              **Tax Bases** for each taxing agency associated with that PIN’s tax code (typically, 10-14 agencies)              | For each agency, the tax base equals the sum of the EAVs of all properties in its district, except for any region of the agency that is in a TIF (where the base is frozen). | *Complication*: Even after a township has been reassessed, many agencies span across township boundaries. (For example: the taxing district of the City of Chicago is divided up into eight assessment townships, but property tax bills for Chicagoans depend on assessments throughout all eight townships). <br><br> *Option*: For each agency associated with that PIN’s tax code, you might use the past year total EAV, and apply a percentage increase or decrease. |
 
 ## Installation
 
@@ -452,13 +539,13 @@ multiple_years_plot <- ggplot(data = multiple_years_summ) +
 
 </details>
 
-<img src="man/figures/README-multi_year_4-1.png" width="100%" />
+<img src="man/figures/README-multi_year_4-1.png" width="85%" />
 
 For more advanced usage, such as counterfactual analysis, see the
 [vignettes
 page](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/index.html).
 
-# Data
+## Data
 
 The PTAXSIM backend database contains cleaned data from the Cook County
 Clerk, Treasurer, and Assessor. The database is updated whenever all the
@@ -466,7 +553,7 @@ data necessary to calculate a new tax year becomes available. Typically
 this occurs roughly a year after assessments are mailed i.e. 2019 bill
 data was available in mid-2020.
 
-## Data sources
+### Data sources
 
 | Table Name       | Source Agency     | Source Link                                                                                                                                          | Ingest Script                                                    | Contains                                                          |
 |------------------|-------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|-------------------------------------------------------------------|
@@ -479,9 +566,10 @@ data was available in mid-2020.
 | pin              | Clerk + Treasurer | CLERKVALUES and TAXBILLAMOUNTS internal SQL tables                                                                                                   | [data-raw/pin/pin.R](data-raw/pin/pin.R)                         | PIN-level tax code, AV, and exemptions                            |
 | tax_code         | Clerk             | [Tax Extension - Tax Code Agency Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates)                             | [data-raw/tax_code/tax_code.R](data-raw/tax_code/tax_code.R)     | Crosswalk of tax codes by district                                |
 | tif              | Clerk             | [TIF Reports - Cook County Summary Reports](https://www.cookcountyclerkil.gov/property-taxes/tifs-tax-increment-financing/tif-reports)               | [data-raw/tif/tif.R](data-raw/tif/tif.R)                         | TIF revenue, start year, and cancellation year                    |
+| tif_crosswalk    | Clerk             | Manually created from TIF summary and distribution reports                                                                                           | [data-raw/tif/tif.R](data-raw/tif/tif.R)                         | Fix for data issue identified in \#39                             |
 | tif_distribution | Clerk             | [TIF Reports - Tax Increment Agency Distribution Reports](https://www.cookcountyclerkil.gov/property-taxes/tifs-tax-increment-financing/tif-reports) | [data-raw/tif/tif.R](data-raw/tif/tif.R)                         | TIF EAV, frozen EAV, and distribution percentage by tax code      |
 
-## Database diagram
+### Database diagram
 
 <details>
 <summary>
@@ -758,7 +846,7 @@ erDiagram
   tax_code }|--o| tif : "may have"
 ```
 
-# Notes and Caveats
+## Notes and caveats
 
 - Currently, the per-district tax calculations for properties in the
   Red-Purple Modernization (RPM) TIF are slightly flawed. However, the
@@ -772,9 +860,6 @@ erDiagram
   determines what the “main” `agency_num` is for each TIF and pulls the
   name and TIF information using that identifier. See issue [\#39](#39)
   for more information.
-- PTAXSIM is a currently a developer and researcher-focused package. It
-  is not intended to predict or explain individual bills. In the future,
-  we plan to make PTAXSIM more accessible via a web frontend and/or API.
 - PTAXSIM is relatively memory-efficient and can calculate every
   district line-item for every tax bill for the last 15 years (roughly
   350 million rows). However, the memory required for this calculation
@@ -784,7 +869,7 @@ erDiagram
   of 2 million PINs, calculates the total bill for each PIN, and
   compares it to the real total bill.
 
-# Disclaimer
+## Disclaimer
 
 This package and the included database are for educational purposes
 only. The Assessor’s office releases the package and database without
@@ -797,3 +882,119 @@ Any results produced by this package as distributed are not official, as
 they are hypothetical, and should not be relied upon for any business or
 commercial purpose. The Assessor’s office expressly disclaims any
 liability for any entity’s reliance on this package and/or database.
+
+## Release procedures
+
+The PTAXSIM package consists of two components, a package and a
+database, each of which can be updated independently. Both components
+have built-in checks to ensure that minimum version expectations are
+met, i.e. package version `0.5.4` expects database version `2021.0.1` or
+higher, and database version `2021.0.1` expects package version `0.5.3`
+or higher.
+
+### Schema
+
+The package uses the [SemVer](https://semver.org/) schema for
+versioning: `<MAJOR VERSION>.<MINOR VERSION>.<PATCH>`.
+
+The database uses a custom schema for versioning:
+`<TAX YEAR>.<MAJOR VERSION>.<MINOR VERSION>`. Where `TAX YEAR` denotes
+the most recent year of data in the database.
+
+### Timing
+
+The PTAXSIM database is updated whenever [all the data
+necessary](#data-sources) to calculate a new tax year becomes available.
+Typically this occurs about a year after initial assessments are mailed.
+Once all necessary data is available, it is manually incorporated into
+the database, and the database tax year version is updated to reflect
+the new data.
+
+### Checklists
+
+The process of updating the package and/or database can be somewhat
+involved. As such, please follow the checklists below when creating new
+releases:
+
+#### Package
+
+- [ ] Make your code updates and commit them in a branch
+- [ ] Make sure your code updates meet styling and linting requirements:
+  - *Styling*: Run `styler::style_pkg()` in the console
+  - *Linting*: Run `lintr::lint_package()` in the console
+- [ ] Build any documentation updates by running `devtools::document()`
+  in the console
+- [ ] Run the build and test processes locally to check for errors:
+  - *Build*: In RStudio, go to the **Build** tab, then hit **Check**
+  - *Test*: In RStudio, go to the **Build** tab, then hit **Test** OR
+    `devtools::test()` in the console
+- [ ] Check the vignettes by building them locally. Run
+  `pkgdown::build_site()` in the console
+- [ ] Rebuild the README manually. Knit `README.Rmd` from within RStudio
+- [ ] Increment the package version in the `DESCRIPTION` file
+  appropriately, following the [schema](#schema) laid out above
+- [ ] If the code updates were so substantial that the current database
+  also needs to be updated, follow the database release checklist below
+- [ ] Push the code updates to GitLab. Wait for the resulting CI
+  pipeline to finish
+- [ ] If there are no pipeline errors, merge the branch to master
+- [ ] Wait for the merge CI pipeline to finish. If there are no errors,
+  cut a new release from master in GitLab under **Deployments** \>
+  **Releases**. Create a new git tag with the version number and title
+  the release with the same version number. Be sure to add a changelog
+  detailing what you updated
+
+#### Database
+
+- [ ] Make your code updates and commit them in a branch
+- [ ] Make any necessary updates to the raw data. If necessary, force
+  add the raw data files if they are ignored by git. Be sure to update
+  `.gitattributes` such that the raw data files are tracked by git LFS
+- [ ] Run the raw data scripts (anything in `data-raw/`) that prepare
+  and clean the data. These scripts will save the cleaned data to a
+  staging area in S3. Ensure that the relevant S3 keys in the PTAXSIM
+  bucket are updated using the AWS console or API
+- [ ] Inside `data-raw/create_db.R`, increment the `db_version` variable
+  following the [schema outlined above](#schema)
+- [ ] If necessary, also increment the `requires_pkg_version` variable
+  in `data-raw/create_db.R`
+- [ ] Increment the database versions in `DESCRIPTION` file:
+  - `Config/Requires_DB_Version`: This is the minimum database version
+    required for this version of the package. It should be incremented
+    whenever there is a breaking change
+  - `Config/Wants_DB_Version`: This is the maximum database version
+    required for this version of the package. It is the version of the
+    database pulled from S3 during CI/testing on GitLab
+- [ ] If necessary, be sure to update the SQL statements in
+  `data-raw/create_db.sql`. These statements define the structure of the
+  database
+- [ ] Run the database generation script `data-raw/create_db.R`. This
+  will create the SQLite database file by pulling data from S3. The file
+  will be generated in a temporary directory (usually `/tmp/Rtmp...`),
+  then compressed using `pbzip2` (required for this script)
+- [ ] Using the command line, grab the final compressed database file
+  from the temporary directory (found at `db_path` after running
+  `data-raw/create_db.R`) and move it to the project directory. Rename
+  the file `ptaxsim-<TAX_YEAR>.<MAJOR VERSION>.<MINOR VERSION>.db.bz2`
+- [ ] Decompress the database file for local testing using `pbzip2`. The
+  typical command will be something like
+  `pbzip2 -d -k ptaxsim-2021.0.2.db.bz2`
+- [ ] Rename the decompressed local database file to `ptaxsim.db` for
+  local testing. This is the file name that the unit tests and vignettes
+  expect
+- [ ] Restart R. Then run the unit tests (`devtools::test()` in the
+  console) and vignettes (`pkgdown::build_site()` in the console)
+  locally
+- [ ] Knit the `README.Rmd` file to update the database link at the top
+  of the README. The link is pulled from the `ptaxsim.db` file’s
+  `metadata` table
+- [ ] If necessary, update the database diagrams in the README with any
+  new fields or tables
+- [ ] Move the compressed database file to S3 for public distribution.
+  The typical command will be something like
+  `aws s3 mv ptaxsim-2021.0.2.db.bz2 s3://ccao-data-public-us-east-1/ptaxsim/ptaxsim-2021.0.2.db.bz2`
+- [ ] Use the S3 console (or API) to make the database file public via
+  an ACL
+- [ ] Push the code updates on GitLab. Wait for the resulting CI
+  pipeline to finish
+- [ ] If there are no pipeline errors, merge the branch to master
