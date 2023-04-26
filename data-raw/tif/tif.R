@@ -305,7 +305,8 @@ tif_distribution_xls <- map_dfr(dist_file_names_xls, function(file) {
     ) %>%
     mutate(tif_tax_code = str_pad(tif_tax_code, "5", "left", "0")) %>%
     select(
-      year, agency_name = tif_name,
+      year,
+      agency_name = tif_name,
       agency_num = tif_agency, tax_code_num = tif_tax_code,
       tax_code_rate, tax_code_eav, tax_code_frozen_eav, tax_code_revenue,
       tax_code_distribution_percent
