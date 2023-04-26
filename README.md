@@ -38,8 +38,8 @@ Table of Contents
 > installation](#database-installation) for details.
 >
 > [**Link to PTAXSIM
-> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.2.db.bz2)
-> (DB version: 2021.0.2; Last updated: 2023-04-25 19:04:56)
+> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.3.db.bz2)
+> (DB version: 2021.0.3; Last updated: 2023-04-26 20:45:18)
 
 PTAXSIM is an R package/database to approximate Cook County property tax
 bills. It uses real assessment, exemption, TIF, and levy data to
@@ -133,8 +133,8 @@ options:
 |                                                             Input                                                              |                                                                               What this means                                                                                |                                                                                                                                                                                                            Complications and possible implementation option(s)                                                                                                                                                                                                             |
 |:------------------------------------------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
 |                                                  The PIN’s **taxable value**                                                   |                              The PIN’s Equalized Assessed Value (EAV), which incorporates the assessed value, exemptions, and IDOR’s equalizer.                              |                                                                                     *Complications*: In a tax year, AVs can change at the Assessor’s Office and at the Board of Review. Also, IDOR calculates a new equalizer every year. <br><br> *Option*: Predict what you think is an accurate AV, apply what exemptions you qualify for, and use past equalizers issued by IDOR.                                                                                      |
-| **Tax Extensions**, also called levies, for each taxing agency associated with that PIN’s tax code (typically, 10-14 agencies) |               The total extension is the total dollar amount each taxing agency decides to collect from property owners within the boundaries of its district.               |                                                                                                                              *Complication*: Each agency sets their own tax levy. <br><br> *Option*: For each agency associated with that PIN’s tax code, you might use the past year extension, and apply a percentage increase or decrease.                                                                                                                              |
-|              **Tax Bases** for each taxing agency associated with that PIN’s tax code (typically, 10-14 agencies)              | For each agency, the tax base equals the sum of the EAVs of all properties in its district, except for any region of the agency that is in a TIF (where the base is frozen). | *Complication*: Even after a township has been reassessed, many agencies span across township boundaries. (For example: the taxing district of the City of Chicago is divided up into eight assessment townships, but property tax bills for Chicagoans depend on assessments throughout all eight townships). <br><br> *Option*: For each agency associated with that PIN’s tax code, you might use the past year total EAV, and apply a percentage increase or decrease. |
+| **Tax extensions**, also called levies, for each taxing agency associated with that PIN’s tax code (typically, 10-14 agencies) |               The total extension is the total dollar amount each taxing agency decides to collect from property owners within the boundaries of its district.               |                                                                                                                              *Complication*: Each agency sets their own tax levy. <br><br> *Option*: For each agency associated with that PIN’s tax code, you might use the past year extension, and apply a percentage increase or decrease.                                                                                                                              |
+|              **Tax bases** for each taxing agency associated with that PIN’s tax code (typically, 10-14 agencies)              | For each agency, the tax base equals the sum of the EAVs of all properties in its district, except for any region of the agency that is in a TIF (where the base is frozen). | *Complication*: Even after a township has been reassessed, many agencies span across township boundaries. (For example: the taxing district of the City of Chicago is divided up into eight assessment townships, but property tax bills for Chicagoans depend on assessments throughout all eight townships). <br><br> *Option*: For each agency associated with that PIN’s tax code, you might use the past year total EAV, and apply a percentage increase or decrease. |
 
 ## Installation
 
@@ -186,9 +186,9 @@ database:
 
 1.  Download the compressed database file from the CCAO’s public S3
     bucket. [Link
-    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.2.db.bz2).
+    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.3.db.bz2).
 2.  (Optional) Rename the downloaded database file by removing the
-    version number, i.e. ptaxsim-2021.0.2.db.bz2 becomes
+    version number, i.e. ptaxsim-2021.0.3.db.bz2 becomes
     `ptaxsim.db.bz2`.
 3.  Decompress the downloaded database file. The file is compressed
     using [bzip2](https://sourceware.org/bzip2/).
@@ -256,7 +256,7 @@ single_bill
 #>  2: FOREST PRESERVE DISTRICT ...           COOK COUNTY              COOK
 #>  3:              CITY OF CHICAGO MUNICIPALITY/TOWNSHIP              MUNI
 #>  4: CITY OF CHICAGO LIBRARY F... MUNICIPALITY/TOWNSHIP           LIBRARY
-#>  5: CITY OF CHICAGO SCHOOL BL... MUNICIPALITY/TOWNSHIP              MUNI
+#>  5: CITY OF CHICAGO SCHOOL BL... MUNICIPALITY/TOWNSHIP              MISC
 #>  6: TIF - CHICAGO - BRONZEVIL... MUNICIPALITY/TOWNSHIP               TIF
 #>  7: CHICAGO COMMUNITY COLLEGE...                SCHOOL         COMM COLL
 #>  8:           BOARD OF EDUCATION                SCHOOL           UNIFIED
@@ -466,7 +466,7 @@ multiple_years
 #>   2: FOREST PRESERVE DISTRICT ...           COOK COUNTY              COOK
 #>   3:              CITY OF CHICAGO MUNICIPALITY/TOWNSHIP              MUNI
 #>   4: CITY OF CHICAGO LIBRARY F... MUNICIPALITY/TOWNSHIP           LIBRARY
-#>   5: CITY OF CHICAGO SCHOOL BL... MUNICIPALITY/TOWNSHIP              MUNI
+#>   5: CITY OF CHICAGO SCHOOL BL... MUNICIPALITY/TOWNSHIP              MISC
 #>  ---                                                                     
 #> 122: CHICAGO COMMUNITY COLLEGE...                SCHOOL         COMM COLL
 #> 123:           BOARD OF EDUCATION                SCHOOL           UNIFIED
@@ -500,8 +500,8 @@ multiple_years_summ <- multiple_years %>%
     agency_minor_type = factor(
       agency_minor_type,
       levels = c(
-        "TIF", "BOND", "COOK", "LIBRARY",
-        "MUNI", "PARK", "UNIFIED", "COMM COLL", "WATER"
+        "TIF", "BOND", "COOK", "LIBRARY", "MUNI", "PARK",
+        "UNIFIED", "COMM COLL", "WATER", "MISC"
       )
     )
   )
@@ -532,7 +532,7 @@ multiple_years_plot <- ggplot(data = multiple_years_summ) +
     expand = c(0, 0)
   ) +
   scale_x_continuous(name = "Year", n.breaks = 7) +
-  scale_fill_manual(values = scales::hue_pal()(9)) +
+  scale_fill_manual(values = scales::hue_pal()(10)) +
   theme_minimal() +
   guides(fill = guide_legend(title = "District Type"))
 ```
