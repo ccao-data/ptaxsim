@@ -14,8 +14,9 @@ CREATE TABLE pin_geometry_raw (
 CREATE VIEW IF NOT EXISTS pin_geometry AS
 SELECT y.year, pr.pin10, pr.longitude, pr.latitude, pr.geometry
 FROM (
-  SELECT DISTINCT year
-  FROM agency
+    SELECT DISTINCT year
+    FROM agency
 ) AS y
 CROSS JOIN pin_geometry_raw pr
-ON y.year >= start_year AND y.year <= end_year
+    ON y.year >= pr.start_year
+    AND y.year <= pr.end_year
