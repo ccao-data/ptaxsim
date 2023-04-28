@@ -563,6 +563,23 @@
       "Hash": "15e9634c0fcd294799e9b2e929ed1b86",
       "Requirements": []
     },
+    "geoarrow": {
+      "Package": "geoarrow",
+      "Version": "0.0.0.9000",
+      "Source": "GitHub",
+      "Remotes": "paleolimbot/narrow",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "geoarrow",
+      "RemoteUsername": "paleolimbot",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "feebf9608b0cb3786a19e8a857479e0f50607c26",
+      "Hash": "41b0d41d7933333b5b7958f46c3e3a66",
+      "Requirements": [
+        "narrow",
+        "wk"
+      ]
+    },
     "gert": {
       "Package": "gert",
       "Version": "1.9.2",
@@ -962,6 +979,19 @@
       "Requirements": [
         "colorspace"
       ]
+    },
+    "narrow": {
+      "Package": "narrow",
+      "Version": "0.0.0.9000",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "narrow",
+      "RemoteUsername": "paleolimbot",
+      "RemoteRef": "HEAD",
+      "RemoteSha": "3572fb5dbcee331188d27367faced26a0f1c6045",
+      "Hash": "79e20f0a849e50170ce9dcfdee1f74c5",
+      "Requirements": []
     },
     "nlme": {
       "Package": "nlme",
