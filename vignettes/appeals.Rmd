@@ -42,9 +42,8 @@ library(data.table)
 library(dplyr)
 library(ggplot2)
 library(ggspatial)
+library(glue)
 library(here)
-library(httr)
-library(jsonlite)
 library(ptaxsim)
 library(sf)
 
@@ -53,37 +52,83 @@ ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.db"))
 
 ## Gathering PINs of interest
 
-We need a way to gather all the properties (PINs) in Schaumburg. Fortunately, the Assessor's Office has a [public data set](https://datacatalog.cookcountyil.gov/Property-Taxation/Assessor-Parcel-Universe/tx2p-k2g9) that already has municipality as a field. We can query that data set to get the PINs we need.
+To determine the impact of appeals, we first need a way to gather all the properties (PINs) in Schaumburg. Fortunately, PTAXSIM's database has all the data required to accomplish this task.
 
-To do so, we construct a query using [Socrata's API](https://dev.socrata.com/docs/queries/). This will let us get only the columns and rows we need, rather than the entire data set. Here, we're getting only the PIN, lat/lon, and class of all PINs in Schaumburg.
+First, we'll need to determine the Village of Schaumburg's *agency number*. This is the ID used by the Clerk to track different taxing bodies. To find Schaumburg's ID, we can directly query PTAXSIM's database and look in the `agency_info` table:
 
 ```{r}
-base_url <- "https://datacatalog.cookcountyil.gov/resource/tx2p-k2g9.json"
+sb_agency_nums <- DBI::dbGetQuery(
+  ptaxsim_db_conn,
+  "SELECT agency_num, agency_name 
+  FROM agency_info
+  WHERE agency_name LIKE '%SCHAUMBURG%'"
+)
 
-sb_res <- GET(
-  base_url,
-  query = list(
-    year = 2021,
-    municipality_name = "Village Of Schaumburg",
-    `$select` = paste0(c("pin", "lat", "lon", "class"), collapse = ","),
-    `$limit` = 500000L
+sb_agency_nums
+```
+
+Here we can see the various taxing bodies around Schaumburg and their types. The agency number we want is `031150000` for the `VILLAGE OF SCHAUMBURG`. With the agency number, we can find all of the *tax codes* that make up the municipality. To do so, we can again query PTAXSIM directly, this time looking in the `tax_code` table:
+
+```{r}
+sb_tax_codes <- DBI::dbGetQuery(
+  ptaxsim_db_conn, "
+  SELECT tax_code_num
+  FROM tax_code
+  WHERE agency_num = '031150000'
+  AND year = 2019
+  "
+)
+```
+
+Finally, we can find all of Schaumburg's PINs with one last direct query. This time we'll look in the `pin` table using the tax codes that make up Schaumburg. We'll use the `glue` library for string expansion to make things a bit easier:
+
+```{r}
+sb_pins <- DBI::dbGetQuery(
+  ptaxsim_db_conn,
+  glue_sql("
+    SELECT pin, class
+    FROM pin
+    WHERE tax_code_num IN ({sb_tax_codes$tax_code_num*})
+    AND year = 2019
+    ",
+    .con = ptaxsim_db_conn
   )
 )
 ```
 
-Next, we convert the response from the API to a `data.frame` and then to an [`sf` object](https://r-spatial.github.io/sf/). This will let us plot each PIN's location on a map. We also add the major class code (property type) to each PIN.
+## Mapping the area
+
+Now that we have Schaumburg's PINs, we can use them to get a quick look at the area using a map. First, we'll get the PIN boundaries. These are included in PTAXSIM's database and can be retrieved using `lookup_pin10_geometry()`.
 
 ```{r}
-sb_pins <- fromJSON(rawToChar(sb_res$content)) %>%
-  st_as_sf(coords = c("lon", "lat"), crs = 4326) %>%
-  mutate(major_class = substr(class, 1, 1)) %>%
-  filter(major_class %in% c("2", "3", "5")) %>%
+# PIN geometries only exist for 10-digit PINs, so we'll need to truncate our
+# existing Schaumburg PINs
+sb_pin10s <- unique(substr(sb_pins$pin, 1, 10))
+
+# The geometry is stored in the database as simple text, so we need to convert
+# it to the correct type using sf
+sb_pins_geo <- lookup_pin10_geometry(year = 2020, pin10 = sb_pin10s)
+sb_pins_geo <- sb_pins_geo %>%
+  st_as_sf(wkt = "geometry", crs = 4326)
+
+# We'll also attach the first class code from each PIN14 to each PIN10 geometry
+# and group them into broad buckets. This is just to help our visualization
+sb_pins_geo <- sb_pins_geo %>%
+  left_join(
+    sb_pins %>%
+      mutate(pin10 = substr(pin, 1, 10)) %>%
+      group_by(pin10) %>%
+      summarize(class = first(class)),
+    by = "pin10"
+  ) %>%
   mutate(
-    major_class = recode_factor(
+    major_class = substr(class, 1, 1),
+    major_class_fct = recode_factor(
       major_class,
       "2" = "2 - Residential",
       "3" = "3 & 5 - Commercial",
-      "5" = "3 & 5 - Commercial"
+      "5" = "3 & 5 - Commercial",
+      "0" = "Other", "1" = "Other", "4" = "Other", "6" = "Other", "7" = "Other"
     )
   )
 ```
@@ -111,17 +156,14 @@ Finally, we can plot our PINs of interest on a map, along with Schaumburg's boun
 sb_pins_map <- ggplot() +
   annotation_map_tile(type = "cartolight", zoomin = -1) +
   geom_sf(
-    data = sb_pins,
-    aes(color = major_class, alpha = major_class),
-    size = 0.7
+    data = sb_pins_geo,
+    aes(fill = major_class_fct),
+    alpha = 0.5,
+    linewidth = 0.1
   ) +
-  geom_sf(data = muni, fill = "transparent", linewidth = 1.1) +
+  geom_sf(data = muni, fill = "transparent", linewidth = 1) +
   annotation_scale(location = "br") +
-  scale_alpha_manual(
-    name = "",
-    values = c("2 - Residential" = 0.2, "3 & 5 - Commercial" = 0.9)
-  ) +
-  scale_color_brewer(name = "", palette = "Set1") +
+  scale_fill_brewer(name = "", palette = "Set1") +
   guides(color = guide_legend(override.aes = list(size = 5))) +
   theme_void() +
   theme(
