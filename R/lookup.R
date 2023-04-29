@@ -31,7 +31,7 @@ globalVariables(c("ptaxsim_db_conn", "."))
 NULL
 
 
-#' Lookup boundaries associated with taxing entities 
+#' Lookup boundaries associated with taxing entities
 #'
 #' @description The functions in this group take a tax year and identifier as
 #'  input and return a \code{data.table} as an output. The returned data
@@ -256,7 +256,7 @@ lookup_pin10_geometry <- function(year,
       "for 10-digit PINs"
     )
   }
-  
+
   stopifnot(
     is.numeric(year),
     is.character(pin10),
@@ -265,7 +265,7 @@ lookup_pin10_geometry <- function(year,
     check_db_conn(conn),
     check_db_sync(conn)
   )
-  
+
   dt_idx <- data.table::CJ("year" = year, "pin10" = pin10, unique = TRUE)
   DBI::dbWriteTable(
     conn = conn,
