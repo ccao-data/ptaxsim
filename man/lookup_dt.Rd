@@ -92,6 +92,7 @@ lookup_tif(2019, "73105")
 }
 \seealso{
 Other lookups: 
+\code{\link{lookup_geom}},
 \code{\link{lookup_vec}}
 }
 \concept{lookups}
