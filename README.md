@@ -38,8 +38,8 @@ Table of Contents
 > installation](#database-installation) for details.
 >
 > [**Link to PTAXSIM
-> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.3.db.bz2)
-> (DB version: 2021.0.3; Last updated: 2023-04-26 20:45:18)
+> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.4.db.bz2)
+> (DB version: 2021.0.4; Last updated: 2023-04-28 23:40:05)
 
 PTAXSIM is an R package/database to approximate Cook County property tax
 bills. It uses real assessment, exemption, TIF, and levy data to
@@ -186,9 +186,9 @@ database:
 
 1.  Download the compressed database file from the CCAO’s public S3
     bucket. [Link
-    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.3.db.bz2).
+    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.4.db.bz2).
 2.  (Optional) Rename the downloaded database file by removing the
-    version number, i.e. ptaxsim-2021.0.3.db.bz2 becomes
+    version number, i.e. ptaxsim-2021.0.4.db.bz2 becomes
     `ptaxsim.db.bz2`.
 3.  Decompress the downloaded database file. The file is compressed
     using [bzip2](https://sourceware.org/bzip2/).
@@ -695,6 +695,23 @@ erDiagram
     int     exe_abate
   }
 
+  pin_geometry {
+    int     year
+    varchar pin10
+    double  longitude
+    double  latitude
+    text    geometry
+  }
+
+  pin_geometry_raw {
+    varchar pin10              PK
+    int     start_year         PK
+    int     end_year           PK
+    double  longitude
+    double  latitude
+    text    geometry
+  }
+
   tax_code {
     int     year               PK
     varchar agency_num         PK
@@ -741,6 +758,8 @@ erDiagram
   tif_distribution }|--|| tif_crosswalk : "in"
   agency_info ||--o{ tif: "describes"
   tax_code }|--o| tif : "may have"
+  pin_geometry ||--o| pin : "has"
+  pin_geometry }|--|| pin_geometry_raw : "expands"
 ```
 
 </details>
@@ -801,6 +820,12 @@ erDiagram
     varchar pin                PK
     varchar class
   }
+  
+  pin_geometry {
+    int     year
+    varchar pin10
+    text    geometry
+  }
 
   tax_code {
     int     year               PK
@@ -844,6 +869,7 @@ erDiagram
   tif_distribution }|--|| tif_crosswalk : "in"
   agency_info ||--o{ tif: "describes"
   tax_code }|--o| tif : "may have"
+  pin_geometry ||--o| pin : "has"
 ```
 
 ## Notes and caveats
