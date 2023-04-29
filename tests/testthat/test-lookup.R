@@ -231,7 +231,7 @@ test_that("lookup values/data are correct", {
   )
   expect_known_hash(
     lookup_agency(sum_df$year, sum_df$tax_code),
-    "85e73a371b"
+    "b0b8d1fbca"
   )
 })
 

@@ -37,8 +37,7 @@ Table of Contents
 > before using this package! See [Database
 > installation](#database-installation) for details.
 >
-> [**Link to PTAXSIM
-> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.4.db.bz2)
+> [**Link to PTAXSIM database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.4.db.bz2)
 > (DB version: 2021.0.4; Last updated: 2023-04-28 23:40:05)
 
 PTAXSIM is an R package/database to approximate Cook County property tax
@@ -186,9 +185,15 @@ database:
 
 1.  Download the compressed database file from the CCAO’s public S3
     bucket. [Link
+<<<<<<< HEAD
     here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.4.db.bz2).
 2.  (Optional) Rename the downloaded database file by removing the
     version number, i.e. ptaxsim-2021.0.4.db.bz2 becomes
+=======
+    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.3.db.bz2).
+2.  (Optional) Rename the downloaded database file by removing the
+    version number, i.e. ptaxsim-2021.0.3.db.bz2 becomes
+>>>>>>> master
     `ptaxsim.db.bz2`.
 3.  Decompress the downloaded database file. The file is compressed
     using [bzip2](https://sourceware.org/bzip2/).
@@ -455,7 +460,7 @@ multiple_years
 #>   3: 2010 14081020210000   206    73001 69062 227905  030210000
 #>   4: 2010 14081020210000   206    73001 69062 227905  030210001
 #>   5: 2010 14081020210000   206    73001 69062 227905  030210002
-#>  ---                                                           
+#>  ---
 #> 122: 2021 14081020210000   206    73105 70000 210189  043030000
 #> 123: 2021 14081020210000   206    73105 70000 210189  044060000
 #> 124: 2021 14081020210000   206    73105 70000 210189  050200000
@@ -467,7 +472,7 @@ multiple_years
 #>   3:              CITY OF CHICAGO MUNICIPALITY/TOWNSHIP              MUNI
 #>   4: CITY OF CHICAGO LIBRARY F... MUNICIPALITY/TOWNSHIP           LIBRARY
 #>   5: CITY OF CHICAGO SCHOOL BL... MUNICIPALITY/TOWNSHIP              MISC
-#>  ---                                                                     
+#>  ---
 #> 122: CHICAGO COMMUNITY COLLEGE...                SCHOOL         COMM COLL
 #> 123:           BOARD OF EDUCATION                SCHOOL           UNIFIED
 #> 124:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
@@ -479,7 +484,7 @@ multiple_years
 #>   3:         0.00914   2083.05
 #>   4:         0.00102    232.46
 #>   5:         0.00116    264.37
-#>  ---                          
+#>  ---
 #> 122:         0.00145    225.36
 #> 123:         0.03517   4984.70
 #> 124:         0.00311    483.37
@@ -658,7 +663,7 @@ erDiagram
     double  eq_factor_tentative
     double  eq_factor_final
   }
-  
+
   metadata {
     varchar db_version
     varchar requires_pkg_version
@@ -728,7 +733,7 @@ erDiagram
     int     first_year
     boolean cancelled_this_year
   }
-  
+
   tif_crosswalk {
     int     year
     varchar agency_num_dist
@@ -807,7 +812,7 @@ erDiagram
     double  eq_factor_tentative
     double  eq_factor_final
   }
-  
+
   metadata {
     varchar db_version
     varchar requires_pkg_version
@@ -820,7 +825,7 @@ erDiagram
     varchar pin                PK
     varchar class
   }
-  
+
   pin_geometry {
     int     year
     varchar pin10
