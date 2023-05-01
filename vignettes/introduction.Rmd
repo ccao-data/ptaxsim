@@ -65,20 +65,20 @@ print(bill)
 
 ### Output columns {#table1}
 
-| Column Name             | Description                                                                                                                                                                                                                                | Possible Valus                                                                                                              |
-|-------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
-| **`year`**              | Tax year of the bill. Note that bills are paid in arrears, so a 2020 bill is paid in 2021.                                                                                                                                                 | Must be >= 2006                                                                                                             |
-| **`pin`**               | Property Index Number of the property. This is the unique identifier of each parcel in Cook County.                                                                                                                                        |                                                                                                                             |
-| **`class`**             | The 3-digit Assessor minor class code. This identifies the property type/structure. See the [ccao package](https://gitlab.com/ccao-data-science---modeling/packages/ccao) for more information.                                            | See [class dictionary](https://gitlab.com/ccao-data-science---modeling/packages/ccao/-/blob/master/data-raw/class_dict.csv) |
-| **`tax_code`**          | The 5-digit tax code. Each tax code identifies the unique combination of taxing districts that a PIN is subject to. Note that the first 2 digits of `tax_code` are the Assessor township code.                                              |                                                                                                                             |
-| **`av`**                | Assessed value of the property. By default, this is the finalized AV *after all appeals have been completed*. See [optional arguments](#optional-arguments) below for more details.                                                                               | Must be >= 0                                                                                                                |
-| **`eav`**               | The `av` multiplied by the state equalization factor.                                                                                                                                                                                      | Must be >= 0                                                                                                                |
-| **`agency_num`**        | Unique numeric identifier for each taxing body/district. Each `pin` is typically taxed by multiple taxing districts. `tax_bill()` will output 1 row for each district for each PIN and year. The PIN above is being taxed by 11 districts. |                                                                                                                             |
-| **`agency_name`**       | Name of the taxing district.                                                                                                                                                                                                               |                                                                                                                             |
-| **`agency_major_type`** | Type of taxing district. Similar to the grouping used on real tax bills.                                                                                                                                                                   | COOK COUNTY, MISCELLANEOUS, MUNICIPALITY/TOWNSHIP, SCHOOL                                                                   |
-| **`agency_minor_type`** | Sub-type of taxing district. Much more fine-grained.                                                                                                                                                                                       | BOND, COOK, COMM COLL, ELEMENTARY, FIRE, GEN ASST, HEALTH, INFRA, LIBRARY, MISC, MOSQUITO, MUNI, PARK, POLICE, SANITARY, SECONDARY, SSA, TIF, TOWNSHIP, UNIFIED, WATER   |
-| **`agency_tax_rate`**   | The tax rate for the PIN and district, which calculated from each district's levy and total tax base.                                                                                                                                      |                                                                                                                             |
-| **`final_tax`**         | The final tax (in dollars) the PIN owes to the taxing district. Equal to `agency_tax_rate * eav` in most cases.                                                                                                                            |                                                                                                                             |
+| Column Name             | Description                                                                                                                                                                                                                                | Possible Valus                                                                                                                                                         |
+|-------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **`year`**              | Tax year of the bill. Note that bills are paid in arrears, so a 2021 bill is paid in 2022                                                                                                                                                  | Must be >= 2006                                                                                                                                                        |
+| **`pin`**               | Property Index Number of the property. This is the unique identifier of each parcel in Cook County                                                                                                                                         |                                                                                                                                                                        |
+| **`class`**             | The 3-digit Assessor minor class code. This identifies the property type/structure                                                                                                                                                         | See [class dictionary](https://gitlab.com/ccao-data-science---modeling/packages/ccao/-/blob/master/data-raw/class_dict.csv)                                            |
+| **`tax_code`**          | The 5-digit tax code. Each tax code identifies the unique combination of taxing districts that a PIN is within. Note that the first 2 digits of `tax_code` are the Assessor township code                                                  |                                                                                                                                                                        |
+| **`av`**                | Assessed value of the property. By default, this is the finalized AV *after all appeals have been completed*. See [optional arguments](#optional-arguments) below for more details                                                         | Must be >= 0                                                                                                                                                           |
+| **`eav`**               | The `av` multiplied by the state equalization factor                                                                                                                                                                                       | Must be >= 0                                                                                                                                                           |
+| **`agency_num`**        | Unique numeric identifier for each taxing body/district. Each `pin` is typically taxed by multiple taxing districts. `tax_bill()` will output 1 row for each district for each PIN and year. The PIN above is being taxed by 11 districts  |                                                                                                                                                                        |
+| **`agency_name`**       | Name of the taxing district                                                                                                                                                                                                                |                                                                                                                                                                        |
+| **`agency_major_type`** | Type of taxing district. Similar to the grouping used on real tax bills                                                                                                                                                                    | COOK COUNTY, MISCELLANEOUS, MUNICIPALITY/TOWNSHIP, SCHOOL                                                                                                              |
+| **`agency_minor_type`** | Sub-type of taxing district. Much more fine-grained                                                                                                                                                                                        | BOND, COOK, COMM COLL, ELEMENTARY, FIRE, GEN ASST, HEALTH, INFRA, LIBRARY, MISC, MOSQUITO, MUNI, PARK, POLICE, SANITARY, SECONDARY, SSA, TIF, TOWNSHIP, UNIFIED, WATER |
+| **`agency_tax_rate`**   | The tax rate for the PIN and district, which is calculated from each district's levy and total tax base                                                                                                                                    |                                                                                                                                                                        |
+| **`final_tax`**         | The final tax (in dollars) the PIN owes to the taxing district. Equal to `agency_tax_rate * eav` in cases without exemptions                                                                                                               |
 
 ### Multiple PINs or years
 
@@ -142,14 +142,14 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
 * Changing `tax_code_vec` "relocates" a PIN by changing the things that are taxing it. This can be useful for counterfactual analysis. For example, if you own property within a school district and want to know what your tax bill would be just outside the district, but otherwise within the same municipality, then you can find the tax code that represents that situation and plug it into `tax_bill()`
 * Filled by **`lookup_tax_code()`**:
   * Takes PINs and years as inputs and outputs a character vector of tax codes. Here is an example:
-  
+
     ```{r}
 tax_code <- lookup_tax_code(2018:2021, "13264290020000")
 print(tax_code)
     ```
-  
+
   * Follows the same recycling rules as `tax_bill()`: input vectors of the same length return an element-wise output, input vectors of different lengths return the Cartesian product.
-  
+
     ```{r}
 tax_code <- lookup_tax_code(
   year = 2018:2021,
@@ -163,7 +163,7 @@ tax_code <- lookup_tax_code(
 )
 print(tax_code)
     ```
-  
+
 ### `agency_dt` {#agency_dt}
 
 | Column Name             | Type       | Key | Note                                                                                                                                                                                      |
@@ -183,15 +183,15 @@ print(tax_code)
 * When joined to the PIN level (via `tax_code`) the `agency_dt` table is used to determine which districts a PIN pays and how much. The basic calculation is: $pin\_eav * (agency\_levy / agency\_base)$
 * Filled by **`lookup_agency()`**:
   * Takes years and tax codes as inputs and outputs a keyed `data.table` of taxing districts, including their identifying information, extension, and base. Here is an example:
-  
+
     ```{r}
 tax_code <- lookup_tax_code(2021, "13264290020000")
 agency <- lookup_agency(2021, tax_code)
 print(agency, topn = 3)
     ```
-  
+
   * Note that it returns a distinct set of districts, even if year and tax code are repeated:
-  
+
     ```{r}
 tax_codes <- lookup_tax_code(
   year = 2021,
@@ -232,20 +232,20 @@ print(agency, topn = 3)
 pin <- lookup_pin(2021, "13264290020000")
 print(pin)
     ```
-    
+
   * Repeat inputs will yield distinct outputs:
 
     ```{r}
 pin <- lookup_pin(2021, c("13264290020000", "13264290020000"))
 print(pin)
     ```
-    
+
   * By default, will return the final assessed value for the year *after all appeals are processed*. This can be changed using an additional argument: `stage`. The options for `stage` include:
     * `"mailed"` - Initial assessed values mailed to taxpayers, no appeals
     * `"certified"` - Assessed values after Assessor appeals are complete
     * `"board"` - Assessed values after Board of Review appeals are complete
     * `"clerk"` - Assessed values used by the Clerk to calculate the base and by the Treasurer to calculate bills. Identical to `"board"` in the huge majority of cases
-    
+
     ```{r}
 pin_mailed <- lookup_pin(2021, "13264290020000", stage = "mailed")
 pin_board <- lookup_pin(2021, "13264290020000", stage = "board")
@@ -275,16 +275,16 @@ tax_code <- lookup_tax_code(2021, "14172270080000")
 tif <- lookup_tif(2021, tax_code)
 print(tif, topn = 3)
     ```
-  
+
   * Returns a `data.table` with zero rows if the specified `tax_code` is not within a TIF district:
-  
+
     ```{r}
 tax_code <- lookup_tax_code(2021, "13264290020000")
 tif <- lookup_tif(2021, tax_code)
 print(tif, topn = 3)
-    ``` 
-    
-# 2. Common scenarios
+    ```
+
+# 2. Common scenarios {#common-scenarios}
 
 ---
 
@@ -439,7 +439,7 @@ bills_summ_plot <- ggplot(data = bills_summ) +
 bills_summ_plot
 ```
 
-Or the change in proportion of tax to each district:
+And even plot the change of the proportion of tax dollars going to each district:
 
 <details>
 
@@ -485,7 +485,7 @@ bills_summ_plot2 <- ggplot(data = bills_summ2) +
 bills_summ_plot2
 ```
 
-This PIN's bill has increased nearly 3x since 2006. A significant portion of that increase due to increases in the Chicago Public Schools levy.
+This PIN's bill has increased over 3x since 2006. A significant portion of that increase is due to increases in the Chicago Public Schools levy.
 
 ## Advanced scenarios
 
