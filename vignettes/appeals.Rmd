@@ -67,7 +67,7 @@ sb_agency_nums <- DBI::dbGetQuery(
 sb_agency_nums
 ```
 
-Here we can see the various taxing bodies around Schaumburg and their types. The agency number we want is `031150000` for the `VILLAGE OF SCHAUMBURG`. With the agency number, we can find all of the *tax codes* that make up the municipality. To do so, we can again query PTAXSIM directly, this time looking in the `tax_code` table:
+Here we can see the various taxing bodies around Schaumburg. The agency number we want is `031150000` for the `VILLAGE OF SCHAUMBURG`. With the agency number, we can find all of the *tax codes* that make up the municipality. To do so, we can again query PTAXSIM directly, this time looking in the `tax_code` table:
 
 ```{r}
 sb_tax_codes <- DBI::dbGetQuery(

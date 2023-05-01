@@ -17,14 +17,6 @@
       "Hash": "b2866e62bab9378c3cc9476a1954226b",
       "Requirements": []
     },
-    "FNN": {
-      "Package": "FNN",
-      "Version": "1.1.3.1",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "a774898dbc05ccf03ed4ca93fa7a71f4",
-      "Requirements": []
-    },
     "KernSmooth": {
       "Package": "KernSmooth",
       "Version": "2.23-20",
@@ -664,23 +656,6 @@
       "Hash": "4f2596dfb05dac67b9dc558e5c6fba2e",
       "Requirements": []
     },
-    "gstat": {
-      "Package": "gstat",
-      "Version": "2.1-0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "6bd91a852ec7bad49e618711d6c6583d",
-      "Requirements": [
-        "FNN",
-        "lattice",
-        "sf",
-        "sftime",
-        "sp",
-        "spacetime",
-        "stars",
-        "zoo"
-      ]
-    },
     "gtable": {
       "Package": "gtable",
       "Version": "0.3.1",
@@ -784,14 +759,6 @@
       "Source": "Repository",
       "Repository": "CRAN",
       "Hash": "6154ec2223172bce8162d4153cda21f7",
-      "Requirements": []
-    },
-    "intervals": {
-      "Package": "intervals",
-      "Version": "0.15.2",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "079e6e04c6aafe087aba89f93311d8ba",
       "Requirements": []
     },
     "isoband": {
@@ -907,18 +874,6 @@
         "rex",
         "xml2",
         "xmlparsedata"
-      ]
-    },
-    "lwgeom": {
-      "Package": "lwgeom",
-      "Version": "0.2-10",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "27820d1affb36626cc284b5c5b7d9049",
-      "Requirements": [
-        "Rcpp",
-        "sf",
-        "units"
       ]
     },
     "magrittr": {
@@ -1567,16 +1522,6 @@
         "units"
       ]
     },
-    "sftime": {
-      "Package": "sftime",
-      "Version": "0.2-0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "9ad28dee2634035886a81680fcd80a30",
-      "Requirements": [
-        "sf"
-      ]
-    },
     "shiny": {
       "Package": "shiny",
       "Version": "1.7.4",
@@ -1633,35 +1578,6 @@
       "Hash": "7b6b37e9d8e3295ccd5a73ac6d62db98",
       "Requirements": [
         "lattice"
-      ]
-    },
-    "spacetime": {
-      "Package": "spacetime",
-      "Version": "1.2-8",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "b9faf5e49683ec47e93fa21560e9c9f2",
-      "Requirements": [
-        "intervals",
-        "lattice",
-        "sp",
-        "xts",
-        "zoo"
-      ]
-    },
-    "stars": {
-      "Package": "stars",
-      "Version": "0.6-0",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "8c779309dc9fa1aa45bf98498330fe69",
-      "Requirements": [
-        "abind",
-        "classInt",
-        "lwgeom",
-        "rlang",
-        "sf",
-        "units"
       ]
     },
     "stringi": {
@@ -2032,16 +1948,6 @@
       "Hash": "b8acdf8af494d9ec19ccb2481a9b11c2",
       "Requirements": []
     },
-    "xts": {
-      "Package": "xts",
-      "Version": "0.12.2",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "6731cbcbe2f9633865b59392aee7966d",
-      "Requirements": [
-        "zoo"
-      ]
-    },
     "yaml": {
       "Package": "yaml",
       "Version": "2.3.6",
@@ -2057,16 +1963,6 @@
       "Repository": "CRAN",
       "Hash": "c42bfcec3fa6a0cce17ce1f8bc684f88",
       "Requirements": []
-    },
-    "zoo": {
-      "Package": "zoo",
-      "Version": "1.8-11",
-      "Source": "Repository",
-      "Repository": "CRAN",
-      "Hash": "874a5b77fe0cfacf2a3450069ae70926",
-      "Requirements": [
-        "lattice"
-      ]
     }
   }
 }

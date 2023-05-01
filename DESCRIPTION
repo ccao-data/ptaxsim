@@ -29,7 +29,6 @@ Suggests:
     dplyr,
     ggplot2,
     ggspatial,
-    gstat,
     here,
     jsonlite,
     httr,
@@ -39,7 +38,6 @@ Suggests:
     readr,
     rmarkdown,
     sf,
-    stars,
     stringr,
     testthat
 Depends:
