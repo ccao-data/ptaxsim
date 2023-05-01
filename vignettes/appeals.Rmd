@@ -59,7 +59,7 @@ First, we'll need to determine the Village of Schaumburg's *agency number*. This
 ```{r}
 sb_agency_nums <- DBI::dbGetQuery(
   ptaxsim_db_conn,
-  "SELECT agency_num, agency_name 
+  "SELECT agency_num, agency_name
   FROM agency_info
   WHERE agency_name LIKE '%SCHAUMBURG%'"
 )

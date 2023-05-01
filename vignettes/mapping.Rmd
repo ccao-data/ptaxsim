@@ -132,8 +132,8 @@ fh_pins_geo <- fh_pins_geo %>%
     major_class = substr(class, 1, 1),
     major_class_fct = recode_factor(
       major_class,
-      "0" = "0 & 1 - Vacant and Exempt", 
-      "1" = "0 & 1 - Vacant and Exempt", 
+      "0" = "0 & 1 - Vacant and Exempt",
+      "1" = "0 & 1 - Vacant and Exempt",
       "2" = "2 - Residential",
       "3" = "3 & 5 - Commercial",
       "5" = "3 & 5 - Commercial",
@@ -282,8 +282,8 @@ ward_pins_geo <- ward_pins_geo %>%
     major_class = substr(class, 1, 1),
     major_class_fct = recode_factor(
       major_class,
-      "0" = "0 & 1 - Vacant and Exempt", 
-      "1" = "0 & 1 - Vacant and Exempt", 
+      "0" = "0 & 1 - Vacant and Exempt",
+      "1" = "0 & 1 - Vacant and Exempt",
       "2" = "2 - Residential",
       "3" = "3 & 5 - Commercial",
       "5" = "3 & 5 - Commercial",
@@ -337,7 +337,7 @@ Now that we've seen how to map the single-area case, let's expand to the multipl
 ```{r}
 # We again need to find tax codes, this time for all Ford Height agencies
 fhm_tax_codes <- DBI::dbGetQuery(
-  ptaxsim_db_conn, 
+  ptaxsim_db_conn,
   glue_sql("
     SELECT tax_code_num, agency_num
     FROM tax_code
@@ -443,7 +443,7 @@ chg_bills <- DBI::dbGetQuery(
     WHERE year IN (2006, 2021)
     AND pin IN ({ward_pins$pin*})
   ",
-  .con = ptaxsim_db_conn
+    .con = ptaxsim_db_conn
   )
 )
 ```
