@@ -78,6 +78,8 @@ stages:
 # in the test stage
 build:
   stage: build
+  tags:
+    - saas-linux-medium-amd64
   script:
     # Need to remove this file because otherwise it is copied to the
     # R build directory. This takes forever and causes the CI runners
@@ -100,7 +102,7 @@ build:
 # This output gets scraped by GitLab and turned into a coverage badge
 test:
   stage: test
-  tags: 
+  tags:
     - saas-linux-medium-amd64
   script:
     - R CMD check $(ls -1t *.tar.gz | head -n 1) --no-manual --no-build-vignettes --no-tests
@@ -121,6 +123,8 @@ test:
 # to GitLab Pages
 pages:
   stage: pages
+  tags:
+    - saas-linux-medium-amd64
   only:
     - master
   script:
