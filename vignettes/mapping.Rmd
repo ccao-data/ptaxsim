@@ -389,25 +389,45 @@ fhm_pins_geo <- fhm_pins_geo %>%
   ) %>%
   left_join(fhm_tax_codes, by = "tax_code_num") %>%
   left_join(fh_agency_nums, by = "agency_num") %>%
+  # Filter ugly railroad PINs
+  filter(!pin10 %in% c("3222501001", "3227500001", "3227501004")) %>%
   mutate(
     an = recode_factor(
       agency_name,
       "FORD HEIGHTS PUBLIC LIBRARY DISTRICT" = "FH LIBRARY",
-      "FORD HEIGHTS PARK DISTRICT" = "FH PARK",
-      "VILLAGE OF FORD HEIGHTS" = "FH VILLAGE",
+      "FORD HEIGHTS PARK DISTRICT" = "FH PARK + VILLAGE",
+      "VILLAGE OF FORD HEIGHTS" = "FH PARK + VILLAGE",
       "TIF - FORD HEIGHTS - COTTAGE GROVE / RTE 20" = "RTE 20 TIF"
     )
   )
 
 fhm_pins_map <- ggplot() +
   annotation_map_tile(type = "cartolight", zoomin = -1) +
+  # Hacky way to get ggplot to respect sf layer position
   geom_sf(
-    data = fhm_pins_geo,
+    data = fhm_pins_geo %>% filter(an == "FH LIBRARY"),
     aes(fill = an),
-    alpha = 0.5,
+    linewidth = 0.1
+  ) +
+  geom_sf(
+    data = fhm_pins_geo %>% filter(an == "FH PARK + VILLAGE"),
+    aes(fill = an),
+    linewidth = 0.1
+  ) +
+  geom_sf(
+    data = fhm_pins_geo %>% filter(an == "RTE 20 TIF"),
+    aes(fill = an),
     linewidth = 0.1
   ) +
   annotation_scale(location = "br") +
+  scale_fill_manual(
+    name = "",
+    values = c(
+      "FH LIBRARY" = "#f6a8a3",
+      "FH PARK + VILLAGE" = "#4eae7b",
+      "RTE 20 TIF" = "#7f87ba"
+    )
+  ) +
   guides(color = guide_legend(override.aes = list(size = 5))) +
   theme_void() +
   theme(
@@ -426,7 +446,7 @@ fhm_pins_map <- ggplot() +
 fhm_pins_map
 ```
 
-Here we can see four taxing districts: a library, a park district, the municipality, and a TIF. The park district and municipality overlap almost perfectly, but the library district is slightly larger. Meanwhile, the TIF district covers only a small commercial strip along Route 20.
+Here we can see four taxing districts: a library, a park district, the municipality, and a TIF. The park district and municipality overlap perfectly (and so are combined), but the library district is slightly larger. Meanwhile, the TIF district covers only a small commercial strip along Route 20.
 
 # Mapping tax bill changes
 
