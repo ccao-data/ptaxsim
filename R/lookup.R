@@ -31,6 +31,32 @@ globalVariables(c("ptaxsim_db_conn", "."))
 NULL
 
 
+#' Lookup boundaries associated with taxing entities
+#'
+#' @description The functions in this group take a tax year and identifier as
+#'  input and return a \code{data.table} as an output. The returned data
+#'  contains a geometry column representing the spatial boundary of the taxing
+#'  entity.
+#'
+#' @param year A numeric vector of tax years.
+#' @param conn A connection object pointing to a local copy of the
+#'   PTAXSIM database.
+#'
+#' @return A \code{data.table} containing the specified geometry. NOTE: The
+#'   geometry is returned as a character vector in the Well-Known Text (WKT)
+#'   format. You must convert the character vector before using \code{sf} or
+#'   similar packages to perform spatial manipulation.
+#'
+#' @examples
+#' \dontrun{
+#' lookup_pin10_geometry(2019, "2030419002")
+#' }
+#' @md
+#' @family lookups
+#' @name lookup_geom
+NULL
+
+
 #' Lookup values required to calculate property tax bills
 #'
 #' @description The functions in this group take a tax year and PIN as input and
@@ -208,6 +234,65 @@ lookup_pin <- function(year,
   )
 
   dt <- data.table::setDT(dt, key = c("year", "pin"))
+
+  return(dt)
+}
+
+
+#' @describeIn lookup_geom Lookup the parcel boundary for a specific PIN and
+#'   year. Returns a \code{data.table} with the PIN's geometry (as WKT) as well
+#'   as the longitude and latitude of the PIN's centroid. NOTE: Not all PINs
+#'   in the tax bill database have corresponding geometries.
+#'
+#' @param pin10 A character vector of 10-digit PINs.
+#'
+#' @export
+lookup_pin10_geometry <- function(year,
+                                  pin10,
+                                  conn = ptaxsim_db_conn) {
+  if (any(nchar(pin10) != 10) && any(nchar(pin10) == 14)) {
+    stop(
+      "Must enter 10-digit PINs, not 14-digit PINs. PIN geometries only exist ",
+      "for 10-digit PINs"
+    )
+  }
+
+  stopifnot(
+    is.numeric(year),
+    is.character(pin10),
+    all(year >= 2006),
+    all(nchar(pin10) == 10),
+    check_db_conn(conn),
+    check_db_sync(conn)
+  )
+
+  dt_idx <- data.table::CJ("year" = year, "pin10" = pin10, unique = TRUE)
+  DBI::dbWriteTable(
+    conn = conn,
+    name = "lookup_pin10_geometry",
+    value = dt_idx,
+    overwrite = TRUE,
+    temporary = TRUE
+  )
+
+  dt <- DBI::dbGetQuery(
+    conn,
+    statement = "
+      SELECT
+          lpg.year,
+          lpg.pin10,
+          pg.longitude,
+          pg.latitude,
+          pg.geometry
+      FROM lookup_pin10_geometry lpg
+      INNER JOIN pin_geometry pg
+          ON lpg.pin10 = pg.pin10
+          AND lpg.year = pg.year
+      ORDER BY lpg.year, lpg.pin10
+    "
+  )
+
+  dt <- data.table::setDT(dt, key = c("year", "pin10"))
 
   return(dt)
 }

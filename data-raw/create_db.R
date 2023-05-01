@@ -36,13 +36,13 @@ db_send_queries <- function(conn, sql) {
 # Set the database version. This gets incremented manually whenever the database
 # changes. This is checked against Config/Requires_DB_Version in the DESCRIPTION
 # file via check_db_version(). Schema is:
-# "MAX_YEAR_OF_DATA.BREAKING_CHANGE.NONBREAKING_CHANGE"
-db_version <- "2021.0.3"
+# "MAX_YEAR_OF_DATA.MAJOR_VERSION.MINOR_VERSION"
+db_version <- "2021.0.4"
 
 # Set the package version required to use this database. This is checked against
-# Version in the DESCRIPTION file. Basically, we have a two-way check that both
-# the package version and DB version are synced. Schema is SemVer.
-requires_pkg_version <- "0.5.4"
+# Version in the DESCRIPTION file. Basically, we have a two-way check so that
+# both the package version and DB version are synced. Schema is SemVer.
+requires_pkg_version <- "0.6.0"
 
 
 
@@ -51,6 +51,7 @@ requires_pkg_version <- "0.5.4"
 
 # Create the table definitions from file
 db_send_queries(conn, sql_from_file("data-raw/create_db.sql"))
+db_send_queries(conn, sql_from_file("data-raw/create_db_geometry.sql"))
 
 
 
@@ -132,6 +133,16 @@ for (dataset in datasets) {
   df <- collect(arrow::open_dataset(file.path(remote_bucket, dataset)))
   DBI::dbAppendTable(conn, dataset, df)
 }
+
+# Load geometry tables manually
+pin_geometry_raw <- geoarrow::read_geoparquet_sf(
+  file.path(remote_bucket, "pin_geometry_raw", "part-0.parquet")
+) %>%
+  mutate(wkt = sf::st_as_text(geometry)) %>%
+  sf::st_drop_geometry() %>%
+  rename(geometry = wkt)
+
+DBI::dbAppendTable(conn, "pin_geometry_raw", pin_geometry_raw)
 
 
 

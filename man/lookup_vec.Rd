@@ -40,6 +40,7 @@ lookup_tax_code(2006:2021, c("20304190020000", "16152090350000"))
 }
 \seealso{
 Other lookups: 
-\code{\link{lookup_dt}}
+\code{\link{lookup_dt}},
+\code{\link{lookup_geom}}
 }
 \concept{lookups}

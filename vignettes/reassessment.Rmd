@@ -35,13 +35,11 @@ library(data.table)
 library(dplyr)
 library(ggplot2)
 library(ggspatial)
-library(gstat)
 library(here)
 library(httr)
 library(jsonlite)
 library(ptaxsim)
 library(sf)
-library(stars)
 library(stringr)
 library(tidyr)
 
@@ -890,7 +888,7 @@ cw_fut_bills_plot <- bind_rows(cw_bills_summ, cw_fut_bills_summ) %>%
   guides(color = guide_legend(ncol = 2, byrow = TRUE)) +
   labs(
     x = "Year", y = "Median Value, Indexed to 2006",
-    caption = "Dotted lines represent reassessment years"
+    caption = "Vertical dotted lines represent reassessment years"
   ) +
   theme_minimal() +
   theme(
@@ -915,6 +913,6 @@ cw_fut_bills_plot <- bind_rows(cw_bills_summ, cw_fut_bills_summ) %>%
 cw_fut_bills_plot
 ```
 
-The dotted lines show counterfactual 2021 AVs and tax bills given our assumptions. The counterfactual values increase significantly, but still increase less than the actual 2021 values. However, the counterfactual tax bills go up *less* than counterfactual AVs, indicating that we may have overestimated the AV increase for the rest of the city (or underestimated the growth in Ward 22).
+The dashed lines show counterfactual 2021 AVs and tax bills given our assumptions. The counterfactual values increase significantly, but still increase less than the actual 2021 values. However, the counterfactual tax bills go up *less* than counterfactual AVs, indicating that we may have overestimated the AV increase for the rest of the city (or underestimated the growth in Ward 22).
 
 Ultimately, the results show the power, and peril, of PTAXSIM. It *can* be used to estimate hypothetical future tax bill changes, but it is also very sensitive to the user's assumptions. Use with caution.
