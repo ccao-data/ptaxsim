@@ -17,6 +17,7 @@ max_year <- DBI::dbGetQuery(
 
 # Create a vector of PINs with known, correct lookup values
 pins <- c("14081020190000", "09274240240000", "07101010391078")
+pin10s <- substr(pins, 1, 10)
 years <- c(2019, 2019, 2018)
 
 test_that("test that lookup values are correct", {
@@ -258,6 +259,35 @@ test_that("bad/incorrect inputs throw errors", {
   expect_error(lookup_agency(2019, "06231050360000"))
   expect_error(lookup_agency(c(2000, 2019), "73105"))
   expect_error(lookup_agency(2019, 73105))
+})
+
+
+context("test lookup_pin10_geometry()")
+
+##### TEST lookup_pin10_geometry() #####
+
+test_that("lookup values/data are correct", {
+  expect_equal(nrow(lookup_pin10_geometry(2019, pin10s)), 3)
+  expect_equal(nrow(lookup_pin10_geometry(2019:2020, pin10s)), 6)
+  expect_equal(nrow(lookup_pin10_geometry(c(2100, 2021), pin10s)), 3)
+  # Returns parsed geoms
+  expect_equal(
+    lookup_pin10_geometry(2006:max_year, pin10s) %>%
+      sf::st_as_sf(wkt = "geometry", crs = 4326) %>%
+      sf::st_is_empty() %>%
+      sum(),
+    0
+  )
+})
+
+test_that("bad/incorrect inputs throw errors", {
+  expect_error(lookup_pin10_geometry("2019", "73105"))
+  expect_error(
+    lookup_pin10_geometry(2019, "06231050360000"),
+    "^Must enter 10-digit PINs"
+  )
+  expect_error(lookup_pin10_geometry(2020:2019, "062310503600"))
+  expect_error(lookup_pin10_geometry(2019, 06231050360000))
 })
 
 DBI::dbDisconnect(ptaxsim_db_conn)
