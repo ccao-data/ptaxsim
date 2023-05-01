@@ -59,6 +59,9 @@ grounded, answers to questions such as:
 - [How do TIF districts affect tax bills? What if a nearby TIF district
   did not
   exist?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/tifs.html)
+- [Where have tax bills changed the most? Where would they change the
+  most given X policy
+  change?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/mapping.html)
 
 PTAXSIM can generate hundreds, or even millions, of tax bills in a
 single function call, which enables complex tax analysis on a
