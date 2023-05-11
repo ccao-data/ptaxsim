@@ -24,9 +24,11 @@ Imports:
     utils
 RoxygenNote: 7.2.3
 Suggests:
+    arrow,
     covr,
     devtools,
     dplyr,
+    geoarrow,
     ggplot2,
     ggspatial,
     here,
@@ -35,6 +37,7 @@ Suggests:
     knitr,
     lintr,
     pkgdown,
+    purrr,
     readr,
     rmarkdown,
     sf,
