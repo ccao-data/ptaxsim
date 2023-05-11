@@ -45,5 +45,7 @@ Suggests:
     testthat
 Depends:
     R (>= 2.10)
+Remotes: 
+    github::paleolimbot/geoarrow
 Config/Requires_DB_Version: 2021.0.4
 Config/Wants_DB_Version: 2021.0.4
