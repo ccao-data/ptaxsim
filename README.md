@@ -881,6 +881,15 @@ erDiagram
   test](tests/testthat/test-accuracy.R). The test takes a random sample
   of 2 million PINs, calculates the total bill for each PIN, and
   compares it to the real total bill.
+- This repository contains an edited version of PTAXSIM’s commit
+  history. Historical Git LFS and other data files (.csv, .xlsx, etc.)
+  were removed in the transition to GitHub. The most current version of
+  these files is available starting in commit
+  [1f06639](https://github.com/ccao-data/ptaxsim/commit/1f06639d98a720999222579b7ff61bcce061f1ec).
+  If you need the historical LFS files for any reason, please visit the
+  [GitLab
+  archive](https://gitlab.com/ccao-data-science---modeling/packages/ptaxsim)
+  of this repository.
 
 ## Disclaimer
 
