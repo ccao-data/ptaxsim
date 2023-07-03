@@ -1,36 +1,29 @@
 Table of Contents
 ================
 
-- <a href="#ptaxsim-package" id="toc-ptaxsim-package">PTAXSIM package</a>
-- <a href="#faqs" id="toc-faqs">FAQs</a>
-- <a href="#installation" id="toc-installation">Installation</a>
-  - <a href="#package-installation" id="toc-package-installation">Package
-    installation</a>
-  - <a href="#database-installation" id="toc-database-installation">Database
-    installation</a>
-- <a href="#usage" id="toc-usage">Usage</a>
-  - <a href="#single-bill-single-year"
-    id="toc-single-bill-single-year">Single bill, single year</a>
-  - <a href="#single-bill-multiple-years"
-    id="toc-single-bill-multiple-years">Single bill, multiple years</a>
-- <a href="#data" id="toc-data">Data</a>
-  - <a href="#data-sources" id="toc-data-sources">Data sources</a>
-  - <a href="#database-diagram" id="toc-database-diagram">Database
-    diagram</a>
-- <a href="#notes-and-caveats" id="toc-notes-and-caveats">Notes and
-  caveats</a>
-- <a href="#disclaimer" id="toc-disclaimer">Disclaimer</a>
-- <a href="#release-procedures" id="toc-release-procedures">Release
-  procedures</a>
-  - <a href="#schema" id="toc-schema">Schema</a>
-  - <a href="#timing" id="toc-timing">Timing</a>
-  - <a href="#checklists" id="toc-checklists">Checklists</a>
+- [PTAXSIM package](#ptaxsim-package)
+- [FAQs](#faqs)
+- [Installation](#installation)
+  - [Package installation](#package-installation)
+  - [Database installation](#database-installation)
+- [Usage](#usage)
+  - [Single bill, single year](#single-bill-single-year)
+  - [Single bill, multiple years](#single-bill-multiple-years)
+- [Data](#data)
+  - [Data sources](#data-sources)
+  - [Database diagram](#database-diagram)
+- [Notes and caveats](#notes-and-caveats)
+- [Disclaimer](#disclaimer)
+- [Release procedures](#release-procedures)
+  - [Schema](#schema)
+  - [Timing](#timing)
+  - [Checklists](#checklists)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 ## PTAXSIM package
 
-<a href='https://gitlab.com/ccao-data-science---modeling/packages/ptaxsim'><img src='man/figures/logo.png' align="right" height="139"/></a>
+<a href='https://github.com/ccao-data/ptaxsim'><img src='man/figures/logo.png' align="right" height="139"/></a>
 
 > :warning: NOTE: PTAXSIM relies on a separate SQLite database to
 > function correctly. You must download and decompress the database
@@ -50,18 +43,18 @@ grounded, answers to questions such as:
 
 - [What would my property tax bill be if my assessed value was \$50K
   lower? What if my school district’s levy goes
-  up?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html)
+  up?](https://ccao-data.github.io/ptaxsim/articles/introduction.html)
 - [How do appeals affect tax bills? What if nobody
-  appeals?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/appeals.html)
+  appeals?](https://ccao-data.github.io/ptaxsim/articles/appeals.html)
 - [How do exemptions affect tax bills? What if a current exemption
   amount is
-  increased?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/exemptions.html)
+  increased?](https://ccao-data.github.io/ptaxsim/articles/exemptions.html)
 - [How do TIF districts affect tax bills? What if a nearby TIF district
   did not
-  exist?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/tifs.html)
+  exist?](https://ccao-data.github.io/ptaxsim/articles/tifs.html)
 - [Where have tax bills changed the most? Where would they change the
   most given X policy
-  change?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/mapping.html)
+  change?](https://ccao-data.github.io/ptaxsim/articles/mapping.html)
 
 PTAXSIM can generate hundreds, or even millions, of tax bills in a
 single function call, which enables complex tax analysis on a
@@ -72,14 +65,13 @@ recommended for critical use. See [Notes](#notes-and-caveats) and
 [Disclaimer](#disclaimer) for more information.
 
 For detailed documentation on included functions and data, [**visit the
-full reference
-list**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/reference/)
+full reference list**](https://ccao-data.github.io/ptaxsim/reference/)
 or the [**introduction
-vignette**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html).
+vignette**](https://ccao-data.github.io/ptaxsim/articles/introduction.html).
 
 For examples of PTAXSIM’s functionality and usage, click one of the
 questions above or see the [**vignettes
-page**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/index.html).
+page**](https://ccao-data.github.io/ptaxsim/articles/index.html).
 
 ## FAQs
 
@@ -143,42 +135,28 @@ options:
 
 ### Package installation
 
-You can install the released version of `ptaxsim` directly from GitLab
-by running the following R command after installing
-[remotes](https://github.com/r-lib/remotes):
+You can install the released version of `ptaxsim` directly from GitHub
+with one of the following commands:
 
 ``` r
-remotes::install_gitlab("ccao-data-science---modeling/packages/ptaxsim")
+# Using remotes
+remotes::install_github("ccao-data/ptaxsim")
+
+# Using renv
+renv::install("ccao-data/ptaxsim")
+
+# Using pak
+pak::pak("ccao-data/ptaxsim")
+
+# Append the @ symbol for a specific version
+remotes::install_github("ccao-data/ptaxsim@0.6.0")
 ```
-
-Or, using [renv](https://github.com/rstudio/renv/):
-
-``` r
-renv::install("gitlab::ccao-data-science---modeling/packages/ptaxsim")
-```
-
-#### Installation on Windows
 
 > :warning: NOTE: Windows users may need to install Rtools in order to
 > build and use this package. Please follow the [instructions
 > here](https://cran.r-project.org/bin/windows/Rtools/) to install
-> Rtools for your version of R.
-
-Once Rtools is installed, installation can proceed normally using the
-code above. Occasionally, when using brand-new or source versions of
-packages, installation [on Windows fails with the following
-error](https://github.com/rstudio/renv/issues/162):
-
-    DLL 'package_name' not found: maybe not installed for this architecture?
-
-If this happens, try using the following installation command:
-
-``` r
-remotes::install_gitlab(
-  repo = "ccao-data-science---modeling/packages/ptaxsim",
-  INSTALL_opts = "--no-multiarch"
-)
-```
+> Rtools for your version of R. Once Rtools is installed, installation
+> can proceed normally using the code above.
 
 ### Database installation
 
@@ -231,7 +209,7 @@ generate *historic* tax bills; it cannot generate future or
 counterfactual bills. To generate future/counterfactual bills, you must
 provide additional data to `tax_bill()` via its secondary arguments. See
 the [introduction
-page](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html)
+page](https://ccao-data.github.io/ptaxsim/articles/introduction.html)
 for more details.
 
 ### Single bill, single year
@@ -546,7 +524,7 @@ multiple_years_plot <- ggplot(data = multiple_years_summ) +
 
 For more advanced usage, such as counterfactual analysis, see the
 [vignettes
-page](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/index.html).
+page](https://ccao-data.github.io/ptaxsim/articles/index.html).
 
 ## Data
 

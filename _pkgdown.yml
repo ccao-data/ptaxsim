@@ -1,5 +1,5 @@
 destination: public
-url: https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/
+url: https://github.com/ccao-data/ptaxsim
 
 reference:
 
@@ -14,7 +14,7 @@ reference:
 - contents:
   - starts_with("check_")
 
-- title: Data 
+- title: Data
 - subtitle: Sample tax bills
   desc: Real Cook County tax bill data used for testing and examples
 - contents:

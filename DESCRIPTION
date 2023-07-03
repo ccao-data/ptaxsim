@@ -10,8 +10,8 @@ Authors@R: c(
 Description: An R package to estimate property tax bills and simulate tax
     scenarios for Cook County, IL. Supplementary to a SQLite database file
     containing all data necessary to estimate historical bills.
-URL: https://gitlab.com/ccao-data-science---modeling/packages/ptaxsim/, https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/
-BugReports: https://gitlab.com/ccao-data-science---modeling/packages/ptaxsim/issues
+URL: https://github.com/ccao-data/ptaxsim, https://ccao-data.github.io/ptaxsim
+BugReports: https://github.com/ccao-data/ptaxsim/issues
 License: GPL-3 + file LICENSE
 Encoding: UTF-8
 LazyData: true

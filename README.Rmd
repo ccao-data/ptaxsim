@@ -35,7 +35,7 @@ stopifnot(
 ```
 
 ## PTAXSIM package
-<a href='https://gitlab.com/ccao-data-science---modeling/packages/ptaxsim'><img src='man/figures/logo.png' align="right" height="139"/></a>
+<a href='https://github.com/ccao-data/ptaxsim'><img src='man/figures/logo.png' align="right" height="139"/></a>
 
 > :warning: NOTE: PTAXSIM relies on a separate SQLite database to function correctly. You must download and decompress the database before using this package!
 > See [Database installation](#database-installation) for details.
@@ -44,17 +44,17 @@ stopifnot(
 
 PTAXSIM is an R package/database to approximate Cook County property tax bills. It uses real assessment, exemption, TIF, and levy data to generate historic, line-item tax bills (broken out by taxing district) for any property from `r metadata$data_year_min` to `r metadata$data_year_max`. Given some careful assumptions and data manipulation, it can also provide hypothetical, but factually grounded, answers to questions such as:
 
-* [What would my property tax bill be if my assessed value was $50K lower? What if my school district's levy goes up?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html)
-* [How do appeals affect tax bills? What if nobody appeals?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/appeals.html)
-* [How do exemptions affect tax bills? What if a current exemption amount is increased?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/exemptions.html)
-* [How do TIF districts affect tax bills? What if a nearby TIF district did not exist?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/tifs.html)
-* [Where have tax bills changed the most? Where would they change the most given X policy change?](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/mapping.html)
+* [What would my property tax bill be if my assessed value was $50K lower? What if my school district's levy goes up?](https://ccao-data.github.io/ptaxsim/articles/introduction.html)
+* [How do appeals affect tax bills? What if nobody appeals?](https://ccao-data.github.io/ptaxsim/articles/appeals.html)
+* [How do exemptions affect tax bills? What if a current exemption amount is increased?](https://ccao-data.github.io/ptaxsim/articles/exemptions.html)
+* [How do TIF districts affect tax bills? What if a nearby TIF district did not exist?](https://ccao-data.github.io/ptaxsim/articles/tifs.html)
+* [Where have tax bills changed the most? Where would they change the most given X policy change?](https://ccao-data.github.io/ptaxsim/articles/mapping.html)
 
 PTAXSIM can generate hundreds, or even millions, of tax bills in a single function call, which enables complex tax analysis on a municipality or even whole-county level. PTAXSIM is accurate (within $10 of the real bill) for >99% of historic property tax bills. However, it is currently an experimental tool only and is *not* recommended for critical use. See [Notes](#notes-and-caveats) and [Disclaimer](#disclaimer) for more information.
 
-For detailed documentation on included functions and data, [**visit the full reference list**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/reference/) or the [**introduction vignette**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html).
+For detailed documentation on included functions and data, [**visit the full reference list**](https://ccao-data.github.io/ptaxsim/reference/) or the [**introduction vignette**](https://ccao-data.github.io/ptaxsim/articles/introduction.html).
 
-For examples of PTAXSIM's functionality and usage, click one of the questions above or see the [**vignettes page**](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/index.html).
+For examples of PTAXSIM's functionality and usage, click one of the questions above or see the [**vignettes page**](https://ccao-data.github.io/ptaxsim/articles/index.html).
 
 ## FAQs
 
@@ -88,36 +88,23 @@ To predict next year’s bill for one property (PIN), you must predict the PIN's
 
 ### Package installation
 
-You can install the released version of `ptaxsim` directly from GitLab by running the following R command after installing [remotes](https://github.com/r-lib/remotes):
+You can install the released version of `ptaxsim` directly from GitHub with one of the following commands:
 
 ```{r, eval=FALSE}
-remotes::install_gitlab("ccao-data-science---modeling/packages/ptaxsim")
+# Using remotes
+remotes::install_github("ccao-data/ptaxsim")
+
+# Using renv
+renv::install("ccao-data/ptaxsim")
+
+# Using pak
+pak::pak("ccao-data/ptaxsim")
+
+# Append the @ symbol for a specific version
+remotes::install_github("ccao-data/ptaxsim@0.6.0")
 ```
 
-Or, using [renv](https://github.com/rstudio/renv/):
-
-```{r, eval=FALSE}
-renv::install("gitlab::ccao-data-science---modeling/packages/ptaxsim")
-```
-
-#### Installation on Windows
-
-> :warning: NOTE: Windows users may need to install Rtools in order to build and use this package. Please follow the [instructions here](https://cran.r-project.org/bin/windows/Rtools/) to install Rtools for your version of R.
-
-Once Rtools is installed, installation can proceed normally using the code above. Occasionally, when using brand-new or source versions of packages, installation [on Windows fails with the following error](https://github.com/rstudio/renv/issues/162):
-
-```
-DLL 'package_name' not found: maybe not installed for this architecture?
-```
-
-If this happens, try using the following installation command:
-
-```{r, eval=FALSE}
-remotes::install_gitlab(
-  repo = "ccao-data-science---modeling/packages/ptaxsim",
-  INSTALL_opts = "--no-multiarch"
-)
-```
+> :warning: NOTE: Windows users may need to install Rtools in order to build and use this package. Please follow the [instructions here](https://cran.r-project.org/bin/windows/Rtools/) to install Rtools for your version of R. Once Rtools is installed, installation can proceed normally using the code above.
 
 ### Database installation
 
@@ -145,7 +132,7 @@ PTAXSIM has a single primary function - `tax_bill()` - with two required argumen
 1. `year_vec` - A numeric vector of tax years
 2. `pin_vec` - A character vector of Property Index Numbers (PINs)
 
-The output is a `data.table` containing the tax amount directed to each taxing district, by PIN and year. By default, `tax_bill()` can only generate *historic* tax bills; it cannot generate future or counterfactual bills. To generate future/counterfactual bills, you must provide additional data to `tax_bill()` via its secondary arguments. See the [introduction page](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/introduction.html) for more details.
+The output is a `data.table` containing the tax amount directed to each taxing district, by PIN and year. By default, `tax_bill()` can only generate *historic* tax bills; it cannot generate future or counterfactual bills. To generate future/counterfactual bills, you must provide additional data to `tax_bill()` via its secondary arguments. See the [introduction page](https://ccao-data.github.io/ptaxsim/articles/introduction.html) for more details.
 
 ### Single bill, single year
 
@@ -236,10 +223,7 @@ multiple_years_plot <- ggplot(data = multiple_years_summ) +
 multiple_years_plot
 ```
 
-For more advanced usage, such as counterfactual analysis, see the [vignettes page](https://ccao-data-science---modeling.gitlab.io/packages/ptaxsim/articles/index.html).
-
-
-
+For more advanced usage, such as counterfactual analysis, see the [vignettes page](https://ccao-data.github.io/ptaxsim/articles/index.html).
 
 ## Data
 
