@@ -12,7 +12,7 @@ Description: An R package to estimate property tax bills and simulate tax
     containing all data necessary to estimate historical bills.
 URL: https://github.com/ccao-data/ptaxsim, https://ccao-data.github.io/ptaxsim
 BugReports: https://github.com/ccao-data/ptaxsim/issues
-License: GPL-3 + file LICENSE
+License: AGPL-3 + file LICENSE
 Encoding: UTF-8
 LazyData: true
 LazyDataCompression: bzip2
