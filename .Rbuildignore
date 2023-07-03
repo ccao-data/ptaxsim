@@ -12,10 +12,9 @@
 \.gitattributes$
 \.gitignore$
 \.gitlab-ci\.yml$
+\.lintr$
 \.travis\.yml$
 ^.*\.Rproj$
-^LICENSE$ 
-^LICENSE\.md$ 
 ^README\.Rmd$
 ^\.Rproj\.user$
 ^\.apt$
@@ -24,7 +23,6 @@
 ^\.gitlab$
 ^\.pre-commit-config\.yaml$
 ^_pkgdown\.yml$
-^aws$
 ^cache$
 ^ci$
 ^codecov\.yml$

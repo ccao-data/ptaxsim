@@ -5,7 +5,12 @@
 *.utf8.md
 *.knit.md
 *.xml
+*.parquet
+*.db
+*.zst
+*.bz2
 .Rproj.user/
 public/
 renv/
 renv.lock
+inst/
