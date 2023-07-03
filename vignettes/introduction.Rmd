@@ -125,7 +125,7 @@ pins <- DBI::dbGetQuery(ptaxsim_db_conn, "SELECT DISTINCT pin FROM pin")
 # Calculate all bills for all years (~350M rows, takes about 10 minutes)
 bills <- tax_bill(2006:2021, pins$pin)
 print(bills, topn = 3)
-#> NOT RUN, takes too long on GitLab CI and requires ~90 GB of RAM
+#> NOT RUN, takes too long on GitHub CI and requires ~90 GB of RAM
 ```
 
 ## Optional arguments to `tax_bill()` {#optional-arguments}

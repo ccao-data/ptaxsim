@@ -1,29 +1,35 @@
 Table of Contents
 ================
 
-- [PTAXSIM package](#ptaxsim-package)
-- [FAQs](#faqs)
-- [Installation](#installation)
-  - [Package installation](#package-installation)
-  - [Database installation](#database-installation)
-- [Usage](#usage)
-  - [Single bill, single year](#single-bill-single-year)
-  - [Single bill, multiple years](#single-bill-multiple-years)
-- [Data](#data)
-  - [Data sources](#data-sources)
-  - [Database diagram](#database-diagram)
-- [Notes and caveats](#notes-and-caveats)
-- [Disclaimer](#disclaimer)
-- [Release procedures](#release-procedures)
-  - [Schema](#schema)
-  - [Timing](#timing)
-  - [Checklists](#checklists)
+- [PTAXSIM](#ptaxsim)
+  - [FAQs](#faqs)
+  - [Installation](#installation)
+    - [Package installation](#package-installation)
+    - [Database installation](#database-installation)
+  - [Usage](#usage)
+    - [Single bill, single year](#single-bill-single-year)
+    - [Single bill, multiple years](#single-bill-multiple-years)
+  - [Data](#data)
+    - [Data sources](#data-sources)
+    - [Database diagram](#database-diagram)
+  - [Notes and caveats](#notes-and-caveats)
+  - [Disclaimer](#disclaimer)
+  - [Release procedures](#release-procedures)
+    - [Schema](#schema)
+    - [Timing](#timing)
+    - [Checklists](#checklists)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-## PTAXSIM package
+# PTAXSIM
 
 <a href='https://github.com/ccao-data/ptaxsim'><img src='man/figures/logo.png' align="right" height="139"/></a>
+
+[![R-CMD-check](https://github.com/ccao-data/ptaxsim/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ccao-data/ptaxsim/actions/workflows/R-CMD-check.yaml)
+[![test-coverage](https://github.com/ccao-data/ptaxsim/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/ccao-data/ptaxsim/actions/workflows/test-coverage.yaml)
+[![lint](https://github.com/ccao-data/ptaxsim/actions/workflows/lint.yaml/badge.svg)](https://github.com/ccao-data/ptaxsim/actions/workflows/lint.yaml)
+[![pre-commit](https://github.com/ccao-data/ptaxsim/actions/workflows/pre-commit.yaml/badge.svg)](https://github.com/ccao-data/ptaxsim/actions/workflows/pre-commit.yaml)
+[![codecov](https://codecov.io/gh/ccao-data/ptaxsim/branch/master/graph/badge.svg)](https://codecov.io/gh/ccao-data/ptaxsim)
 
 > :warning: NOTE: PTAXSIM relies on a separate SQLite database to
 > function correctly. You must download and decompress the database
@@ -942,14 +948,13 @@ releases:
   appropriately, following the [schema](#schema) laid out above
 - [ ] If the code updates were so substantial that the current database
   also needs to be updated, follow the database release checklist below
-- [ ] Push the code updates to GitLab. Wait for the resulting CI
+- [ ] Push the code updates to GitHub. Wait for the resulting CI
   pipeline to finish
 - [ ] If there are no pipeline errors, merge the branch to master
 - [ ] Wait for the merge CI pipeline to finish. If there are no errors,
-  cut a new release from master in GitLab under **Deployments** \>
-  **Releases**. Create a new git tag with the version number and title
-  the release with the same version number. Be sure to add a changelog
-  detailing what you updated
+  cut a new release from master. Create a new git tag with the version
+  number and title the release with the same version number. Be sure to
+  add a changelog detailing what you updated
 
 #### Database
 
@@ -971,7 +976,7 @@ releases:
     whenever there is a breaking change
   - `Config/Wants_DB_Version`: This is the maximum database version
     required for this version of the package. It is the version of the
-    database pulled from S3 during CI/testing on GitLab
+    database pulled from S3 during CI/testing on GitHub
 - [ ] If necessary, be sure to update the SQL statements in
   `data-raw/create_db.sql`. These statements define the structure of the
   database
@@ -1002,6 +1007,6 @@ releases:
   `aws s3 mv ptaxsim-2021.0.2.db.bz2 s3://ccao-data-public-us-east-1/ptaxsim/ptaxsim-2021.0.2.db.bz2`
 - [ ] Use the S3 console (or API) to make the database file public via
   an ACL
-- [ ] Push the code updates on GitLab. Wait for the resulting CI
+- [ ] Push the code updates on GitHub. Wait for the resulting CI
   pipeline to finish
 - [ ] If there are no pipeline errors, merge the branch to master

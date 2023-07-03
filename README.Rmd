@@ -34,8 +34,14 @@ stopifnot(
 )
 ```
 
-## PTAXSIM package
+# PTAXSIM
 <a href='https://github.com/ccao-data/ptaxsim'><img src='man/figures/logo.png' align="right" height="139"/></a>
+
+[![R-CMD-check](https://github.com/ccao-data/ptaxsim/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ccao-data/ptaxsim/actions/workflows/R-CMD-check.yaml)
+[![test-coverage](https://github.com/ccao-data/ptaxsim/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/ccao-data/ptaxsim/actions/workflows/test-coverage.yaml)
+[![lint](https://github.com/ccao-data/ptaxsim/actions/workflows/lint.yaml/badge.svg)](https://github.com/ccao-data/ptaxsim/actions/workflows/lint.yaml)
+[![pre-commit](https://github.com/ccao-data/ptaxsim/actions/workflows/pre-commit.yaml/badge.svg)](https://github.com/ccao-data/ptaxsim/actions/workflows/pre-commit.yaml)
+[![codecov](https://codecov.io/gh/ccao-data/ptaxsim/branch/master/graph/badge.svg)](https://codecov.io/gh/ccao-data/ptaxsim)
 
 > :warning: NOTE: PTAXSIM relies on a separate SQLite database to function correctly. You must download and decompress the database before using this package!
 > See [Database installation](#database-installation) for details.
@@ -593,9 +599,9 @@ The process of updating the package and/or database can be somewhat involved. As
 - [ ] Rebuild the README manually. Knit `README.Rmd` from within RStudio
 - [ ] Increment the package version in the `DESCRIPTION` file appropriately, following the [schema](#schema) laid out above
 - [ ] If the code updates were so substantial that the current database also needs to be updated, follow the database release checklist below
-- [ ] Push the code updates to GitLab. Wait for the resulting CI pipeline to finish
+- [ ] Push the code updates to GitHub. Wait for the resulting CI pipeline to finish
 - [ ] If there are no pipeline errors, merge the branch to master
-- [ ] Wait for the merge CI pipeline to finish. If there are no errors, cut a new release from master in GitLab under **Deployments** > **Releases**. Create a new git tag with the version number and title the release with the same version number. Be sure to add a changelog detailing what you updated
+- [ ] Wait for the merge CI pipeline to finish. If there are no errors, cut a new release from master. Create a new git tag with the version number and title the release with the same version number. Be sure to add a changelog detailing what you updated
 
 #### Database
 
@@ -606,7 +612,7 @@ The process of updating the package and/or database can be somewhat involved. As
 - [ ] If necessary, also increment the `requires_pkg_version` variable in `data-raw/create_db.R`
 - [ ] Increment the database versions in `DESCRIPTION` file:
   - `Config/Requires_DB_Version`: This is the minimum database version required for this version of the package. It should be incremented whenever there is a breaking change
-  - `Config/Wants_DB_Version`: This is the maximum database version required for this version of the package. It is the version of the database pulled from S3 during CI/testing on GitLab
+  - `Config/Wants_DB_Version`: This is the maximum database version required for this version of the package. It is the version of the database pulled from S3 during CI/testing on GitHub
 - [ ] If necessary, be sure to update the SQL statements in `data-raw/create_db.sql`. These statements define the structure of the database
 - [ ] Run the database generation script `data-raw/create_db.R`. This will create the SQLite database file by pulling data from S3. The file will be generated in a temporary directory (usually `/tmp/Rtmp...`), then compressed using `pbzip2` (required for this script)
 - [ ] Using the command line, grab the final compressed database file from the temporary directory (found at `db_path` after running `data-raw/create_db.R`) and move it to the project directory. Rename the file `ptaxsim-<TAX_YEAR>.<MAJOR VERSION>.<MINOR VERSION>.db.bz2`
@@ -617,5 +623,5 @@ The process of updating the package and/or database can be somewhat involved. As
 - [ ] If necessary, update the database diagrams in the README with any new fields or tables
 - [ ] Move the compressed database file to S3 for public distribution. The typical command will be something like `aws s3 mv ptaxsim-2021.0.2.db.bz2 s3://ccao-data-public-us-east-1/ptaxsim/ptaxsim-2021.0.2.db.bz2`
 - [ ] Use the S3 console (or API) to make the database file public via an ACL
-- [ ] Push the code updates on GitLab. Wait for the resulting CI pipeline to finish
+- [ ] Push the code updates on GitHub. Wait for the resulting CI pipeline to finish
 - [ ] If there are no pipeline errors, merge the branch to master

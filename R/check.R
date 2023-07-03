@@ -90,7 +90,7 @@ check_db_sync <- function(conn) {
     stop(
       "The PTAXSIM database file is missing the required metadata table. ",
       "It is likely that your database file is out-of-date. Please download ",
-      "an updated version of the database file from GitLab"
+      "an updated version of the database file from GitHub"
     )
   }
 
@@ -108,7 +108,7 @@ check_db_sync <- function(conn) {
       "The PTAXSIM database file does not meet the minimum version ",
       "requirements of the PTAXSIM package (package requires DB version >= ",
       req_db_version, ", you have: ", loaded_db_version, "). Please download ",
-      "an updated version of the PTAXSIM database file from GitLab"
+      "an updated version of the PTAXSIM database file from GitHub"
     )
   }
 
@@ -118,7 +118,7 @@ check_db_sync <- function(conn) {
       "The PTAXSIM package does not meet the minimum version requirements ",
       "necessary to use the current database file (DB requires package ",
       "version >= ", req_pkg_version, ", you have ", loaded_pkg_version, "). ",
-      "Please install an updated version of the PTAXSIM package from GitLab"
+      "Please install an updated version of the PTAXSIM package from GitHub"
     )
   }
 

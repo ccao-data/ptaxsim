@@ -454,7 +454,7 @@ t_pins <- GET(
 t_pins <- fromJSON(rawToChar(t_pins$content))$pin
 
 # Iterating through years instead of calculating all bills at once. This is to
-# avoid memory constraints on the GitLab CI runners that create this vignette
+# avoid memory constraints on the GitHub CI runners that create this vignette
 t_bills_summ <- purrr::map_dfr(2006:2021, function(x) {
   tax_bill(x, t_pins) %>%
     select(pin, year, av, final_tax) %>%
