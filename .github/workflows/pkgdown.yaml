@@ -1,0 +1,64 @@
+# Workflow derived from https://github.com/r-lib/actions/tree/v2/examples
+# Need help debugging build failures? Start at https://github.com/r-lib/actions#where-to-find-help
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main, master]
+  release:
+    types: [published]
+
+name: pkgdown
+
+jobs:
+  prepare-ptaxsim:
+    uses: ./.github/workflows/prepare-ptaxsim.yaml
+    secrets: inherit
+
+  pkgdown:
+    needs: prepare-ptaxsim
+    runs-on: ubuntu-latest
+    # Only restrict concurrency for non-PR jobs
+    concurrency:
+      group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      PTAXSIM_DB_PATH: ${{ github.workspace }}/ptaxsim.db
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: r-lib/actions/setup-pandoc@v2
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          extra-packages: any::pkgdown, local::.
+          needs: website
+
+      - name: Restore database cache
+        uses: actions/cache/restore@v3
+        with:
+          path: ptaxsim.db.bz2
+          key: ${{ format('{0}-{1}', needs.prepare-ptaxsim.outputs.PTAXSIM_VERSION, hashFiles('DESCRIPTION')) }}
+          fail-on-cache-miss: true
+
+      - name: Unpack database
+        run: bzip2 -d ptaxsim.db.bz2
+        shell: bash
+
+      - name: Build site
+        run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
+        shell: Rscript {0}
+
+      - name: Deploy to GitHub pages 🚀
+        if: github.event_name != 'pull_request'
+        uses: JamesIves/github-pages-deploy-action@v4.4.1
+        with:
+          clean: false
+          branch: gh-pages
+          folder: docs
