@@ -10,6 +10,8 @@ on:
         description: "PTAXSIM database version"
         value: ${{ jobs.download-db.outputs.output1 }}
 
+name: prepare-ptaxsim
+
 jobs:
   download-db:
     runs-on: ubuntu-latest
