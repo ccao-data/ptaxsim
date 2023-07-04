@@ -18,7 +18,7 @@ pins <- DBI::dbGetQuery(
   SELECT year, pin, tax_bill_total
   FROM pin
   ORDER BY random()
-  LIMIT 2000000
+  LIMIT 1000000
   "
 )
 
