@@ -22,7 +22,7 @@ repos:
     -   id: file-contents-sorter
         files: '^\.Rbuildignore$'
     -   id: end-of-file-fixer
-        exclude: '\.Rd'
+        exclude: '\.Rd|\.csv'
     -   id: mixed-line-ending
         args: ['--fix=no']
 -   repo: local

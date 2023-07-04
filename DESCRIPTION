@@ -36,16 +36,27 @@ Suggests:
     httr,
     knitr,
     lintr,
+    odbc,
+    openxlsx,
     pkgdown,
     purrr,
     readr,
+    RColorBrewer,
+    readxl,
     rmarkdown,
+    scales,
     sf,
+    snakecase,
     stringr,
-    testthat
+    tabulizer,
+    testthat,
+    tidyr,
+    units,
+    usethis
 Depends:
     R (>= 2.10)
 Remotes: 
-    github::paleolimbot/geoarrow
+    paleolimbot/geoarrow,
+    ropensci/tabulizer
 Config/Requires_DB_Version: 2021.0.4
 Config/Wants_DB_Version: 2021.0.4
