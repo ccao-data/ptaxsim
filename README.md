@@ -2,26 +2,26 @@ Table of Contents
 ================
 
 - [PTAXSIM](#ptaxsim)
-  - [FAQs](#faqs)
-  - [Installation](#installation)
-    - [Package installation](#package-installation)
-    - [Database installation](#database-installation)
-  - [Usage](#usage)
-    - [Single bill, single year](#single-bill-single-year)
-    - [Single bill, multiple years](#single-bill-multiple-years)
-  - [Data](#data)
-    - [Data sources](#data-sources)
-    - [Database diagram](#database-diagram)
-  - [Notes and caveats](#notes-and-caveats)
-  - [Disclaimer](#disclaimer)
-  - [Release procedures](#release-procedures)
-    - [Schema](#schema)
-    - [Timing](#timing)
-    - [Checklists](#checklists)
+- [FAQs](#faqs)
+- [Installation](#installation)
+  - [Package installation](#package-installation)
+  - [Database installation](#database-installation)
+- [Usage](#usage)
+  - [Single bill, single year](#single-bill-single-year)
+  - [Single bill, multiple years](#single-bill-multiple-years)
+- [Data](#data)
+  - [Data sources](#data-sources)
+  - [Database diagram](#database-diagram)
+- [Notes and caveats](#notes-and-caveats)
+- [Disclaimer](#disclaimer)
+- [Release procedures](#release-procedures)
+  - [Schema](#schema)
+  - [Timing](#timing)
+  - [Checklists](#checklists)
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# PTAXSIM
+## PTAXSIM
 
 <a href='https://github.com/ccao-data/ptaxsim'><img src='man/figures/logo.png' align="right" height="139"/></a>
 
@@ -879,7 +879,7 @@ erDiagram
   is substantial (around 100 GB).
 - PTAXSIM’s accuracy is measured automatically with an [integration
   test](tests/testthat/test-accuracy.R). The test takes a random sample
-  of 2 million PINs, calculates the total bill for each PIN, and
+  of 1 million PINs, calculates the total bill for each PIN, and
   compares it to the real total bill.
 - This repository contains an edited version of PTAXSIM’s commit
   history. Historical Git LFS and other data files (.csv, .xlsx, etc.)

@@ -34,7 +34,7 @@ stopifnot(
 )
 ```
 
-# PTAXSIM
+## PTAXSIM
 <a href='https://github.com/ccao-data/ptaxsim'><img src='man/figures/logo.png' align="right" height="139"/></a>
 
 [![R-CMD-check](https://github.com/ccao-data/ptaxsim/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ccao-data/ptaxsim/actions/workflows/R-CMD-check.yaml)
@@ -559,7 +559,7 @@ erDiagram
 - Special Service Area (SSA) rates must be calculated manually when creating counterfactual bills. See issue [#31](#31) for more information.
 - In rare instances, a TIF can have multiple `agency_num` identifiers (usually there's only one per TIF). The `tif_crosswalk` table determines what the "main" `agency_num` is for each TIF and pulls the name and TIF information using that identifier. See issue [#39](#39) for more information.
 - PTAXSIM is relatively memory-efficient and can calculate every district line-item for every tax bill for the last 15 years (roughly 350 million rows). However, the memory required for this calculation is substantial (around 100 GB).
-- PTAXSIM's accuracy is measured automatically with an [integration test](tests/testthat/test-accuracy.R). The test takes a random sample of 2 million PINs, calculates the total bill for each PIN, and compares it to the real total bill.
+- PTAXSIM's accuracy is measured automatically with an [integration test](tests/testthat/test-accuracy.R). The test takes a random sample of 1 million PINs, calculates the total bill for each PIN, and compares it to the real total bill.
 - This repository contains an edited version of PTAXSIM's commit history. Historical Git LFS and other data files (.csv, .xlsx, etc.) were removed in the transition to GitHub. The most current version of these files is available starting in commit [1f06639](https://github.com/ccao-data/ptaxsim/commit/1f06639d98a720999222579b7ff61bcce061f1ec). If you need the historical LFS files for any reason, please visit the [GitLab archive](https://gitlab.com/ccao-data-science---modeling/packages/ptaxsim) of this repository.
 
 ## Disclaimer
