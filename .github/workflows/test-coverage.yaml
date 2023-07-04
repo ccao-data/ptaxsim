@@ -40,7 +40,9 @@ jobs:
           fail-on-cache-miss: true
 
       - name: Unpack database
-        run: bzip2 -d ptaxsim.db.bz2
+        run: |
+          sudo apt-get install -y pbzip2
+          pbzip2 -d ptaxsim.db.bz2
         shell: bash
 
       - name: Test coverage

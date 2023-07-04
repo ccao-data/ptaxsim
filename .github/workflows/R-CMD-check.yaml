@@ -58,9 +58,18 @@ jobs:
           fail-on-cache-miss: true
           enableCrossOsArchive: true
 
-      - name: Unpack database (*nix)
-        if: runner.os != 'Windows'
-        run: bzip2 -d ptaxsim.db.bz2
+      - name: Unpack database (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get install -y pbzip2
+          pbzip2 -d ptaxsim.db.bz2
+        shell: bash
+
+      - name: Unpack database (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install pbzip2
+          pbzip2 -d ptaxsim.db.bz2
         shell: bash
 
       - name: Unpack database (Windows)
