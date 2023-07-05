@@ -10,21 +10,20 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      RENV_CONFIG_CACHE_ENABLED: false
-      R_CACHE_ROOTPATH: ~/.cache/pre-commit
     steps:
+
+      # Replacement for pre-commit/action
       - uses: actions/checkout@v3
-
-      - uses: r-lib/actions/setup-r@v2
-        with:
-          use-public-rspm: true
-
-      - uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          extra-packages: any::lintr, any::styler, local::.
 
       - uses: actions/setup-python@v4
         with:
           python-version: 3.x
 
-      - uses: pre-commit/action@v3.0.0
+      - run: python -m pip install pre-commit
+        shell: bash
+
+      - run: python -m pip freeze --local
+        shell: bash
+
+      - run: pre-commit run --show-diff-on-failure --color=always --all-files
+        shell: bash
