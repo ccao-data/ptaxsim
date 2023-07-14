@@ -23,32 +23,33 @@ jobs:
       output1: ${{ steps.version_db.outputs.PTAXSIM_VERSION }}
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
 
-      - id: version_db
-        name: Get database version
+      - name: Get database version
+        id: version_db
         run: |
           echo "PTAXSIM_VERSION=$(grep -Po "(?<=Wants_DB_Version: )[0-9]*\.[0-9]*\.[0-9]*" ${{ github.workspace }}/DESCRIPTION)" >> $GITHUB_ENV
           echo "PTAXSIM_VERSION=$(grep -Po "(?<=Wants_DB_Version: )[0-9]*\.[0-9]*\.[0-9]*" ${{ github.workspace }}/DESCRIPTION)" >> $GITHUB_OUTPUT
 
-      - id: check_db
-        name: Check database cache
+      - name: Check database cache
         uses: actions/cache/restore@v3
+        id: check_db
         with:
           path: ptaxsim.db.bz2
           key: ${{ format('{0}-{1}', env.PTAXSIM_VERSION, hashFiles('DESCRIPTION')) }}
           lookup-only: true
 
-      - id: fetch_db
-        name: Fetch database file
+      - name: Fetch database file
+        id: fetch_db
         if: steps.check_db.outputs.cache-hit != 'true'
         run: |
           aws s3 cp ${{ inputs.PTAXSIM_DB_BASE_URL }}/ptaxsim-${{ env.PTAXSIM_VERSION }}.db.bz2 ${{ github.workspace }}/ptaxsim.db.bz2
         shell: bash
 
-      - id: save_db
-        name: Save database cache
+      - name: Save database cache
         uses: actions/cache/save@v3
+        id: save_db
         if: steps.check_db.outputs.cache-hit != 'true'
         with:
           path: ptaxsim.db.bz2
