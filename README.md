@@ -863,15 +863,15 @@ erDiagram
 
 - Currently, the per-district tax calculations for properties in the
   Red-Purple Modernization (RPM) TIF are slightly flawed. However, the
-  total tax bill per PIN is still accurate. See issue [\#11](#11) for
+  total tax bill per PIN is still accurate. See issue [\#4](https://github.com/ccao-data/ptaxsim/issues/4) for
   more information.
 - Special Service Area (SSA) rates must be calculated manually when
-  creating counterfactual bills. See issue [\#31](#31) for more
+  creating counterfactual bills. See issue [\#3](https://github.com/ccao-data/ptaxsim/issues/3) for more
   information.
 - In rare instances, a TIF can have multiple `agency_num` identifiers
   (usually there’s only one per TIF). The `tif_crosswalk` table
   determines what the “main” `agency_num` is for each TIF and pulls the
-  name and TIF information using that identifier. See issue [\#39](#39)
+  name and TIF information using that identifier. See archived issue [\#39](https://gitlab.com/ccao-data-science---modeling/packages/ptaxsim/-/issues/39)
   for more information.
 - PTAXSIM is relatively memory-efficient and can calculate every
   district line-item for every tax bill for the last 15 years (roughly
