@@ -1,6 +1,12 @@
 destination: public
 url: https://github.com/ccao-data/ptaxsim
 
+authors:
+  sidebar:
+    roles: [aut, ctb]
+  Dan Snow:
+    href: https://github.com/dfsnow
+
 reference:
 
 - title: Functions
