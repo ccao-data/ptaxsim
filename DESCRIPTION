@@ -4,8 +4,8 @@ Title: Calculate Cook County Property Tax Bills and Simulate Scenarios
 Version: 0.6.1
 Authors@R: c(
     person(given = "Dan", family = "Snow", email = "daniel.snow@cookcountyil.gov", role = c("aut", "cre")),
-    person(given = "Mike", family = "Wu", role = c("aut", "ctb")),
-    person(given = "Rob", family = "Ross", role = c("aut", "ctb"))
+    person(given = "Rob", family = "Ross", role = c("aut", "ctb")),
+    person(given = "Mike", family = "Wu", role = c("ctb"))
     )
 Description: An R package to estimate property tax bills and simulate tax
     scenarios for Cook County, IL. Supplementary to a SQLite database file
