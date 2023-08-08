@@ -23,7 +23,6 @@ runs:
       run: |
         echo "PTAXSIM_VERSION=$(grep -Po "(?<=Wants_DB_Version: )[0-9]*\.[0-9]*\.[0-9]*" ${{ github.workspace }}/DESCRIPTION)" >> $GITHUB_ENV
         echo "PTAXSIM_VERSION=${{ env.PTAXSIM_VERSION }}" >> $GITHUB_OUTPUT
-      shell: bash
 
     - name: Restore database cache
       uses: actions/cache/restore@v3.3.1
@@ -44,21 +43,21 @@ runs:
       id: fetch_db
       if: steps.restore_db_cache.outputs.cache-hit != 'true'
       run: |
-        aws s3 cp ${{ inputs.PTAXSIM_DB_BASE_URL }}/ptaxsim-${{ env.PTAXSIM_VERSION }}.db.bz2 ${{ github.workspace }}/ptaxsim.db.bz2
+        aws s3 cp ${{ inputs.PTAXSIM_DB_BASE_URL }}/ptaxsim-${{ env.PTAXSIM_VERSION }}.db.bz2 ${{ github.workspace }}/ptaxsim.db.bz2 --quiet
       shell: bash
 
     - name: Unpack database (Linux)
       if: runner.os == 'Linux'
       run: |
         sudo apt-get install -y pbzip2
-        pbzip2 -d ptaxsim.db.bz2
+        pbzip2 -dk ptaxsim.db.bz2
       shell: bash
 
     - name: Unpack database (macOS)
       if: runner.os == 'macOS'
       run: |
         brew install pbzip2
-        pbzip2 -d ptaxsim.db.bz2
+        pbzip2 -dk ptaxsim.db.bz2
       shell: bash
 
     - name: Unpack database (Windows)
