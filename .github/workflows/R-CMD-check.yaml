@@ -31,11 +31,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Prepare PTAXSIM database
-        uses: ./.github/actions/prepare-ptaxsim
-        with:
-          ASSUMED_ROLE: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
-
       - name: Setup pandoc
         uses: r-lib/actions/setup-pandoc@v2
 
@@ -51,6 +46,11 @@ jobs:
         with:
           extra-packages: any::rcmdcheck
           needs: check
+
+      - name: Prepare PTAXSIM database
+        uses: ./.github/actions/prepare-ptaxsim
+        with:
+          ASSUMED_ROLE: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
 
       - name: Check R package
         uses: r-lib/actions/check-r-package@v2
