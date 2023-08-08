@@ -21,7 +21,8 @@ runs:
     - name: Get database version
       id: version_db
       run: |
-        echo "PTAXSIM_VERSION=$(sed -n 's/.*Wants_DB_Version: \([0-9]*\.[0-9]*\.[0-9]\).*/\1/p' ${{ github.workspace }}/DESCRIPTION)" >> $GITHUB_ENV
+        DESCRIPTION_PATH=$(echo "${{ github.workspace }}/DESCRIPTION" | sed 's/\\/\//g')
+        echo "PTAXSIM_VERSION=$(sed -n 's/.*Wants_DB_Version: \([0-9]*\.[0-9]*\.[0-9]\).*/\1/p' $DESCRIPTION_PATH)" >> $GITHUB_ENV
         echo "PTAXSIM_VERSION=${{ env.PTAXSIM_VERSION }}" >> $GITHUB_OUTPUT
       shell: bash
 
