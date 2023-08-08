@@ -20,8 +20,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Prepare PTAXSIM DB
+      - name: Prepare PTAXSIM database
         uses: ./.github/actions/prepare-ptaxsim
+        with:
+          ASSUMED_ROLE: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
 
       - name: Setup R
         uses: r-lib/actions/setup-r@v2

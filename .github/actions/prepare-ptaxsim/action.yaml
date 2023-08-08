@@ -1,10 +1,12 @@
-name: Prepare PTAXSIM DB
+name: Prepare PTAXSIM database
 description: Downloads and extracts the PTAXSIM database file from S3
 inputs:
   PTAXSIM_DB_BASE_URL:
     required: false
     type: string
     default: "s3://ccao-data-public-us-east-1/ptaxsim"
+  ASSUMED_ROLE:
+    description: "AWS role used for S3"
 outputs:
   PTAXSIM_VERSION:
     description: "PTAXSIM database version"
@@ -34,7 +36,7 @@ runs:
       if: steps.restore_db_cache.outputs.cache-hit != 'true'
       uses: aws-actions/configure-aws-credentials@v2
       with:
-        role-to-assume: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
+        role-to-assume: ${{ inputs.ASSUMED_ROLE }}
         aws-region: us-east-1
 
     - name: Fetch database file
