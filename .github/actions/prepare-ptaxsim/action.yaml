@@ -23,6 +23,7 @@ runs:
       run: |
         echo "PTAXSIM_VERSION=$(grep -Po "(?<=Wants_DB_Version: )[0-9]*\.[0-9]*\.[0-9]*" ${{ github.workspace }}/DESCRIPTION)" >> $GITHUB_ENV
         echo "PTAXSIM_VERSION=${{ env.PTAXSIM_VERSION }}" >> $GITHUB_OUTPUT
+      shell: bash
 
     - name: Restore database cache
       uses: actions/cache/restore@v3.3.1
