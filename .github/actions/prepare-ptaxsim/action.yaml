@@ -52,17 +52,18 @@ runs:
       if: runner.os == 'Linux'
       run: |
         sudo apt-get install -y pbzip2
-        pbzip2 -dk ptaxsim.db.bz2
+        pbzip2 -dk ${{ github.workspace }}/ptaxsim.db.bz2
       shell: bash
 
     - name: Unpack database (macOS)
       if: runner.os == 'macOS'
       run: |
         brew install pbzip2
-        pbzip2 -dk ptaxsim.db.bz2
+        pbzip2 -dk ${{ github.workspace }}/ptaxsim.db.bz2
       shell: bash
 
     - name: Unpack database (Windows)
       if: runner.os == 'Windows'
-      run: 7z x ptaxsim.db.bz2
+      run: |
+        7z x ${{ github.workspace }}/ptaxsim.db.bz2
       shell: cmd
