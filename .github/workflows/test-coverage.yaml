@@ -17,11 +17,11 @@ jobs:
       contents: read
 
     steps:
-      - name: Prepare PTAXSIM DB
-        uses: ./.github/actions/prepare-ptaxsim
-
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Prepare PTAXSIM DB
+        uses: ./.github/actions/prepare-ptaxsim
 
       - name: Setup R
         uses: r-lib/actions/setup-r@v2
