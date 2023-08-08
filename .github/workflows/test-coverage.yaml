@@ -6,16 +6,20 @@ on:
 name: test-coverage
 
 jobs:
-  prepare-ptaxsim:
-    uses: ./.github/workflows/prepare-ptaxsim.yaml
-    secrets: inherit
-
   test-coverage:
-    needs: prepare-ptaxsim
     runs-on: ubuntu-latest
     env:
       PTAXSIM_DB_PATH: ${{ github.workspace }}/ptaxsim.db
+
+    # Required for OIDC access to S3
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
+      - name: Prepare PTAXSIM DB
+        uses: ./.github/actions/prepare-ptaxsim
+
       - name: Checkout
         uses: actions/checkout@v3
 
@@ -29,19 +33,6 @@ jobs:
         with:
           extra-packages: any::covr
           needs: coverage
-
-      - name: Restore database cache
-        uses: actions/cache/restore@v3
-        with:
-          path: ptaxsim.db.bz2
-          key: ${{ format('{0}-{1}', needs.prepare-ptaxsim.outputs.PTAXSIM_VERSION, hashFiles('DESCRIPTION')) }}
-          fail-on-cache-miss: true
-
-      - name: Unpack database
-        run: |
-          sudo apt-get install -y pbzip2
-          pbzip2 -d ptaxsim.db.bz2
-        shell: bash
 
       - name: Test coverage
         run: |
