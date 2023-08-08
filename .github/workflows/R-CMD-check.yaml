@@ -6,14 +6,9 @@ on:
 name: R-CMD-check
 
 jobs:
-  prepare-ptaxsim:
-    uses: ./.github/workflows/prepare-ptaxsim.yaml
-    secrets: inherit
-
   R-CMD-check:
-    needs: prepare-ptaxsim
-    runs-on: ${{ matrix.config.os }}
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
+    runs-on: ${{ matrix.config.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -26,6 +21,12 @@ jobs:
     env:
       PTAXSIM_DB_PATH: ${{ github.workspace }}/ptaxsim.db
       R_KEEP_PKG_SOURCE: yes
+
+    # Required for OIDC access to S3
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -46,32 +47,10 @@ jobs:
           extra-packages: any::rcmdcheck
           needs: check
 
-      - name: Restore database cache
-        uses: actions/cache/restore@v3.3.1
+      - name: Prepare PTAXSIM database
+        uses: ./.github/actions/prepare-ptaxsim
         with:
-          path: ptaxsim.db.bz2
-          key: ${{ format('{0}-{1}', needs.prepare-ptaxsim.outputs.PTAXSIM_VERSION, hashFiles('DESCRIPTION')) }}
-          fail-on-cache-miss: true
-          enableCrossOsArchive: true
-
-      - name: Unpack database (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get install -y pbzip2
-          pbzip2 -d ptaxsim.db.bz2
-        shell: bash
-
-      - name: Unpack database (macOS)
-        if: runner.os == 'macOS'
-        run: |
-          brew install pbzip2
-          pbzip2 -d ptaxsim.db.bz2
-        shell: bash
-
-      - name: Unpack database (Windows)
-        if: runner.os == 'Windows'
-        run: 7z x ptaxsim.db.bz2
-        shell: cmd
+          ASSUMED_ROLE: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
 
       - name: Check R package
         uses: r-lib/actions/check-r-package@v2

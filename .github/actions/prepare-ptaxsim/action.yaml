@@ -1,0 +1,69 @@
+name: Prepare PTAXSIM database
+description: Downloads and extracts the PTAXSIM database file from S3
+inputs:
+  PTAXSIM_DB_BASE_URL:
+    required: false
+    type: string
+    default: "s3://ccao-data-public-us-east-1/ptaxsim"
+  ASSUMED_ROLE:
+    description: "AWS role used for S3"
+outputs:
+  PTAXSIM_VERSION:
+    description: "PTAXSIM database version"
+    value: ${{ steps.version_db.outputs.PTAXSIM_VERSION }}
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Get database version
+      id: version_db
+      run: |
+        DESCRIPTION_PATH=$(echo "${{ github.workspace }}/DESCRIPTION" | sed 's/\\/\//g')
+        echo "PTAXSIM_VERSION=$(sed -n 's/.*Wants_DB_Version: \([0-9]*\.[0-9]*\.[0-9]\).*/\1/p' $DESCRIPTION_PATH)" >> $GITHUB_ENV
+        echo "PTAXSIM_VERSION=${{ env.PTAXSIM_VERSION }}" >> $GITHUB_OUTPUT
+      shell: bash
+
+    - name: Cache database
+      uses: actions/cache@v3.3.1
+      id: cache_db
+      with:
+        path: ptaxsim.db.bz2
+        key: ${{ format('{0}-{1}', env.PTAXSIM_VERSION, hashFiles('DESCRIPTION')) }}
+        enableCrossOsArchive: true
+
+    - name: Configure AWS credentials
+      if: steps.cache_db.outputs.cache-hit != 'true'
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        role-to-assume: ${{ inputs.ASSUMED_ROLE }}
+        aws-region: us-east-1
+
+    - name: Fetch database file
+      id: fetch_db
+      if: steps.cache_db.outputs.cache-hit != 'true'
+      run: |
+        aws s3 cp ${{ inputs.PTAXSIM_DB_BASE_URL }}/ptaxsim-${{ env.PTAXSIM_VERSION }}.db.bz2 ${{ github.workspace }}/ptaxsim.db.bz2 --quiet
+      shell: bash
+
+    - name: Unpack database (Linux)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get install -y pbzip2
+        pbzip2 -dk ${{ github.workspace }}/ptaxsim.db.bz2
+      shell: bash
+
+    - name: Unpack database (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install pbzip2
+        pbzip2 -dk ${{ github.workspace }}/ptaxsim.db.bz2
+      shell: bash
+
+    - name: Unpack database (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        7z x ${{ github.workspace }}/ptaxsim.db.bz2
+      shell: cmd
