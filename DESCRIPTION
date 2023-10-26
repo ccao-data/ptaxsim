@@ -39,7 +39,6 @@ Suggests:
     odbc,
     openxlsx,
     pkgdown,
-    prettymapr,
     purrr,
     readr,
     RColorBrewer,
