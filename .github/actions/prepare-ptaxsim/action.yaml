@@ -46,7 +46,6 @@ runs:
       if: steps.cache_db.outputs.cache-hit != 'true'
       run: |
         aws s3 cp ${{ inputs.PTAXSIM_DB_BASE_URI }}/ptaxsim-${{ env.PTAXSIM_VERSION }}.db.bz2 ptaxsim.db.bz2 --quiet
-        ls
       shell: bash
 
     - name: Unpack database (Linux)
