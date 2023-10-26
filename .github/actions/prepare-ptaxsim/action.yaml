@@ -45,7 +45,7 @@ runs:
       id: fetch_db
       if: steps.cache_db.outputs.cache-hit != 'true'
       run: |
-        aws s3 cp ${{ inputs.PTAXSIM_DB_BASE_URI }}/ptaxsim-${{ env.PTAXSIM_VERSION }}.db.bz2 ${{ github.workspace }}/ptaxsim.db.bz2 --quiet
+        aws s3 cp ${{ inputs.PTAXSIM_DB_BASE_URI }}/ptaxsim-${{ env.PTAXSIM_VERSION }}.db.bz2 ptaxsim.db.bz2 --quiet
       shell: bash
 
     - name: Unpack database (Linux)
@@ -65,5 +65,5 @@ runs:
     - name: Unpack database (Windows)
       if: runner.os == 'Windows'
       run: |
-        7z x ${{ github.workspace }}/ptaxsim.db.bz2
+        7z x ${{ github.workspace }}\ptaxsim.db.bz2
       shell: cmd
