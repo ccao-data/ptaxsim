@@ -186,7 +186,7 @@ arrow::write_parquet(
 # EAV, final extension, and much more
 agency <- map_dfr(file_names, function(file) {
   message("Reading: ", file)
-  readxl::read_xlsx(file) %>%
+  readxl::read_xlsx(file, sheet = 1) %>%
     set_names(snakecase::to_snake_case(names(.))) %>%
     mutate(
       across(
@@ -232,9 +232,9 @@ agency <- map_dfr(file_names, function(file) {
       "reduction_percent", "reduction_factor", "clerk_reduction_factor"
     ))) %>%
     rename_with(~"total_non_cap_ext", any_of(c(
-      "total_non_cap_ext", "final_non_cap_ext"
+      "total_non_cap_ext", "final_non_cap_ext", "total_non_cap_extension"
     ))) %>%
-    rename_with(~"total_ext", any_of(c("total_ext", "final_ext"))) %>%
+    rename_with(~"total_ext", any_of(c("total_ext", "final_ext", "grand_total_ext"))) %>%
     # Select, order, and rename columns
     select(
       year,
@@ -293,20 +293,20 @@ agency <- map_dfr(file_names, function(file) {
   arrange(year, agency_num) %>%
   # Coerce columns to expected types
   mutate(
-    across(c(year), as.character),
+    across(c(year), ~ as.character(.x)),
     across(
       c(
         lim_numerator, lim_denominator, prior_eav:cty_total_eav,
         total_levy, total_max_levy, total_reduced_levy, total_final_levy
       ),
-      as.integer64
+      ~ as.integer64(.x)
     ),
     across(
       c(
         lim_rate, pct_burden, total_prelim_rate, total_final_rate,
         reduction_pct, total_non_cap_ext, total_ext
       ),
-      as.double
+      ~ as.double(.x)
     )
   )
 
