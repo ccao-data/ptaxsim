@@ -1,7 +1,6 @@
 library(arrow)
 library(dplyr)
 library(miniUI)
-#library(tabulizer)
 library(pdftools)
 library(tidyr)
 library(stringr)
@@ -21,9 +20,6 @@ row_to_names <- function(df) {
 remote_bucket <- Sys.getenv("S3_REMOTE_BUCKET")
 remote_path <- file.path(remote_bucket, "cpi", "part-0.parquet")
 
-# Extract the table only (no headers), then manually assign header
-#cpi_ext <- extract_areas(file = "data-raw/cpi/cpihistory.pdf")[[1]]
-
 cpi <- pdftools::pdf_text(pdf = "data-raw/cpi/cpihistory.pdf") %>%
   str_extract(., regex('1991.*', dotall = TRUE)) %>%
   str_remove_all(., "\\(5 % for Cook\\)") %>%
@@ -35,10 +31,6 @@ cpi <- pdftools::pdf_text(pdf = "data-raw/cpi/cpihistory.pdf") %>%
                        names=c("year", "cpi", "pct", "ptell_cook", "levy_year", "year_paid"),
                        delim = ' ', too_few='align_start', too_many = "drop")
 
-#cpi <- as_tibble(cpi_ext[, c(1, 2, 4, 5, 6)])
-#cpi <- setNames(cpi, c("year", "cpi", "ptell_cook", "comments", "levy_year"))
-
-# Merge Cook rate into main column
 cpi <- cpi %>%
   mutate(
     across(c(year, levy_year), as.character),
