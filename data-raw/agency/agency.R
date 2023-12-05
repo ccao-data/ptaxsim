@@ -43,9 +43,6 @@ file_names <- list.files(
 )
 
 
-
-
-
 # agency_fund ------------------------------------------------------------------
 
 # Load the detail sheet from each agency file. This includes the levy and rate
@@ -64,7 +61,7 @@ agency_fund <- map_dfr(file_names, function(file) {
       "loss", "loss_percent", "fund_loss"
     ))) %>%
     rename_with(~"levy_plus_loss", any_of(c(
-      "levy_and_loss", "fund_levy_plus_loss"
+      "levy_and_loss", "fund_levy_plus_loss", "levy_loss"
     ))) %>%
     rename_with(~"rate_ceiling", any_of(c(
       "ceiling", "rate_ceiling", "fund_rate_ceiling"
