@@ -29,24 +29,39 @@ row_to_names <- function(df) {
 extract_tax_bill <- function(file) {
   base_file <- basename(file)
   tbl <- pdf_text(file)[[1]] %>%
-    str_extract(., regex('MISCELLANEOUS TAXES.*', dotall = TRUE)) %>%
-    str_split(., '\n') %>%
+    str_extract(., regex("MISCELLANEOUS TAXES.*", dotall = TRUE)) %>%
+    str_split(., "\n") %>%
     unlist() %>%
     tibble(vals = `.`) %>%
-    mutate(vals = str_replace_all(vals, '[:space:]{2,}', '\t')) %>%
-    separate_wider_delim(col=vals,
-                         names=c("agency_name", "final_tax", "rate", "percent", "pension", "prev_tax"),
-                         delim = '\t', too_few='align_start', too_many = "drop") %>%
-    mutate(agency_name = str_squish(agency_name),
-           flag = is.na(prev_tax),
-           prev_tax = if_else(flag,
-                              pension,
-                              prev_tax),
-           pension = if_else(flag,
-                             NA,
-                             pension)) %>%
+    mutate(vals = str_replace_all(vals, "[:space:]{2,}", "\t")) %>%
+    separate_wider_delim(
+      col = vals,
+      names = c(
+        "agency_name", "final_tax", "rate", "percent",
+        "pension", "prev_tax"
+      ),
+      delim = "\t", too_few = "align_start", too_many = "drop"
+    ) %>%
+    mutate(
+      agency_name = str_squish(agency_name),
+      flag = is.na(prev_tax),
+      prev_tax = if_else(flag,
+        pension,
+        prev_tax
+      ),
+      pension = if_else(flag,
+        NA,
+        pension
+      )
+    ) %>%
     select(-flag) %>%
-    filter(agency_name != '', !str_detect(agency_name, 'TAXES|Assess|Property|EAV|Local Tax|Total Tax|Do not|Equalizer|cookcountyclerk.com'))
+    filter(
+      agency_name != "",
+      !str_detect(
+        agency_name,
+        "TAXES|Assess|Property|EAV|Local Tax|Total Tax|Do not|Equalizer|cookcountyclerk.com"
+      )
+    )
   # Create a list with metadata for output
   out <- list(
     year = str_sub(base_file, 1, 4),
@@ -100,8 +115,8 @@ bills_df <- bills_df %>%
 # Round numeric values to nearest hundredth
 bills_df <- bills_df %>%
   mutate(
-    across(c(final_tax, percent, pension, prev_tax), ~round(.x, 2)),
-    across(c(rate), ~round(.x, 3)),
+    across(c(final_tax, percent, pension, prev_tax), ~ round(.x, 2)),
+    across(c(rate), ~ round(.x, 3)),
   )
 
 # Write detail results to file for safekeeping

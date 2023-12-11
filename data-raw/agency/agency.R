@@ -234,7 +234,10 @@ agency <- map_dfr(file_names, function(file) {
     rename_with(~"total_non_cap_ext", any_of(c(
       "total_non_cap_ext", "final_non_cap_ext", "total_non_cap_extension"
     ))) %>%
-    rename_with(~"total_ext", any_of(c("total_ext", "final_ext", "grand_total_ext"))) %>%
+    rename_with(~"total_ext", any_of(c(
+      "total_ext", "final_ext",
+      "grand_total_ext"
+    ))) %>%
     # Select, order, and rename columns
     select(
       year,

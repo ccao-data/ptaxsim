@@ -75,16 +75,16 @@ tif_main_xls <- map_dfr(summ_file_names_xls, function(file) {
     df <- readxl::read_xlsx(file)
   }
 
-  #modify legacy pdf conversions to excel
-  if(between(year_ext, 2006, 2012)){
+  # modify legacy pdf conversions to excel
+  if (between(year_ext, 2006, 2012)) {
     df %>%
       set_names(c(
         "agency_num", "tif_name", "first_year",
         "curr_year_revenue", "prev_year_revenue", "pct_diff"
       )) %>%
       filter(agency_num != "AGENCY") %>%
-      mutate(across(where(is.character), ~na_if(., "-"))) %>%
-      mutate(across(where(is.character), ~na_if(., " "))) %>%
+      mutate(across(where(is.character), ~ na_if(., "-"))) %>%
+      mutate(across(where(is.character), ~ na_if(., " "))) %>%
       mutate(
         year = year_ext,
         agency_num = str_pad(
@@ -144,7 +144,7 @@ tif_main_xls <- map_dfr(summ_file_names_xls, function(file) {
       mutate(
         cancelled_this_year =
           year == str_extract(new_cancelled, "\\d{4}") &
-          str_detect(tolower(new_cancelled), "cancel"),
+            str_detect(tolower(new_cancelled), "cancel"),
         across(c(cancelled_this_year), ~ replace_na(.x, FALSE)),
         across(c(curr_year_revenue, prev_year_revenue), ~ replace_na(.x, 0)),
         agency = str_pad(agency, 9, "left", "0")
@@ -158,8 +158,10 @@ tif_main_xls <- map_dfr(summ_file_names_xls, function(file) {
 })
 
 tif_main <- tif_main_xls %>%
-  filter(!is.na(tif_name), agency_num != 'City of Chicago',
-         agency_num != 'Suburban Total') %>%
+  filter(
+    !is.na(tif_name), agency_num != "City of Chicago",
+    agency_num != "Suburban Total"
+  ) %>%
   # Manual fixes for misread values
   mutate(
     agency_num = ifelse(
@@ -210,12 +212,14 @@ tif_main <- tif_main_xls %>%
       agency_num == "030600504" & year == 2011,
       2011, first_year
     ),
-    agency_num = if_else(tif_name == 'Melrsoe Park - Lake Street Corridor',
-                         '030770509',
-                         agency_num),
-    agency_num = if_else(tif_name == 'Melrose Park - Joyce Bros. Storage',
-                         '030770501',
-                         agency_num)
+    agency_num = if_else(tif_name == "Melrsoe Park - Lake Street Corridor",
+      "030770509",
+      agency_num
+    ),
+    agency_num = if_else(tif_name == "Melrose Park - Joyce Bros. Storage",
+      "030770501",
+      agency_num
+    )
   ) %>%
   filter(!(agency_num == "030330500" & first_year == 2012)) %>%
   mutate(across(c(year, first_year), as.character))
