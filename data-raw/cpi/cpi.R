@@ -14,7 +14,7 @@ row_to_names <- function(df) {
 # The goal of this script is to create a data frame of Consumer Price Indices
 # CPI-U used by PTELL to calculate/cap property tax extensions
 # We can load the historical CPIs from a PDF provided by the State of Illinois
-# https://tax.illinois.gov/content/dam/soi/en/web/tax/localgovernments/property/documents/cpihistory.pdf
+# https://tax.illinois.gov/content/dam/soi/en/web/tax/localgovernments/property/documents/cpihistory.pdf # nolint
 
 # Paths for local raw data storage and remote storage on S3
 remote_bucket <- Sys.getenv("S3_REMOTE_BUCKET")
