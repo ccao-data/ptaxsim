@@ -23,6 +23,7 @@ file_names <- list.files(
 # Load each file and cleanup columns, then combine into single df
 tax_code <- map_dfr(file_names, function(file) {
   # Extract year from file name
+  print(file)
   year_ext <- str_extract(file, "\\d{4}")
 
   # Load file based on extension
@@ -38,6 +39,14 @@ tax_code <- map_dfr(file_names, function(file) {
     rename_with(
       ~ str_replace(.x, "taxcode", "tax_code"),
       starts_with("taxcode")
+    ) %>%
+    rename_with(
+      ~ str_replace(.x, "ag_rate", "agency_rate"),
+      starts_with("ag_rate")
+    ) %>%
+    rename_with(
+      ~ str_replace(.x, "code_rate", "tax_code_rate"),
+      starts_with("code_rate")
     ) %>%
     mutate(
       year = as.character(year_ext),
