@@ -38,6 +38,7 @@ Suggests:
     lintr,
     odbc,
     openxlsx,
+    pdftools,
     pkgdown,
     prettymapr,
     purrr,
@@ -49,7 +50,6 @@ Suggests:
     sf,
     snakecase,
     stringr,
-    tabulizer,
     testthat,
     tidyr,
     units,
@@ -57,7 +57,6 @@ Suggests:
 Depends:
     R (>= 2.10)
 Remotes: 
-    paleolimbot/geoarrow,
-    ropensci/tabulizer
+    paleolimbot/geoarrow
 Config/Requires_DB_Version: 2021.0.4
 Config/Wants_DB_Version: 2021.0.4
