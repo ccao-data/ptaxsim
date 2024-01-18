@@ -36,6 +36,7 @@ Suggests:
     httr,
     knitr,
     lintr,
+    noctua,
     odbc,
     openxlsx,
     pdftools,

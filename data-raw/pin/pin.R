@@ -2,6 +2,7 @@ library(arrow)
 library(DBI)
 library(dplyr)
 library(geoarrow)
+library(noctua)
 library(odbc)
 library(sf)
 library(tidyr)
@@ -26,6 +27,10 @@ ccaodata <- dbConnect(
   odbc::odbc(),
   .connection_string = Sys.getenv("DB_CONFIG_CCAODATA")
 )
+
+# Establish a connection the Data Department's Athena data warehouse. We'll use
+# values from here to fill in any missing values from the legacy system
+ccaoathena <- dbConnect(noctua::athena())
 
 # Pull AV and class from the Clerk and HEAD tables, giving preference to values
 # from the Clerk table in case of mismatch (except for property class).
@@ -82,6 +87,25 @@ pin <- dbGetQuery(
     tax_bill_total = tidyr::replace_na(tax_bill_total, 0)
   )
 
+# Pull AVs from Athena to fill in any missingness from the legacy system
+pin_athena <- dbGetQuery(
+  ccaoathena,
+  "
+  SELECT DISTINCT
+      pin,
+      year,
+      mailed_tot,
+      certified_tot,
+      board_tot
+  FROM default.vw_pin_value
+  WHERE year >= '2006'
+  "
+) %>%
+  mutate(
+    across(c(year, pin), as.character),
+    across(c(ends_with("_tot")), as.integer)
+  )
+
 pin_fill <- pin %>%
   # There are a few (less than 100) rows with Clerk AVs split for the same PIN.
   # Sum to get 1 record per PIN, then keep the record with the highest AV
@@ -89,6 +113,12 @@ pin_fill <- pin %>%
   mutate(av_clerk = sum(av_clerk)) %>%
   ungroup() %>%
   distinct(year, pin, .keep_all = TRUE) %>%
+  left_join(pin_athena, by = c("year", "pin")) %>%
+  mutate(
+    av_board = ifelse(is.na(av_board), board_tot, av_board),
+    av_certified = ifelse(is.na(av_certified), certified_tot, av_certified),
+    av_mailed = ifelse(is.na(av_mailed), mailed_tot, av_mailed)
+  ) %>%
   # A few (less than 500) values are missing from the mailed assessment stage
   # AV column. We can replace any missing mailed value with certified value
   # from the same year. Only 2 board/certified values are missing, and both are
@@ -97,7 +127,8 @@ pin_fill <- pin %>%
     av_board = ifelse(is.na(av_board), 0L, av_board),
     av_certified = ifelse(is.na(av_certified), 0L, av_certified),
     av_mailed = ifelse(is.na(av_mailed), av_certified, av_mailed)
-  )
+  ) %>%
+  select(-ends_with("_tot"))
 
 # Write to S3
 arrow::write_dataset(
