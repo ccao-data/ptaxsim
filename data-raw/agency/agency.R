@@ -283,7 +283,7 @@ agency <- map_dfr(file_names, function(file) {
       0,
       cty_cook_eav
     ),
-    across(starts_with("cty_"), replace_na, 0),
+    across(starts_with("cty_"), ~ replace_na(.x, 0)),
     # Make all percentages decimals
     across(
       c(pct_burden, reduction_pct),
