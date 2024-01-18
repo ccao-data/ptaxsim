@@ -59,7 +59,10 @@ extract_tax_bill <- function(file) {
       agency_name != "",
       !str_detect(
         agency_name,
-        "TAXES|Assess|Property|EAV|Local Tax|Total Tax|Do not|Equalizer|cookcountyclerk.com"
+        paste0(
+          "TAXES|Assess|Property|EAV|Local Tax|",
+          "Total Tax|Do not|Equalizer|cookcountyclerk.com"
+        )
       )
     )
   # Create a list with metadata for output
@@ -109,7 +112,8 @@ bills_df <- bills_df %>%
   group_by(pin, year, agency_num) %>%
   mutate(across(final_tax:prev_tax, sum)) %>%
   select(-cook) %>%
-  filter(!is.na(agency_num), row_number() == 1) %>%
+  filter(!is.na(agency_num), name_priority == 1) %>%
+  select(-name_priority) %>%
   ungroup()
 
 # Round numeric values to nearest hundredth
