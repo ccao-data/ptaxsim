@@ -167,6 +167,7 @@ sum_dt_no_rpm <- sum_dt %>%
   filter(!pin %in% c(
     "14174100180000",
     "01363010130000",
+    "14333001380000",
     "10252080490000"
     # TODO: This last PIN has an exemption on its 2022 bill but not in the
     # 2022 clerk data. Seems like a new parcel, need to investigate further
