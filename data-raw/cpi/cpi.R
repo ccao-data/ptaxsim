@@ -41,6 +41,7 @@ cpi <- cpi %>%
     ptell_cook = ptell_cook / 100
   ) %>%
   filter(year != "1991", year != "", year != "CPI") %>%
+  select(-pct, -year_paid) %>%
   arrange(year)
 
 # Write to S3
