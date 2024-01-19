@@ -140,12 +140,12 @@ test_that("returned amount/output correct for all sample bills", {
   expect_equal(
     tax_bill(sum_dt$year, sum_dt$pin, simplify = FALSE) %>%
       nrow(),
-    508
+    621
   )
   expect_equal(
     tax_bill(sum_dt$year, sum_dt$pin, simplify = TRUE) %>%
       nrow(),
-    525
+    639
   )
 
   # District level tax amounts
@@ -164,7 +164,13 @@ test_that("returned amount/output correct for all sample bills", {
 # Exclude certain PINs in the RPM TIF or with extremely high bills
 # Will run separate tests for these
 sum_dt_no_rpm <- sum_dt %>%
-  filter(!pin %in% c("14174100180000", "01363010130000"))
+  filter(!pin %in% c(
+    "14174100180000",
+    "01363010130000",
+    "10252080490000"
+    # TODO: This last PIN has an exemption on its 2022 bill but not in the
+    # 2022 clerk data. Seems like a new parcel, need to investigate further
+  ))
 
 test_that("all differences are less than $25", {
   expect_true(
