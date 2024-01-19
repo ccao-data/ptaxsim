@@ -7,6 +7,7 @@ library(purrr)
 library(readxl)
 library(snakecase)
 library(stringr)
+library(tabulizer)
 library(tidyr)
 
 calc_mode <- function(x) {
@@ -75,93 +76,113 @@ tif_main_xls <- map_dfr(summ_file_names_xls, function(file) {
     df <- readxl::read_xlsx(file)
   }
 
-  # modify legacy pdf conversions to excel
-  if (between(year_ext, 2006, 2012)) {
-    df %>%
-      set_names(c(
-        "agency_num", "tif_name", "first_year",
-        "curr_year_revenue", "prev_year_revenue", "pct_diff"
-      )) %>%
-      filter(agency_num != "AGENCY") %>%
-      mutate(across(where(is.character), ~ na_if(., "-"))) %>%
-      mutate(across(where(is.character), ~ na_if(., " "))) %>%
-      mutate(
-        year = year_ext,
-        agency_num = str_pad(
-          str_squish(str_trim(str_remove_all(agency_num, "-"))),
-          9,
-          "left",
-          "0"
-        ),
-        cancelled_this_year =
-          year == str_extract(tif_name, "\\d{4}"),
-        tif_name =
-          str_trim(str_squish(str_remove(tif_name, "City of|Village of"))),
-        # Kludge for bad OCR/table extraction for certain cells
-        agency_num = case_when(
-          str_detect(tif_name, "Country Club Hills - 175th") & year == 2008 ~
-            "030240501",
-          str_detect(tif_name, "Thornton - Downtown") & year == 2009 ~
-            "031260501",
-          str_detect(tif_name, "Evanston - Dempster / Dodge") & year == 2012 ~
-            "030380506",
-          str_detect(tif_name, "Homewood - East CBD") & year == 2012 ~
-            "030600505",
-          str_detect(tif_name, "East Dundee") & year %in% 2012 ~
-            "030320500",
-          str_detect(agency_num, "Homewood East CBD") & year == 2012 ~
-            "030600505",
-          TRUE ~ agency_num
-        ),
-        first_year = ifelse(
-          tif_name == "2011" & agency_num == "030600505",
-          2011,
-          first_year
-        )
-      ) %>%
-      filter(!is.na(agency_num)) %>%
-      mutate(
-        tif_name = str_remove_all(tif_name, "\\ *Cancel.*"),
-        tif_name = str_remove_all(tif_name, "\\ *CANCEL.*"),
-        tif_name = str_remove_all(tif_name, "\\ *New.*"),
-        tif_name = str_squish(str_trim(tif_name)),
-        cancelled_this_year = replace_na(cancelled_this_year, FALSE),
-        across(
-          c("first_year", "curr_year_revenue", "prev_year_revenue"),
-          ~ replace_na(readr::parse_number(.x), 0)
-        )
-      ) %>%
-      select(
-        year, agency_num, tif_name, prev_year_revenue,
-        curr_year_revenue, first_year, cancelled_this_year
-      )
-  } else {
-    df %>%
-      mutate(year = year_ext) %>%
-      set_names(snakecase::to_snake_case(names(.))) %>%
-      rename_with(~ str_replace(.x, str_c(year_ext, "_"), "curr_year_")) %>%
-      rename_with(~ str_replace(.x, str_c(year_ext - 1, "_"), "prev_year_")) %>%
-      mutate(
-        cancelled_this_year =
-          year == str_extract(new_cancelled, "\\d{4}") &
-            str_detect(tolower(new_cancelled), "cancel"),
-        across(c(cancelled_this_year), ~ replace_na(.x, FALSE)),
-        across(c(curr_year_revenue, prev_year_revenue), ~ replace_na(.x, 0)),
-        agency = str_pad(agency, 9, "left", "0")
-      ) %>%
-      select(
-        year,
-        agency_num = agency, tif_name, prev_year_revenue,
-        curr_year_revenue, first_year, cancelled_this_year,
-      )
-  }
+  df %>%
+    mutate(year = year_ext) %>%
+    set_names(snakecase::to_snake_case(names(.))) %>%
+    rename_with(~ str_replace(.x, str_c(year_ext, "_"), "curr_year_")) %>%
+    rename_with(~ str_replace(.x, str_c(year_ext - 1, "_"), "prev_year_")) %>%
+    mutate(
+      cancelled_this_year =
+        year == str_extract(new_cancelled, "\\d{4}") &
+          str_detect(tolower(new_cancelled), "cancel"),
+      across(c(cancelled_this_year), ~ replace_na(.x, FALSE)),
+      across(c(curr_year_revenue, prev_year_revenue), ~ replace_na(.x, 0)),
+      agency = str_pad(agency, 9, "left", "0")
+    ) %>%
+    select(
+      year,
+      agency_num = agency, tif_name, prev_year_revenue,
+      curr_year_revenue, first_year, cancelled_this_year,
+    )
 })
 
-tif_main <- tif_main_xls %>%
-  filter(
-    !is.na(tif_name), agency_num != "City of Chicago",
-    agency_num != "Suburban Total"
-  ) %>%
+
+## PDF files -----
+
+# Get summary report PDFs
+summ_file_names_pdf <- list.files(
+  path = "data-raw/tif/main",
+  pattern = "*Summary\\.pdf",
+  full.names = TRUE
+)
+
+tif_main_pdf <- map_dfr(summ_file_names_pdf, function(file) {
+  message("Reading: ", file)
+  year_ext <- as.integer(str_extract(file, "\\d{4}"))
+
+  # Extract tables from PDFs. Some tables get an extra 3rd column which we can
+  # drop
+  tables <- extract_tables(file) %>%
+    map(function(x) if (ncol(x) > 6) x[, c(1:2, 4:7)] else x) %>%
+    .[lapply(., nrow) > 1]
+
+  do.call(rbind, tables) %>%
+    as_tibble() %>%
+    set_names(c(
+      "agency_num", "tif_name", "first_year",
+      "curr_year_revenue", "prev_year_revenue", "pct_diff"
+    )) %>%
+    filter(agency_num != "AGENCY") %>%
+    mutate(across(where(is.character), ~ na_if(.x, "-"))) %>%
+    mutate(across(where(is.character), ~ na_if(.x, ""))) %>%
+    mutate(
+      year = year_ext,
+      agency_num = str_pad(
+        str_squish(str_trim(str_remove_all(agency_num, "-"))),
+        9,
+        "left",
+        "0"
+      ),
+      cancelled_this_year =
+        year == str_extract(tif_name, "\\d{4}"),
+      tif_name =
+        str_trim(str_squish(str_remove(tif_name, "City of|Village of"))),
+      # Kludge for bad OCR/table extraction for certain cells
+      agency_num = case_when(
+        str_detect(tif_name, "Country Club Hills - 175th") & year == 2008 ~
+          "030240501",
+        str_detect(tif_name, "Thornton - Downtown") & year == 2009 ~
+          "031260501",
+        str_detect(tif_name, "Evanston - Dempster / Dodge") & year == 2012 ~
+          "030380506",
+        str_detect(tif_name, "Homewood - East CBD") & year == 2012 ~
+          "030600505",
+        str_detect(tif_name, "East Dundee") & year %in% 2012 ~
+          "030320500",
+        str_detect(agency_num, "Homewood East CBD") & year == 2012 ~
+          "030600505",
+        TRUE ~ agency_num
+      ),
+      first_year = ifelse(
+        tif_name == "2011" & agency_num == "030600505",
+        2011,
+        first_year
+      )
+    ) %>%
+    filter(!is.na(agency_num)) %>%
+    mutate(
+      tif_name = str_remove_all(tif_name, "\\ *Cancel.*"),
+      tif_name = str_remove_all(tif_name, "\\ *CANCEL.*"),
+      tif_name = str_remove_all(tif_name, "\\ *New.*"),
+      tif_name = str_squish(str_trim(tif_name)),
+      cancelled_this_year = replace_na(cancelled_this_year, FALSE),
+      across(
+        c("first_year", "curr_year_revenue", "prev_year_revenue"),
+        ~ replace_na(readr::parse_number(.x), 0)
+      )
+    ) %>%
+    select(
+      year, agency_num, tif_name, prev_year_revenue,
+      curr_year_revenue, first_year, cancelled_this_year
+    )
+})
+
+# Combine Excel and PDF outputs into since data frame
+tif_main <- bind_rows(
+  tif_main_pdf,
+  tif_main_xls
+) %>%
+  filter(!is.na(tif_name)) %>%
   # Manual fixes for misread values
   mutate(
     agency_num = ifelse(
@@ -211,14 +232,6 @@ tif_main <- tif_main_xls %>%
     first_year = ifelse(
       agency_num == "030600504" & year == 2011,
       2011, first_year
-    ),
-    agency_num = if_else(tif_name == "Melrsoe Park - Lake Street Corridor",
-      "030770509",
-      agency_num
-    ),
-    agency_num = if_else(tif_name == "Melrose Park - Joyce Bros. Storage",
-      "030770501",
-      agency_num
     )
   ) %>%
   filter(!(agency_num == "030330500" & first_year == 2012)) %>%
@@ -248,6 +261,8 @@ arrow::write_parquet(
   sink = remote_path_main,
   compression = "zstd"
 )
+
+
 
 
 # tif_distribution -------------------------------------------------------------
