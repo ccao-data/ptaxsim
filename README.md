@@ -37,13 +37,13 @@ Table of Contents
 > installation](#database-installation) for details.
 >
 > [**Link to PTAXSIM
-> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.4.db.bz2)
-> (DB version: 2021.0.4; Last updated: 2023-04-28 23:40:05)
+> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2022.0.0.db.bz2)
+> (DB version: 2022.0.0; Last updated: 2024-01-19 04:40:35)
 
 PTAXSIM is an R package/database to approximate Cook County property tax
 bills. It uses real assessment, exemption, TIF, and levy data to
 generate historic, line-item tax bills (broken out by taxing district)
-for any property from 2006 to 2021. Given some careful assumptions and
+for any property from 2006 to 2022. Given some careful assumptions and
 data manipulation, it can also provide hypothetical, but factually
 grounded, answers to questions such as:
 
@@ -173,9 +173,9 @@ database:
 
 1.  Download the compressed database file from the CCAO’s public S3
     bucket. [Link
-    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2021.0.4.db.bz2).
+    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2022.0.0.db.bz2).
 2.  (Optional) Rename the downloaded database file by removing the
-    version number, i.e. ptaxsim-2021.0.4.db.bz2 becomes
+    version number, i.e. ptaxsim-2022.0.0.db.bz2 becomes
     `ptaxsim.db.bz2`.
 3.  Decompress the downloaded database file. The file is compressed
     using [bzip2](https://sourceware.org/bzip2/).
@@ -434,7 +434,7 @@ broken out by taxing district. To do so, pass a vector of multiple years
 to the `year_vec` argument of `tax_bill()`:
 
 ``` r
-multiple_years <- tax_bill(2010:2021, "14081020210000")
+multiple_years <- tax_bill(2010:2022, "14081020210000")
 multiple_years
 #>      year            pin class tax_code    av    eav agency_num
 #>   1: 2010 14081020210000   206    73001 69062 227905  010010000
@@ -443,11 +443,11 @@ multiple_years
 #>   4: 2010 14081020210000   206    73001 69062 227905  030210001
 #>   5: 2010 14081020210000   206    73001 69062 227905  030210002
 #>  ---                                                           
-#> 122: 2021 14081020210000   206    73105 70000 210189  043030000
-#> 123: 2021 14081020210000   206    73105 70000 210189  044060000
-#> 124: 2021 14081020210000   206    73105 70000 210189  050200000
-#> 125: 2021 14081020210000   206    73105 70000 210189  050200001
-#> 126: 2021 14081020210000   206    73105 70000 210189  080180000
+#> 133: 2022 14081020210000   206    73105 70000 204659  043030000
+#> 134: 2022 14081020210000   206    73105 70000 204659  044060000
+#> 135: 2022 14081020210000   206    73105 70000 204659  050200000
+#> 136: 2022 14081020210000   206    73105 70000 204659  050200001
+#> 137: 2022 14081020210000   206    73105 70000 204659  080180000
 #>                       agency_name     agency_major_type agency_minor_type
 #>   1:               COUNTY OF COOK           COOK COUNTY              COOK
 #>   2: FOREST PRESERVE DISTRICT ...           COOK COUNTY              COOK
@@ -455,11 +455,11 @@ multiple_years
 #>   4: CITY OF CHICAGO LIBRARY F... MUNICIPALITY/TOWNSHIP           LIBRARY
 #>   5: CITY OF CHICAGO SCHOOL BL... MUNICIPALITY/TOWNSHIP              MISC
 #>  ---                                                                     
-#> 122: CHICAGO COMMUNITY COLLEGE...                SCHOOL         COMM COLL
-#> 123:           BOARD OF EDUCATION                SCHOOL           UNIFIED
-#> 124:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
-#> 125: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
-#> 126: METRO WATER RECLAMATION D...         MISCELLANEOUS             WATER
+#> 133: CHICAGO COMMUNITY COLLEGE...                SCHOOL         COMM COLL
+#> 134:           BOARD OF EDUCATION                SCHOOL           UNIFIED
+#> 135:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
+#> 136: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
+#> 137: METRO WATER RECLAMATION D...         MISCELLANEOUS             WATER
 #>      agency_tax_rate final_tax
 #>   1:         0.00423    964.04
 #>   2:         0.00051    116.23
@@ -467,11 +467,11 @@ multiple_years
 #>   4:         0.00102    232.46
 #>   5:         0.00116    264.37
 #>  ---                          
-#> 122:         0.00145    225.36
-#> 123:         0.03517   4984.70
-#> 124:         0.00311    483.37
-#> 125:         0.00000      0.00
-#> 126:         0.00382    593.71
+#> 133:         0.00155    238.81
+#> 134:         0.03757   5313.22
+#> 135:         0.00323    497.64
+#> 136:         0.00000      0.00
+#> 137:         0.00374    576.22
 ```
 
 The `tax_bill()` function will automatically combine the years and PIN
@@ -509,7 +509,7 @@ multiple_years_plot <- ggplot(data = multiple_years_summ) +
   annotate(
     "text",
     x = 2015.8,
-    y = 12500,
+    y = 11500,
     label = "RPM TIF enacted",
     hjust = 1
   ) +
@@ -863,15 +863,15 @@ erDiagram
 
 - Currently, the per-district tax calculations for properties in the
   Red-Purple Modernization (RPM) TIF are slightly flawed. However, the
-  total tax bill per PIN is still accurate. See issue [\#4](https://github.com/ccao-data/ptaxsim/issues/4) for
+  total tax bill per PIN is still accurate. See issue [\#11](#11) for
   more information.
 - Special Service Area (SSA) rates must be calculated manually when
-  creating counterfactual bills. See issue [\#3](https://github.com/ccao-data/ptaxsim/issues/3) for more
+  creating counterfactual bills. See issue [\#31](#31) for more
   information.
 - In rare instances, a TIF can have multiple `agency_num` identifiers
   (usually there’s only one per TIF). The `tif_crosswalk` table
   determines what the “main” `agency_num` is for each TIF and pulls the
-  name and TIF information using that identifier. See archived issue [\#39](https://gitlab.com/ccao-data-science---modeling/packages/ptaxsim/-/issues/39)
+  name and TIF information using that identifier. See issue [\#39](#39)
   for more information.
 - PTAXSIM is relatively memory-efficient and can calculate every
   district line-item for every tax bill for the last 15 years (roughly
