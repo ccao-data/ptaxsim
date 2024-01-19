@@ -20,6 +20,7 @@ labels: release
 - [ ] Using the command line, grab the final compressed database file from the temporary directory (found at `db_path` after running `data-raw/create_db.R`) and move it to the project directory. Rename the file `ptaxsim-<TAX_YEAR>.<MAJOR VERSION>.<MINOR VERSION>.db.bz2`
 - [ ] Decompress the database file for local testing using `pbzip2`. The typical command will be something like `pbzip2 -d -k ptaxsim-2021.0.2.db.bz2`
 - [ ] Rename the decompressed local database file to `ptaxsim.db` for local testing. This is the file name that the unit tests and vignettes expect
+- [ ] Use [sqldiff](https://www.sqlite.org/sqldiff.html) or a similar tool to compare the new database file to the previous version. Ensure that the changes are expected
 - [ ] Restart R. Then run the unit tests (`devtools::test()` in the console) and vignettes (`pkgdown::build_site()` in the console) locally
 - [ ] Knit the `README.Rmd` file to update the database link at the top of the README. The link is pulled from the `ptaxsim.db` file's `metadata` table
 - [ ] If necessary, update the database diagrams in the README with any new fields or tables
