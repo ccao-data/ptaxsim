@@ -47,6 +47,12 @@ jobs:
           extra-packages: any::rcmdcheck
           needs: check
 
+      - name: Disk usage before build
+        run: df -h
+
+      - name: Largest files in the workspace
+        run: du -ah ${{ github.workspace }} | sort -rh | head -20
+        
       - name: Prepare PTAXSIM database
         uses: ./.github/actions/prepare-ptaxsim
         with:
