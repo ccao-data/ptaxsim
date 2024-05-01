@@ -1,5 +1,6 @@
 .*\.bz2$
 .*\.db$
+.*\.db.bz2$
 .*\.pdf$
 .*\.tar\.gz$
 .*\.tgz$
@@ -15,8 +16,6 @@
 \.lintr$
 \.travis\.yml$
 ^.*\.Rproj$
-^.*\.db$
-^.*\.db.bz2$
 ^README\.Rmd$
 ^\.Rproj\.user$
 ^\.apt$
