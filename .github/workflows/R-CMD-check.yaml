@@ -57,6 +57,9 @@ jobs:
           df -h
           ls -lah
 
+      - name: Cleanup temp directory
+        run: rm -rf /tmp/*
+
       - name: Check R package
         uses: r-lib/actions/check-r-package@v2
         with:
