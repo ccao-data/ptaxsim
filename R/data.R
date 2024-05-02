@@ -26,6 +26,8 @@
 #' @source \url{https://www.cookcountytreasurer.com/setsearchparameters.aspx}
 "sample_tax_bills_detail"
 
+print("hello world!")
+
 
 #' Summary data from real sample tax bills
 #'
