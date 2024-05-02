@@ -57,15 +57,6 @@ jobs:
           df -h
           ls -lah
 
-      - name: Cleanup specific temp file with wildcards
-        run: |
-          echo "Attempting to remove the following files:"
-          ls /tmp/Rtmp*/Rbuild*/ptaxsim/ptaxsim.db
-          rm -f /tmp/Rtmp*/Rbuild*/ptaxsim/ptaxsim.db
-          echo "Post-removal directory listing to verify cleanup:"
-          ls /tmp/Rtmp*/Rbuild*/ptaxsim/
-        shell: bash
-
       - name: Check R package
         uses: r-lib/actions/check-r-package@v2
         with:
