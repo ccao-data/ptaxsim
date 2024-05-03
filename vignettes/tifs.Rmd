@@ -41,6 +41,14 @@ library(sf)
 ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.db"))
 ```
 
+```{r, echo=FALSE}
+# This is needed to build the vignette using GitHub Actions
+ptaxsim_db_conn <- DBI::dbConnect(
+  RSQLite::SQLite(),
+  Sys.getenv("PTAXSIM_DB_PATH")
+)
+```
+
 ## Gathering PINs of interest
 
 To determine the TIF's impact, we first need a way to gather all the properties (PINs) in Wheeling. Fortunately, PTAXSIM's database has all the data required to accomplish this task.
@@ -188,7 +196,7 @@ wh_pins_map
 
 The map shows the TIF district highlighted in <span style="color:#7d26cd"><strong>purple</strong></span>. It covers mostly commercial buildings and a small park. The primary development is called the [Wheeling Town Center](https://thewheelingtowncenter.com/).
 
-### A quick aside: tax codes 
+### A quick aside: tax codes
 
 The Wheeling Town Center II TIF was created by layering an additional taxing district boundary onto existing districts. When this happened, a new ***tax code*** was created. A tax code is a 5-digit number that identifies the unique combination of overlapping tax districts for a given area.
 

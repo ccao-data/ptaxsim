@@ -10,8 +10,6 @@ name: pkgdown
 jobs:
   build-pkgdown-site:
     runs-on: ubuntu-latest
-    env:
-      PTAXSIM_DB_PATH: ${{ github.workspace }}/ptaxsim.db
 
     # Required for OIDC access to S3
     permissions:
@@ -37,9 +35,14 @@ jobs:
           needs: website
 
       - name: Prepare PTAXSIM database
+        id: prep_ptaxsim_db
         uses: ./.github/actions/prepare-ptaxsim
         with:
           ASSUMED_ROLE: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
+
+      - name: Set PTAXSIM database path
+        run: echo "PTAXSIM_DB_PATH=${{ steps.prep_ptaxsim_db.outputs.PTAXSIM_DB_DIR }}/ptaxsim.db" >> $GITHUB_ENV
+        shell: bash
 
       - name: Build pkgdown site
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)

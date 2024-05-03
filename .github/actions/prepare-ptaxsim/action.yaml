@@ -8,6 +8,9 @@ inputs:
   ASSUMED_ROLE:
     description: AWS role used for S3 actions
 outputs:
+  PTAXSIM_DB_DIR:
+    description: "PTAXSIM database directory on runner"
+    value: ${{ steps.set_db_dir.outputs.PTAXSIM_DB_DIR }}
   PTAXSIM_VERSION:
     description: "PTAXSIM database version"
     value: ${{ steps.version_db.outputs.PTAXSIM_VERSION }}
@@ -17,6 +20,14 @@ runs:
   steps:
     - name: Checkout
       uses: actions/checkout@v4
+
+    - name: Set database directory
+      id: set_db_dir
+      run: |
+        PDIR=$RUNNER_TEMP
+        echo "PTAXSIM_DB_DIR=$PDIR" >> $GITHUB_ENV
+        echo "PTAXSIM_DB_DIR=$PDIR" >> $GITHUB_OUTPUT
+      shell: bash
 
     - name: Get database version
       id: version_db
@@ -30,7 +41,7 @@ runs:
       uses: actions/cache@v3.3.2
       id: cache_db
       with:
-        path: ptaxsim.db.bz2
+        path: ${{ env.PTAXSIM_DB_DIR }}/ptaxsim.db.bz2
         key: ${{ format('{0}-{1}', env.PTAXSIM_VERSION, hashFiles('DESCRIPTION')) }}
         enableCrossOsArchive: true
 
@@ -47,23 +58,27 @@ runs:
       run: |
         aws s3 cp ${{ inputs.PTAXSIM_DB_BASE_URI }}/ptaxsim-${{ env.PTAXSIM_VERSION }}.db.bz2 ptaxsim.db.bz2 --quiet
       shell: bash
+      working-directory: ${{ env.PTAXSIM_DB_DIR }}
 
     - name: Unpack database (Linux)
       if: runner.os == 'Linux'
       run: |
         sudo apt-get install -y pbzip2
-        pbzip2 -dk ${{ github.workspace }}/ptaxsim.db.bz2
+        pbzip2 -dk ptaxsim.db.bz2
       shell: bash
+      working-directory: ${{ env.PTAXSIM_DB_DIR }}
 
     - name: Unpack database (macOS)
       if: runner.os == 'macOS'
       run: |
         brew install pbzip2
-        pbzip2 -dk ${{ github.workspace }}/ptaxsim.db.bz2
+        pbzip2 -dk ptaxsim.db.bz2
       shell: bash
+      working-directory: ${{ env.PTAXSIM_DB_DIR }}
 
     - name: Unpack database (Windows)
       if: runner.os == 'Windows'
       run: |
-        7z x ${{ github.workspace }}\ptaxsim.db.bz2
+        7z x ptaxsim.db.bz2
       shell: cmd
+      working-directory: ${{ env.PTAXSIM_DB_DIR }}
