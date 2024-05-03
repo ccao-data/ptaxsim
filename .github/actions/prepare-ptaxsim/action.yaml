@@ -24,8 +24,11 @@ runs:
     - name: Set database directory
       id: set_db_dir
       run: |
-        echo "PTAXSIM_DB_DIR=$RUNNER_TEMP" >> $GITHUB_ENV
-        echo "PTAXSIM_DB_DIR=$RUNNER_TEMP" >> $GITHUB_OUTPUT
+        PDIR=$RUNNER_TEMP
+        echo "PTAXSIM_DB_DIR=$PDIR" >> $GITHUB_ENV
+        echo "PTAXSIM_DB_DIR=$PDIR" >> $GITHUB_OUTPUT
+        if [[ "$RUNNER_OS" =~ ^(Linux|macOS)$ ]] && mkdir -p $PDIR
+        if [[ "$RUNNER_OS" == "Windows" ]] && mkdir $PDIR
       shell: bash
 
     - name: Get database version
@@ -55,26 +58,29 @@ runs:
       id: fetch_db
       if: steps.cache_db.outputs.cache-hit != 'true'
       run: |
-        cd ${{ env.PTAXSIM_DB_DIR }}
         aws s3 cp ${{ inputs.PTAXSIM_DB_BASE_URI }}/ptaxsim-${{ env.PTAXSIM_VERSION }}.db.bz2 ptaxsim.db.bz2 --quiet
       shell: bash
+      working-directory: ${{ env.PTAXSIM_DB_DIR }}
 
     - name: Unpack database (Linux)
       if: runner.os == 'Linux'
       run: |
         sudo apt-get install -y pbzip2
-        pbzip2 -dk ${{ env.PTAXSIM_DB_DIR }}/ptaxsim.db.bz2
+        pbzip2 -dk ptaxsim.db.bz2
       shell: bash
+      working-directory: ${{ env.PTAXSIM_DB_DIR }}
 
     - name: Unpack database (macOS)
       if: runner.os == 'macOS'
       run: |
         brew install pbzip2
-        pbzip2 -dk ${{ env.PTAXSIM_DB_DIR }}/ptaxsim.db.bz2
+        pbzip2 -dk ptaxsim.db.bz2
       shell: bash
+      working-directory: ${{ env.PTAXSIM_DB_DIR }}
 
     - name: Unpack database (Windows)
       if: runner.os == 'Windows'
       run: |
-        7z x ${{ env.PTAXSIM_DB_DIR }}\ptaxsim.db.bz2
+        7z x ptaxsim.db.bz2
       shell: cmd
+      working-directory: ${{ env.PTAXSIM_DB_DIR }}
