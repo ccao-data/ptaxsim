@@ -8,9 +8,9 @@ inputs:
   ASSUMED_ROLE:
     description: AWS role used for S3 actions
 outputs:
-  PTAXSIM_DB_PATH:
-    description: "PTAXSIM database path on runner"
-    value: ${{ steps.set_db_path.outputs.PTAXSIM_DB_PATH }}
+  PTAXSIM_DB_DIR:
+    description: "PTAXSIM database directory on runner"
+    value: ${{ steps.set_db_dir.outputs.PTAXSIM_DB_DIR }}
   PTAXSIM_VERSION:
     description: "PTAXSIM database version"
     value: ${{ steps.version_db.outputs.PTAXSIM_VERSION }}
@@ -21,12 +21,11 @@ runs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Set database path
-      id: set_db_path
+    - name: Set database directory
+      id: set_db_dir
       run: |
-        echo "PTAXSIM_DB_PATH_COMP=$RUNNER_TEMP/ptaxsim.db.bz2" >> $GITHUB_ENV
-        echo "PTAXSIM_DB_PATH=$RUNNER_TEMP/ptaxsim.db" >> $GITHUB_ENV
-        echo "PTAXSIM_DB_PATH=$RUNNER_TEMP/ptaxsim.db" >> $GITHUB_OUTPUT
+        echo "PTAXSIM_DB_DIR=$RUNNER_TEMP" >> $GITHUB_ENV
+        echo "PTAXSIM_DB_DIR=$RUNNER_TEMP" >> $GITHUB_OUTPUT
       shell: bash
 
     - name: Get database version
@@ -41,7 +40,7 @@ runs:
       uses: actions/cache@v3.3.2
       id: cache_db
       with:
-        path: ${{ env.PTAXSIM_DB_PATH_COMP }}
+        path: ${{ env.PTAXSIM_DB_DIR }}/ptaxsim.db.bz2
         key: ${{ format('{0}-{1}', env.PTAXSIM_VERSION, hashFiles('DESCRIPTION')) }}
         enableCrossOsArchive: true
 
@@ -56,25 +55,25 @@ runs:
       id: fetch_db
       if: steps.cache_db.outputs.cache-hit != 'true'
       run: |
-        aws s3 cp ${{ inputs.PTAXSIM_DB_BASE_URI }}/ptaxsim-${{ env.PTAXSIM_VERSION }}.db.bz2 ${{ env.PTAXSIM_DB_PATH_COMP }} --quiet
+        aws s3 cp ${{ inputs.PTAXSIM_DB_BASE_URI }}/ptaxsim-${{ env.PTAXSIM_VERSION }}.db.bz2 ${{ env.PTAXSIM_DB_DIR }}/ptaxsim.db.bz2 --quiet
       shell: bash
 
     - name: Unpack database (Linux)
       if: runner.os == 'Linux'
       run: |
         sudo apt-get install -y pbzip2
-        pbzip2 -dk ${{ env.PTAXSIM_DB_PATH_COMP }}
+        pbzip2 -dk ${{ env.PTAXSIM_DB_DIR }}/ptaxsim.db.bz2
       shell: bash
 
     - name: Unpack database (macOS)
       if: runner.os == 'macOS'
       run: |
         brew install pbzip2
-        pbzip2 -dk ${{ env.PTAXSIM_DB_PATH_COMP }}
+        pbzip2 -dk ${{ env.PTAXSIM_DB_DIR }}/ptaxsim.db.bz2
       shell: bash
 
     - name: Unpack database (Windows)
       if: runner.os == 'Windows'
       run: |
-        7z x ${{ env.PTAXSIM_DB_PATH_COMP }}
+        7z x ${{ env.PTAXSIM_DB_DIR }}\ptaxsim.db.bz2
       shell: cmd

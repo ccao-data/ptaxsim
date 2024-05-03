@@ -36,7 +36,7 @@ jobs:
           ASSUMED_ROLE: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
 
       - name: Set PTAXSIM database path
-        run: echo "PTAXSIM_DB_PATH=${{ steps.prep_ptaxsim_db.outputs.PTAXSIM_DB_PATH }}" >> $GITHUB_ENV
+        run: echo "PTAXSIM_DB_PATH=${{ steps.prep_ptaxsim_db.outputs.PTAXSIM_DB_DIR }}/ptaxsim.db" >> $GITHUB_ENV
         shell: bash
 
       - name: Test coverage
