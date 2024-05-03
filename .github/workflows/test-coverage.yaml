@@ -8,8 +8,6 @@ name: test-coverage
 jobs:
   test-coverage:
     runs-on: ubuntu-latest
-    env:
-      PTAXSIM_DB_PATH: ${{ github.workspace }}/ptaxsim.db
 
     # Required for OIDC access to S3
     permissions:
