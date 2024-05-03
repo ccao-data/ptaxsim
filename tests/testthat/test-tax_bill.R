@@ -244,4 +244,10 @@ test_that("agnostic to input data.table row order", {
   )
 })
 
+test_that("Returns 0 for agency with base/levy of 0", {
+  expect_false(
+    any(is.nan(tax_bill(2022, c("12283000140000", "12284120030000"))$final_tax))
+  )
+})
+
 DBI::dbDisconnect(ptaxsim_db_conn)
