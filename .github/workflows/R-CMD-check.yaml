@@ -52,6 +52,9 @@ jobs:
         with:
           ASSUMED_ROLE: ${{ secrets.AWS_IAM_ROLE_TO_ASSUME_ARN }}
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+
       - name: Check R package
         uses: r-lib/actions/check-r-package@v2
         with:
