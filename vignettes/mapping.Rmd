@@ -41,6 +41,14 @@ library(tidyr)
 ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.db"))
 ```
 
+```{r, echo=FALSE}
+# This is needed to build the vignette using GitHub Actions
+ptaxsim_db_conn <- DBI::dbConnect(
+  RSQLite::SQLite(),
+  Sys.getenv("PTAXSIM_DB_PATH")
+)
+```
+
 ## Single taxing district
 
 We're going to use the the Village of Ford Heights as our example taxing district, since it's relatively small and uncomplicated.
@@ -362,7 +370,7 @@ fhm_pins <- DBI::dbGetQuery(
 )
 ```
 
-This gives us about 2,300 PINs, roughly 300 more than the Village of Ford Heights has alone. We can fetch and prepare the geometries the same way we did for the single district case. 
+This gives us about 2,300 PINs, roughly 300 more than the Village of Ford Heights has alone. We can fetch and prepare the geometries the same way we did for the single district case.
 
 ```{r}
 fhm_pins_geo <- lookup_pin10_geometry(

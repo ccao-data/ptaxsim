@@ -50,6 +50,14 @@ library(sf)
 ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.db"))
 ```
 
+```{r, echo=FALSE}
+# This is needed to build the vignette using GitHub Actions
+ptaxsim_db_conn <- DBI::dbConnect(
+  RSQLite::SQLite(),
+  Sys.getenv("PTAXSIM_DB_PATH")
+)
+```
+
 ## Gathering PINs of interest
 
 To determine the impact of appeals, we first need a way to gather all the properties (PINs) in Schaumburg. Fortunately, PTAXSIM's database has all the data required to accomplish this task.
@@ -228,7 +236,7 @@ sb_pins_summ <- sb_pins_all %>%
     ),
     idx = (med_av / med_av[stage == "2018\nboard"]) * 100
   )
-```  
+```
 
 Finally, we can plot the index over time to see how reassessment and the subsequent appeals at each stage impacted assessed values.
 

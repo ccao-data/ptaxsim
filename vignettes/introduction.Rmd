@@ -49,6 +49,14 @@ library(ptaxsim)
 ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("ptaxsim.db"))
   ```
 
+  ```{r, echo=FALSE}
+# This is needed to build the vignette using GitHub Actions
+ptaxsim_db_conn <- DBI::dbConnect(
+  RSQLite::SQLite(),
+  Sys.getenv("PTAXSIM_DB_PATH")
+)
+  ```
+
 ## The main function - `tax_bill()` {#main-arguments}
 
 PTAXSIM has a single primary function - `tax_bill()` - with two *required* arguments:

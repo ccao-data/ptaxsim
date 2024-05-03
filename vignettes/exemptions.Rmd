@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-Property tax exemptions are savings that lower a homeowner’s property tax bill. They work by reducing or freezing the taxable value (Equalized Assessed Value, or EAV) of a home. For example, the most common exemption, the Homeowner Exemption, reduces EAV by \$10,000. 
+Property tax exemptions are savings that lower a homeowner’s property tax bill. They work by reducing or freezing the taxable value (Equalized Assessed Value, or EAV) of a home. For example, the most common exemption, the Homeowner Exemption, reduces EAV by \$10,000.
 
 Once the exemption EAV has been subtracted from the property's EAV, the final EAV is multiplied by the local tax rate to get the final property tax bill. Since local tax rates can vary significantly by area, the actual effective value of each exemption likewise varies geographically.
 
@@ -39,6 +39,14 @@ library(ggplot2)
 library(ptaxsim)
 
 ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.db"))
+```
+
+```{r, echo=FALSE}
+# This is needed to build the vignette using GitHub Actions
+ptaxsim_db_conn <- DBI::dbConnect(
+  RSQLite::SQLite(),
+  Sys.getenv("PTAXSIM_DB_PATH")
+)
 ```
 
 The PIN we'll use is **25-32-114-005-0000**, the same PIN whose bill is shown above. This is a small, single-family property in Calumet with a very typical exemption situation, just a Homeowner Exemption.
@@ -183,7 +191,7 @@ The exemption amount for this PIN has increased in tandem with increases in the 
 
 We can also use PTAXSIM to answer hypotheticals. For example, how would this PIN's bill history change if the Homeowner Exemption increased from \$10,000 to \$15,000 in 2018?
 
-To find out, we again create a modified PIN input to pass to `tax_bill()`. This time, we increase the Homeowner Exemption to $15,000 for all years after 2018. 
+To find out, we again create a modified PIN input to pass to `tax_bill()`. This time, we increase the Homeowner Exemption to $15,000 for all years after 2018.
 
 ```{r}
 exe_dt_2 <- lookup_pin(2006:2020, "25321140050000") %>%
@@ -293,7 +301,7 @@ We're using `data.table` syntax here because it's much faster than `dplyr` when 
 t_bills_w_exe <- tax_bill(t_years, t_pins)[, stage := "With exemptions"]
 ```
 
-Unlike a single PIN, removing exemptions from many PINs means that the base (the amount of total taxable value available) will change substantially. In order to accurately model the effect of removing exemptions, we need to fully recalculate the base of each district by adding the sum of taxable value recovered from each PIN. 
+Unlike a single PIN, removing exemptions from many PINs means that the base (the amount of total taxable value available) will change substantially. In order to accurately model the effect of removing exemptions, we need to fully recalculate the base of each district by adding the sum of taxable value recovered from each PIN.
 
 To start, we use the `lookup_pin()` function to recover the total EAV of exemptions for each PIN.
 
@@ -367,7 +375,7 @@ t_no_exe_summ <- rbind(t_bills_w_exe, t_bills_no_exe)[
 ]
 ```
 
-Finally, we can plot the average bill with and without exemptions by property type. 
+Finally, we can plot the average bill with and without exemptions by property type.
 
 <details>
 
@@ -427,7 +435,7 @@ Exemptions in Calumet have significantly increased in both volume and amount (vi
 
 Conversely, Calumet's commercial property owners have picked up an increasingly large share of the overall tax burden since 2006. In 2019, the average commercial property paid about $1,100 more than they would have if exemptions did not exist.
 
-## Changing exemptions 
+## Changing exemptions
 
 PTAXSIM can also answer hypotheticals about large areas. For example, how would the average residential tax bill in Calumet change if the Senior Exemption increased by $5,000 and the Senior Freeze Exemption was removed?
 
