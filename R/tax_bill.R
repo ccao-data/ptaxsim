@@ -194,6 +194,7 @@ tax_bill <- function(year_vec,
   # Calculate the exemption effect by subtracting the exempt amount from
   # the total taxable EAV
   dt[, agency_tax_rate := agency_total_ext / as.numeric(agency_total_eav)]
+  dt[, agency_tax_rate := replace(agency_tax_rate, is.nan(agency_tax_rate), 0)]
   dt[, tax_amt_exe := exe_total * agency_tax_rate]
   dt[, tax_amt_pre_exe := round(eav * agency_tax_rate, 2)]
   dt[, tax_amt_post_exe := round(tax_amt_pre_exe - tax_amt_exe, 2)]

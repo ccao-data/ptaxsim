@@ -46,7 +46,15 @@ library(tidyr)
 ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.db"))
 ```
 
-The example PIN we’ll use is **16-26-406-015-0000**. This is a small, single-family property in West Chicago without any exemptions. We can use the `tax_bill()` function to get every bill for this PIN from 2006 to 2021. 
+```{r, echo=FALSE}
+# This is needed to build the vignette using GitHub Actions
+ptaxsim_db_conn <- DBI::dbConnect(
+  RSQLite::SQLite(),
+  Sys.getenv("PTAXSIM_DB_PATH")
+)
+```
+
+The example PIN we’ll use is **16-26-406-015-0000**. This is a small, single-family property in West Chicago without any exemptions. We can use the `tax_bill()` function to get every bill for this PIN from 2006 to 2021.
 
 ```{r}
 p <- tax_bill(2006:2021, "16264060150000")
@@ -744,7 +752,7 @@ cw_fut_agency_tots <- DBI::dbGetQuery(
 
 ## Levies
 
-We also need to recalculate levies for the whole county based on our assumption: 
+We also need to recalculate levies for the whole county based on our assumption:
 
 - All levies will change by their average change of the last 3 years
 
@@ -768,7 +776,7 @@ cw_fut_levies <- lookup_agency(
 
 ## Preparing inputs
 
-Now that we've calculated our hypothetical future values, we need to transform the data into the format excepted by `tax_bill()`. We do this by replicating the input format provided by each `lookup_` function from PTAXSIM. 
+Now that we've calculated our hypothetical future values, we need to transform the data into the format excepted by `tax_bill()`. We do this by replicating the input format provided by each `lookup_` function from PTAXSIM.
 
 ```{r}
 # Prep pin_dt. Keep only Ward 22 pins
