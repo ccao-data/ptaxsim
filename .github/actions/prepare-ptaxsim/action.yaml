@@ -27,8 +27,8 @@ runs:
         PDIR=$RUNNER_TEMP
         echo "PTAXSIM_DB_DIR=$PDIR" >> $GITHUB_ENV
         echo "PTAXSIM_DB_DIR=$PDIR" >> $GITHUB_OUTPUT
-        if [[ "$RUNNER_OS" =~ ^(Linux|macOS)$ ]] && mkdir -p $PDIR
-        if [[ "$RUNNER_OS" == "Windows" ]] && mkdir $PDIR
+        if [[ "$RUNNER_OS" =~ ^(Linux|macOS)$ ]]; then mkdir -p $PDIR; fi
+        if [[ "$RUNNER_OS" == "Windows" ]]; then mkdir $PDIR; fi
       shell: bash
 
     - name: Get database version
