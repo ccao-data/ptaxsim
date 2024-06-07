@@ -59,6 +59,8 @@ jobs:
           for file in inst/mermaid/*.mmd; do
             mmdc -i "$file" -o "${file/.mmd/.svg}"
           done
+          mkdir -p docs/mermaid
+          mv *.svg docs/mermaid
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
 
