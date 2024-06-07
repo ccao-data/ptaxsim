@@ -60,7 +60,7 @@ jobs:
             mmdc -i "$file" -o "${file/.mmd/.pdf}"
           done
           mkdir -p docs/mermaid
-          mv inst/mermaid/*.svg docs/mermaid
+          mv inst/mermaid/*.pdf docs/mermaid
         working-directory: ${{ env.PROJECT_DIR }}
         shell: bash
 
