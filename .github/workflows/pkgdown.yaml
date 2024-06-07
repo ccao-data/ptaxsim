@@ -48,11 +48,25 @@ jobs:
         run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
         shell: Rscript {0}
 
+      - name: Setup node
+        uses: actions/setup-node@v4
+
+      - name: Install docs build dependencies
+        run: npm install -g @mermaid-js/mermaid-cli
+
+      - name: Prepare Mermaid assets for docs
+        run: |
+          for file in inst/mermaid/*.mmd; do
+            mmdc -i "$file" -o "${file/.mmd/.svg}"
+          done
+        working-directory: ${{ env.PROJECT_DIR }}
+        shell: bash
+
       - name: Configure pages
         uses: actions/configure-pages@v3
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: 'docs'
 
