@@ -44,9 +44,9 @@ jobs:
         run: echo "PTAXSIM_DB_PATH=${{ steps.prep_ptaxsim_db.outputs.PTAXSIM_DB_DIR }}/ptaxsim.db" >> $GITHUB_ENV
         shell: bash
 
-      # - name: Build pkgdown site
-      #   run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
-      #   shell: Rscript {0}
+      - name: Build pkgdown site
+        run: pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
+        shell: Rscript {0}
 
       - name: Setup node
         uses: actions/setup-node@v4
@@ -57,7 +57,7 @@ jobs:
       - name: Prepare Mermaid assets for docs
         run: |
           for file in inst/mermaid/*.mmd; do
-            mmdc -i "$file" -o "${file/.mmd/.svg}"
+            mmdc -i "$file" -o "${file/.mmd/.pdf}"
           done
           mkdir -p docs/mermaid
           mv inst/mermaid/*.svg docs/mermaid

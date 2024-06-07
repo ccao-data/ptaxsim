@@ -566,6 +566,10 @@ data was available in mid-2020.
 
 ### Database diagram
 
+> :warning: [Click
+> here](https://ccao-data.github.io/ptaxsim/mermaid/er-diagram-big.pdf)
+> for a more detailed version of the diagram below.
+
 ``` mermaid
 erDiagram
 
