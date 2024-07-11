@@ -27,10 +27,10 @@ row_to_names <- function(df) {
 # Different tax bills can have different table sizes depending on the number of
 # taxing district.
 
-extract_tax_bill <- function(file){
+extract_tax_bill <- function(file) {
   base_file <- basename(file)
   tbl <- pdf_text(file) %>%
-    paste(., collapse='\n') %>%
+    paste(., collapse = "\n") %>%
     str_extract(., regex("MISCELLANEOUS TAXES.*", dotall = TRUE)) %>%
     str_split(., "\n") %>%
     unlist() %>%
