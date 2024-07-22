@@ -49,12 +49,10 @@ extract_tax_bill <- function(file) {
       flag = is.na(prev_tax),
       prev_tax = if_else(flag,
                          pension,
-                         prev_tax
-      ),
+                         prev_tax),
       pension = if_else(flag,
                         NA,
-                        pension
-      )
+                        pension)
     ) %>%
     select(-flag) %>%
     filter(
