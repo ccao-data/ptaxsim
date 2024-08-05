@@ -1,5 +1,7 @@
 destination: public
 url: https://github.com/ccao-data/ptaxsim
+template:
+  bootstrap: 5
 
 authors:
   sidebar:
@@ -10,21 +12,20 @@ authors:
     href: https://github.com/rross0
 
 reference:
+  - title: Functions
+  - subtitle: Calculate tax bills
+    contents:
+      - tax_bill
+  - subtitle: Lookup tax data
+    contents:
+      - starts_with("lookup_")
+  - subtitle: Check database validity
+    contents:
+      - starts_with("check_")
 
-- title: Functions
-- subtitle: Calculate tax bills
-- contents:
-  - tax_bill
-- subtitle: Lookup tax data
-- contents:
-  - starts_with("lookup_")
-- subtitle: Check database validity
-- contents:
-  - starts_with("check_")
-
-- title: Data
-- subtitle: Sample tax bills
-  desc: Real Cook County tax bill data used for testing and examples
-- contents:
-  - sample_tax_bills_detail
-  - sample_tax_bills_summary
+  - title: Data
+  - subtitle: Sample tax bills
+    desc: Real Cook County tax bill data used for testing and examples
+    contents:
+      - sample_tax_bills_detail
+      - sample_tax_bills_summary
