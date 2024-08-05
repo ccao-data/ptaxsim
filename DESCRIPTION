@@ -51,7 +51,7 @@ Suggests:
     sf,
     snakecase,
     stringr,
-    tabulizer,
+    tabulapdf,
     testthat,
     tidyr,
     units,
@@ -60,6 +60,6 @@ Depends:
     R (>= 2.10)
 Remotes: 
     paleolimbot/geoarrow,
-    ropensci/tabulizer
+    ropensci/tabulapdf
 Config/Requires_DB_Version: 2021.0.4
 Config/Wants_DB_Version: 2023.0.0
