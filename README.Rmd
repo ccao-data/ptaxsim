@@ -173,7 +173,7 @@ There are some minor differences between PTAXSIM and the real bill. The taxing d
 We can also look at a single property over multiple years, in this case broken out by taxing district. To do so, pass a vector of multiple years to the `year_vec` argument of `tax_bill()`:
 
 ```{r multi_year_1, message=FALSE, warning=FALSE}
-multiple_years <- tax_bill(2010:2021, "14081020210000")
+multiple_years <- tax_bill(2010:2023, "14081020210000")
 multiple_years
 ```
 
@@ -203,7 +203,10 @@ library(ggplot2)
 
 # Plot the amount of taxes going to each district over time
 multiple_years_plot <- ggplot(data = multiple_years_summ) +
-  geom_area(aes(x = year, y = final_tax, fill = agency_minor_type)) +
+  geom_area(
+    aes(x = year, y = final_tax, fill = agency_minor_type),
+    alpha = 0.7
+  ) +
   geom_vline(xintercept = 2016, linetype = "dashed", alpha = 0.3) +
   annotate(
     "text",
@@ -215,7 +218,8 @@ multiple_years_plot <- ggplot(data = multiple_years_summ) +
   scale_y_continuous(
     name = "Total Tax Amount",
     labels = scales::dollar,
-    expand = c(0, 0)
+    expand = c(0, 0),
+    n.breaks = 8
   ) +
   scale_x_continuous(name = "Year", n.breaks = 7) +
   scale_fill_manual(values = scales::hue_pal()(10)) +
