@@ -122,7 +122,10 @@ tif_main_pdf <- map_dfr(summ_file_names_pdf, function(file) {
       "agency_num", "tif_name", "first_year",
       "curr_year_revenue", "prev_year_revenue", "pct_diff"
     )) %>%
-    filter(agency_num != "AGENCY") %>%
+    filter(
+      agency_num != "AGENCY" | is.na(agency_num),
+      first_year != "Year"
+    ) %>%
     mutate(across(where(is.character), ~ na_if(.x, "-"))) %>%
     mutate(across(where(is.character), ~ na_if(.x, ""))) %>%
     mutate(
