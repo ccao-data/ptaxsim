@@ -37,13 +37,13 @@ Table of Contents
 > installation](#database-installation) for details.
 >
 > [**Link to PTAXSIM
-> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2022.0.0.db.bz2)
-> (DB version: 2022.0.0; Last updated: 2024-01-19 04:40:35)
+> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2023.0.0.db.bz2)
+> (DB version: 2023.0.0; Last updated: 2024-08-05 19:43:42)
 
 PTAXSIM is an R package/database to approximate Cook County property tax
 bills. It uses real assessment, exemption, TIF, and levy data to
 generate historic, line-item tax bills (broken out by taxing district)
-for any property from 2006 to 2022. Given some careful assumptions and
+for any property from 2006 to 2023. Given some careful assumptions and
 data manipulation, it can also provide hypothetical, but factually
 grounded, answers to questions such as:
 
@@ -173,9 +173,9 @@ database:
 
 1.  Download the compressed database file from the CCAO’s public S3
     bucket. [Link
-    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2022.0.0.db.bz2).
+    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2023.0.0.db.bz2).
 2.  (Optional) Rename the downloaded database file by removing the
-    version number, i.e. ptaxsim-2022.0.0.db.bz2 becomes
+    version number, i.e. ptaxsim-2023.0.0.db.bz2 becomes
     `ptaxsim.db.bz2`.
 3.  Decompress the downloaded database file. The file is compressed
     using [bzip2](https://sourceware.org/bzip2/).
@@ -438,7 +438,7 @@ broken out by taxing district. To do so, pass a vector of multiple years
 to the `year_vec` argument of `tax_bill()`:
 
 ``` r
-multiple_years <- tax_bill(2010:2021, "14081020210000")
+multiple_years <- tax_bill(2010:2023, "14081020210000")
 multiple_years
 #> Key: <year, pin, agency_num>
 #>       year            pin  class tax_code    av    eav agency_num
@@ -449,11 +449,11 @@ multiple_years
 #>   4:  2010 14081020210000    206    73001 69062 227905  030210001
 #>   5:  2010 14081020210000    206    73001 69062 227905  030210002
 #>  ---                                                             
-#> 122:  2021 14081020210000    206    73105 70000 210189  043030000
-#> 123:  2021 14081020210000    206    73105 70000 210189  044060000
-#> 124:  2021 14081020210000    206    73105 70000 210189  050200000
-#> 125:  2021 14081020210000    206    73105 70000 210189  050200001
-#> 126:  2021 14081020210000    206    73105 70000 210189  080180000
+#> 144:  2023 14081020210000    206    73105 70000 211141  043030000
+#> 145:  2023 14081020210000    206    73105 70000 211141  044060000
+#> 146:  2023 14081020210000    206    73105 70000 211141  050200000
+#> 147:  2023 14081020210000    206    73105 70000 211141  050200001
+#> 148:  2023 14081020210000    206    73105 70000 211141  080180000
 #>                       agency_name     agency_major_type agency_minor_type
 #>                            <char>                <char>            <char>
 #>   1:               COUNTY OF COOK           COOK COUNTY              COOK
@@ -462,11 +462,11 @@ multiple_years
 #>   4: CITY OF CHICAGO LIBRARY F... MUNICIPALITY/TOWNSHIP           LIBRARY
 #>   5: CITY OF CHICAGO SCHOOL BL... MUNICIPALITY/TOWNSHIP              MISC
 #>  ---                                                                     
-#> 122: CHICAGO COMMUNITY COLLEGE...                SCHOOL         COMM COLL
-#> 123:           BOARD OF EDUCATION                SCHOOL           UNIFIED
-#> 124:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
-#> 125: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
-#> 126: METRO WATER RECLAMATION D...         MISCELLANEOUS             WATER
+#> 144: CHICAGO COMMUNITY COLLEGE...                SCHOOL         COMM COLL
+#> 145:           BOARD OF EDUCATION                SCHOOL           UNIFIED
+#> 146:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
+#> 147: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
+#> 148: METRO WATER RECLAMATION D...         MISCELLANEOUS             WATER
 #>      agency_tax_rate final_tax
 #>                <num>     <num>
 #>   1:         0.00423    964.04
@@ -475,11 +475,11 @@ multiple_years
 #>   4:         0.00102    232.46
 #>   5:         0.00116    264.37
 #>  ---                          
-#> 122:         0.00145    225.36
-#> 123:         0.03517   4984.70
-#> 124:         0.00311    483.37
-#> 125:         0.00000      0.00
-#> 126:         0.00382    593.71
+#> 144:         0.00158    245.36
+#> 145:         0.03829   5411.54
+#> 146:         0.00318    493.83
+#> 147:         0.00000      0.00
+#> 148:         0.00345    535.76
 ```
 
 The `tax_bill()` function will automatically combine the years and PIN
@@ -512,7 +512,10 @@ library(ggplot2)
 
 # Plot the amount of taxes going to each district over time
 multiple_years_plot <- ggplot(data = multiple_years_summ) +
-  geom_area(aes(x = year, y = final_tax, fill = agency_minor_type)) +
+  geom_area(
+    aes(x = year, y = final_tax, fill = agency_minor_type),
+    alpha = 0.7
+  ) +
   geom_vline(xintercept = 2016, linetype = "dashed", alpha = 0.3) +
   annotate(
     "text",
@@ -524,7 +527,8 @@ multiple_years_plot <- ggplot(data = multiple_years_summ) +
   scale_y_continuous(
     name = "Total Tax Amount",
     labels = scales::dollar,
-    expand = c(0, 0)
+    expand = c(0, 0),
+    n.breaks = 8
   ) +
   scale_x_continuous(name = "Year", n.breaks = 7) +
   scale_fill_manual(values = scales::hue_pal()(10)) +

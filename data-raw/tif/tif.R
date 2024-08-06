@@ -7,7 +7,7 @@ library(purrr)
 library(readxl)
 library(snakecase)
 library(stringr)
-library(tabulizer)
+library(tabulapdf)
 library(tidyr)
 
 calc_mode <- function(x) {
@@ -112,7 +112,7 @@ tif_main_pdf <- map_dfr(summ_file_names_pdf, function(file) {
 
   # Extract tables from PDFs. Some tables get an extra 3rd column which we can
   # drop
-  tables <- extract_tables(file) %>%
+  tables <- extract_tables(file, method = "stream") %>%
     map(function(x) if (ncol(x) > 6) x[, c(1:2, 4:7)] else x) %>%
     .[lapply(., nrow) > 1]
 
@@ -122,7 +122,10 @@ tif_main_pdf <- map_dfr(summ_file_names_pdf, function(file) {
       "agency_num", "tif_name", "first_year",
       "curr_year_revenue", "prev_year_revenue", "pct_diff"
     )) %>%
-    filter(agency_num != "AGENCY") %>%
+    filter(
+      agency_num != "AGENCY" | is.na(agency_num),
+      first_year != "Year"
+    ) %>%
     mutate(across(where(is.character), ~ na_if(.x, "-"))) %>%
     mutate(across(where(is.character), ~ na_if(.x, ""))) %>%
     mutate(
@@ -188,6 +191,16 @@ tif_main <- bind_rows(
     agency_num = ifelse(
       tif_name == "Village of East Dundee" & year == 2013,
       "030320500",
+      agency_num
+    ),
+    agency_num = ifelse(
+      agency_num == "003300777700501" & year == 2006,
+      "030770501",
+      agency_num
+    ),
+    agency_num = ifelse(
+      agency_num == "003300777700509" & year %in% c(2007, 2008),
+      "030770509",
       agency_num
     ),
     agency_num = ifelse(

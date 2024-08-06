@@ -26,9 +26,11 @@ row_to_names <- function(df) {
 
 # Different tax bills can have different table sizes depending on the number of
 # taxing district.
+
 extract_tax_bill <- function(file) {
   base_file <- basename(file)
-  tbl <- pdf_text(file)[[1]] %>%
+  tbl <- pdf_text(file) %>%
+    paste(., collapse = "\n") %>%
     str_extract(., regex("MISCELLANEOUS TAXES.*", dotall = TRUE)) %>%
     str_split(., "\n") %>%
     unlist() %>%
@@ -61,7 +63,8 @@ extract_tax_bill <- function(file) {
         agency_name,
         paste0(
           "TAXES|Assess|Property|EAV|Local Tax|",
-          "Total Tax|Do not|Equalizer|cookcountyclerk.com"
+          "Total Tax|Do not|Equalizer|cookcountyclerk.com|",
+          "Pursuant|meaning of|If paying later|\\d{15}+|By \\d{2}/"
         )
       )
     )
@@ -75,6 +78,7 @@ extract_tax_bill <- function(file) {
 
   return(out)
 }
+
 
 # Collect all scanned tables + meta data in a data frame
 bills <- map(list_pdf_inputs, extract_tax_bill)

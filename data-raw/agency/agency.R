@@ -268,7 +268,7 @@ agency <- map_dfr(file_names, function(file) {
     agency_name = str_trim(str_squish(agency_name)),
     agg_ext_base_year = as.integer(agg_ext_base_year),
     agg_ext_base_year = na_if(agg_ext_base_year, 0),
-    home_rule_ind = ifelse(home_rule_ind %in% c("Y", "No PTELL"), TRUE, FALSE),
+    home_rule_ind = home_rule_ind %in% c("Y", "HR", "No PTELL"),
     home_rule_ind = replace_na(home_rule_ind, FALSE),
     across(
       c(
@@ -286,8 +286,12 @@ agency <- map_dfr(file_names, function(file) {
     across(starts_with("cty_"), ~ replace_na(.x, 0)),
     # Make all percentages decimals
     across(
-      c(pct_burden, reduction_pct),
-      ~ ifelse(year != 2017, .x / 100, .x)
+      pct_burden,
+      ~ ifelse(!year %in% c(2017, 2023), .x / 100, .x)
+    ),
+    across(
+      reduction_pct,
+      ~ ifelse(!year %in% c(2017), .x / 100, .x)
     ),
     reduction_type = ifelse(
       !toupper(reduction_type) %in% c("NO REDUCTION", "NONE"),
