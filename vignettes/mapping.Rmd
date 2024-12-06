@@ -218,10 +218,9 @@ Sometimes you may need to create a map of a non-taxing area like a ward, judicia
 To demonstrate such a case, we can use Chicago Ward 48. The first thing we need to do is find a boundary of Ward 48. Fortunately, the ward boundaries are available on the [Chicago Data Portal](https://data.cityofchicago.org/Facilities-Geographic-Boundaries/Boundaries-Wards-2015-2023-/sp34-6z76).
 
 ```{r, message=FALSE, warning=FALSE, results='hide'}
-ward_bound <- st_read(paste0(
-  "https://data.cityofchicago.org/api/geospatial/",
-  "sp34-6z76?method=export&format=GeoJSON"
-)) %>%
+ward_bound <- st_read(
+  "https://data.cityofchicago.org/resource/k9yb-bpqx.geojson"
+) %>%
   filter(ward == "48")
 ```
 
