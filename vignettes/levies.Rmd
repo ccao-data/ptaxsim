@@ -31,7 +31,10 @@ make_table <- function(inputdata) {
   )
 }
 
-ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.db"))
+ptaxsim_db_conn <- DBI::dbConnect(
+  RSQLite::SQLite(),
+  here("./ptaxsim.db")
+)
 
 fund <- tbl(ptaxsim_db_conn, "agency_fund") %>% collect()
 agency <- tbl(ptaxsim_db_conn, "agency") %>% collect()
@@ -79,13 +82,13 @@ all_changes %>%
 
 The above graph introduces several key concepts:
 
-- First, the blue line represents the PTELL limited rate of increase due to inflation, excluding all PTELL exceptions (note: this is not the exact increase an individual taxpayer would pay)
-- Second, the green line represents the rate of change of total extension
-- Third, the red line represents the rate of change of capped extension (subject to PTELL)
+- First, the blue line represents the PTELL limited rate of increase due to inflation. This is the maximum increase in the levied amount with no PTELL exemptions (note: this is not the exact increase an individual taxpayer would pay). So for example, based on the PTELL rate, the 2023 levy should only be 46% higher than the 2006 levy.
+- Second, the green line represents the actual rate of change of total extension across every taxing body in Cook County.
+- Third, the red line represents the rate of change of capped extension, which is subject to PTELL. Some funds are not capped (see next section).
 
-## Uncapped Agencies
+### Uncapped Agencies
 
-What types of agencies have large amounts of uncapped extension?
+PTELL allows for specific types of levies to be exempted from any rate of increases limitations. Within each agency's levy, there are additional funds which can be exempted from PTELL. Below is a figure which shows the share of all agencies which have at least one fund uncapped.
 
 ```{r}
 agency %>%
@@ -106,9 +109,9 @@ agency %>%
   )
 ```
 
-In 2021, the so-called "recapture" law was implemented which allowed taxing bodies to increase their levy to recapture refunds from property tax appeals at the Illinois Property Tax Appeal Board and other losses. This lead to a large increase in the number of uncapped funds in 2021.
+In 2021, the so-called "recapture" law was implemented which allowed taxing bodies to increase their levy to recapture refunds from property tax appeals at the Illinois Property Tax Appeal Board and other losses. This led to a large increase in the number of uncapped funds in 2021.
 
-### Taxing Bodies with Over $1,000,000 in uncapped levies in 2023
+#### Taxing Bodies with Over $1,000,000 in uncapped levies in 2023
 
 ```{r}
 agency %>%
