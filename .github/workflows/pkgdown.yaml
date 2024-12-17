@@ -57,7 +57,11 @@ jobs:
       - name: Prepare Mermaid assets for docs
         run: |
           for file in inst/mermaid/*.mmd; do
-            mmdc -i "$file" -o "${file/.mmd/.svg}"
+            # Confine the mermaid process to an AppArmor profile, necessary on
+            # Ubuntu >= 23.10 to work around new AppArmor rules that block the
+            # Puppeteer sandbox (used by mermaid) from working. See:
+            # https://github.com/mermaid-js/mermaid-cli/issues/730#issuecomment-2408615110
+            aa-exec --profile=chrome mmdc -i "$file" -o "${file/.mmd/.svg}"
           done
           mkdir -p docs/mermaid
           mv inst/mermaid/*.svg docs/mermaid
