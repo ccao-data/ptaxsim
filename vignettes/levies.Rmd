@@ -15,28 +15,43 @@ library(DBI)
 library(tidyverse)
 library(ptaxsim)
 
+theme_set(theme_bw())
 
-make_table <- function(inputdata){
-    DT::datatable(
-      inputdata, extensions = 'Buttons', 
-      rownames = FALSE,
-      options = list(
-        dom = 'Bfrtip', 
-        buttons = c('excel', 'pdf'),
-        pageLength = 20)
+make_table <- function(inputdata) {
+  DT::datatable(
+    inputdata,
+    extensions = "Buttons",
+    rownames = FALSE,
+    options = list(
+      dom = "Bfrtip",
+      buttons = c("excel", "pdf"),
+      pageLength = 20
+    )
   )
 }
 
+ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.db"))
 
-#ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.db"))
-ptaxsim_db_conn <-  DBI::dbConnect(RSQLite::SQLite(), "~/GitHub/bor/ptaxsim.db")
+fund <- tbl(ptaxsim_db_conn, "agency_fund") %>% collect()
+agency <- tbl(ptaxsim_db_conn, "agency") %>% collect()
+agency_info <- tbl(ptaxsim_db_conn, "agency_info") %>% collect()
+inflation <- tbl(ptaxsim_db_conn, "cpi") %>% collect()
+eq_factor <- tbl(ptaxsim_db_conn, "eq_factor") %>% collect()
 
-fund <- tbl(ptaxsim_db_conn, 'agency_fund') %>% collect()
-agency <- tbl(ptaxsim_db_conn, 'agency') %>% collect()
-agency_info <- tbl(ptaxsim_db_conn, 'agency_info') %>% collect()
-inflation <- tbl(ptaxsim_db_conn, 'cpi') %>% collect()
-
-theme_set(theme_bw())
+all_changes <- agency %>%
+  mutate(total_cap_ext = total_ext - replace_na(total_non_cap_ext, 0)) %>%
+  select(year, total_ext, total_cap_ext, total_non_cap_ext) %>%
+  group_by(year) %>%
+  summarize(
+    total_ext = sum(total_ext, na.rm = TRUE),
+    total_cap_ext = sum(total_cap_ext, na.rm = TRUE)
+  ) %>%
+  left_join(inflation %>% select(-year), join_by(year == levy_year)) %>%
+  mutate(
+    PTELL = 1 * c(1, cumprod(1 + tail(ptell_cook, -1))),
+    Extension = total_ext / total_ext[year == 2006],
+    `Capped Extension` = total_cap_ext / total_cap_ext[year == 2006]
+  )
 ```
 
 # Introduction
@@ -45,39 +60,111 @@ One of the largest factors in year-to-year changes in tax bills are changes in l
 
 Note: levies generally refer to the budgeted or requested amount of property tax funds. Extensions represent the actual property tax funds collected after any restrictions or calculations on changes in levies have be applied.
 
-## An Example
+```{r}
+all_changes %>%
+  select(year, PTELL, Extension, `Capped Extension`) %>%
+  pivot_longer(!year) %>%
+  ggplot(aes(x = year, y = value - 1, color = name)) +
+  geom_line() +
+  geom_point() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    x = "Tax Year", y = "Percent Increase since 2006",
+    color = "Index",
+    title = "Change in All Cook County Taxing Bodies Levies"
+  ) +
+  theme(legend.position = "bottom")
+```
+
+The above graph introduces several key concepts:
+
+- First, the blue line represents the PTELL limited rate of increase due to inflation, excluding all PTELL exceptions (note: this is not the exact increase an individual taxpayer would pay)
+- Second, the green line represents the rate of change of total extension
+- Third, the red line represents the rate of change of capped extension (subject to PTELL)
+
+## Uncapped Agencies
+
+What types of agencies have large amounts of uncapped extension?
+
+```{r}
+agency %>%
+  mutate(total_cap_ext = total_ext - replace_na(total_non_cap_ext, 0)) %>%
+  select(year, agency_num, total_ext, total_cap_ext, total_non_cap_ext) %>%
+  group_by(year) %>%
+  summarize(
+    pct_with_uncapped =
+      n_distinct(agency_num[!is.na(total_non_cap_ext)]) / n()
+  ) %>%
+  ggplot(aes(x = year, y = pct_with_uncapped)) +
+  geom_point() +
+  geom_line() +
+  scale_y_continuous(limits = c(0, NA), labels = scales::percent) +
+  labs(
+    x = "Tax Year", y = "Share of Agencies with Uncapped Funds",
+    title = "Share of Agencies with Uncapped Funds"
+  )
+```
+
+In 2021, the so-called "recapture" law was implemented which allowed taxing bodies to increase their levy to recapture refunds from property tax appeals at the Illinois Property Tax Appeal Board and other losses. This lead to a large increase in the number of uncapped funds in 2021.
+
+### Taxing Bodies with Over $1,000,000 in uncapped levies in 2023
+
+```{r}
+agency %>%
+  mutate(total_cap_ext = total_ext - replace_na(total_non_cap_ext, 0)) %>%
+  select(year, agency_num, total_ext, total_cap_ext, total_non_cap_ext) %>%
+  filter(
+    !is.na(total_non_cap_ext), year == 2023, total_non_cap_ext >= 1000000
+  ) %>%
+  left_join(
+    agency_info %>% select(agency_num, agency_name, major_type, minor_type)
+  ) %>%
+  select(
+    `Name` = agency_name, `Type` = major_type,
+    `Type Detail` = minor_type, `Total Uncapped Ext` = total_non_cap_ext
+  ) %>%
+  arrange(-`Total Uncapped Ext`) %>%
+  mutate(`Total Uncapped Ext` = scales::dollar(`Total Uncapped Ext`)) %>%
+  make_table()
+```
+
+# An Example
 
 The largest taxing body in Cook County is the Chicago Board of Education / Chicago Public Schools (CPS).
 
 ```{r}
-cps_changes <- agency %>% filter(agency_num == '044060000') %>%
+cps_changes <- agency %>%
+  filter(agency_num == "044060000") %>%
   mutate(total_cap_ext = total_ext - total_non_cap_ext) %>%
   select(year, total_ext, total_cap_ext, total_non_cap_ext) %>%
   left_join(inflation %>% select(-year), join_by(year == levy_year)) %>%
   mutate(
     PTELL = 1 * c(1, cumprod(1 + tail(ptell_cook, -1))),
     Extension = total_ext / total_ext[year == 2006],
-    `Capped Extension` = total_cap_ext / total_cap_ext[year == 2006])
+    `Capped Extension` = total_cap_ext / total_cap_ext[year == 2006]
+  )
 
 cps_changes %>%
   select(year, PTELL, Extension, `Capped Extension`) %>%
   pivot_longer(!year) %>%
-  ggplot(aes(x=year, y=value-1, color=name)) +
+  ggplot(aes(x = year, y = value - 1, color = name)) +
   geom_line() +
   geom_point() +
-  scale_y_continuous(labels=scales::percent)+
-  labs(x='Tax Year', y='Percent Increase since 2006',
-       color='Index',
-       title='CPS Levy Increases Exceed PTELL Cap') +
-  theme(legend.position='bottom')
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    x = "Tax Year", y = "Percent Increase since 2006",
+    color = "Index",
+    title = "CPS Levy Increases Exceed PTELL Cap"
+  ) +
+  theme(legend.position = "bottom")
 ```
 
-We can see that the percent increase in the extension is much greater than the PTELL inflation limit (blue line) over time. Let's breakdown how these differences arose by looking at the changes for one year, from 2015 to 2016.
+We can see that the percent increase in the extension is much greater than the PTELL inflation limit (blue line) over time. Let"s breakdown how these differences arose by looking at the changes for one year, from 2015 to 2016.
 
 ### PTELL Overview
 
 1.  **Calculate the inflation adjustment, lesser of 5% or inflation**
-2.  **Calculate the base aggregate extension by multiplying last year's extension by the inflation adjustment**
+2.  **Calculate the base aggregate extension by multiplying last year"s extension by the inflation adjustment**
 3.  **Calculate the current year total equalized assessed value (EAV) minus additional exceptions**
 
 Exceptions include new construction, annexations (or disconnections), voter-approved increases (e.g. referendum), and capturing Tax Increment Financing district (TIF) increment when the TIF expires. For additional reading on PTELL, see the [PTELL manual](https://tax.illinois.gov/content/dam/soi/en/web/tax/research/publications/documents/localgovernment/ptax1080.pdf).
@@ -85,7 +172,7 @@ Exceptions include new construction, annexations (or disconnections), voter-appr
 ### 2016 PTELL Calculation
 
 1. Inflation was 0.7%
-2. Base Aggregate Extension is then $2.37 billion (last year's extension times 1.007)
+2. Base Aggregate Extension is then $2.37 billion (last year"s extension times 1.007)
 3. The total current year EAV is 74,020,998,258. The total exemptions to PTELL include 397,527,515 of new property EAV, 39,039,707 of recovered TIF increment, and 10,666,736 of expired incentives. This results in an adjusted total EAV of 73,573,764,300.
 
 The limiting PTELL rate is then 3.222, which is the maximum rate that CPS can levy across *all* capped funds. The total CPS capped levy was \$2.638 billion or a tax rate of 3.565. Since this was greater than the PTELL rate, the PTELL rate reduced the levy to the maximum rate of 3.222. This resulted in a change in capped funds from \$2.353 billion in 2015 to \$2.384 billion in 2016, an increase of 1.33%. 
@@ -96,7 +183,7 @@ One significant change which occurred between 2015 and 2016 was the implementati
 
 ### Summary
 
-Overall, there was a 12.5% or \$306.1 million increase in the total CPS extension from 2015 to 2016. PTELL limited funds accounted for \$31.4 million of that increase and funds not subject to PTELL accounted for \$274.7 million of the increase. Let's breakdown all the levy changes in CPS in this way.
+Overall, there was a 12.5% or \$306.1 million increase in the total CPS extension from 2015 to 2016. PTELL limited funds accounted for \$31.4 million of that increase and funds not subject to PTELL accounted for \$274.7 million of the increase. Let"s breakdown all the levy changes in CPS in this way.
 
 ```{r}
 cps_changes %>%
@@ -112,15 +199,20 @@ cps_changes %>%
     percent_cap = cap_change / lag_cap,
     cap_change_ptell_max = ptell_cook * lag_cap,
     cap_change_new_prop_port = if_else(cap_change - cap_change_ptell_max > 0,
-                                       cap_change - cap_change_ptell_max,
-                                       0),
-  ) %>% 
-  select(year, total_change, uncap_change, cap_change,
-         cap_change_new_prop_port, ptell_cook, percent_cap) %>%
+      cap_change - cap_change_ptell_max,
+      0
+    ),
+  ) %>%
+  select(
+    year, total_change, uncap_change, cap_change,
+    cap_change_new_prop_port, ptell_cook, percent_cap
+  ) %>%
   filter(year >= 2007) %>%
-  mutate(ptell_cook = scales::percent(ptell_cook, .01),
-         percent_cap = scales::percent(percent_cap, .01),
-         across(contains('_change'), ~ scales::dollar(round(.x/1e6)))) %>%
+  mutate(
+    ptell_cook = scales::percent(ptell_cook, .01),
+    percent_cap = scales::percent(percent_cap, .01),
+    across(contains("_change"), ~ scales::dollar(round(.x / 1e6)))
+  ) %>%
   rename(
     Year = year,
     `Total Change ($Million)` = total_change,
