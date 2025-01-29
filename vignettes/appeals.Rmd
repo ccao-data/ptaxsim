@@ -483,7 +483,7 @@ sb_bills_plot <- bind_rows(
 sb_bills_plot
 ```
 
-Overall, post-reassessment appeals in Schaumburg resulted in a roughly 11% increase in the median residential tax bill and a +20% decrease in the median commercial tax bill. Without appeals, particularly at the Board of Review, the median commercial bill would have increased roughly 30% from 2018.
+Overall, post-reassessment appeals in Schaumburg resulted in a roughly 11% increase in the median residential tax bill and a 17% decrease in the median commercial tax bill. Without appeals, particularly at the Board of Review, the median commercial bill would have increased roughly 27% from 2018.
 
 # Counterfactual scenario
 
