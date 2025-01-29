@@ -52,10 +52,10 @@ ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.db"))
 
 ```{r, echo=FALSE}
 # This is needed to build the vignette using GitHub Actions
-#ptaxsim_db_conn <- DBI::dbConnect(
- # RSQLite::SQLite(),
-  #Sys.getenv("PTAXSIM_DB_PATH")
-#)
+ptaxsim_db_conn <- DBI::dbConnect(
+  RSQLite::SQLite(),
+  Sys.getenv("PTAXSIM_DB_PATH")
+)
 ```
 
 ## Gathering PINs of interest
@@ -481,7 +481,7 @@ sb_bills_plot <- bind_rows(
 sb_bills_plot
 ```
 
-Overall, post-reassessment appeals in Schaumburg resulted in a roughly 7% increase in the median residential tax bill and a +20% decrease in the median commercial tax bill. Without appeals, particularly at the Board of Review, the median commercial bill would have increased roughly 30% from 2018.
+Overall, post-reassessment appeals in Schaumburg resulted in a roughly 11% increase in the median residential tax bill and a +20% decrease in the median commercial tax bill. Without appeals, particularly at the Board of Review, the median commercial bill would have increased roughly 30% from 2018.
 
 # Counterfactual scenario
 
@@ -753,7 +753,7 @@ sb_cntr_plot <- bind_rows(
 sb_cntr_plot
 ```
 
-Holding commercial appeals constant makes their effect on residential tax bills clearer: large commercial appeals shift the property tax burden back to residential property owners. In the case of Schaumburg, the drop in commercial AVs during the second level of review (at the Board of Review) contributed to a roughly 7% rise in the median residential tax bill.
+Holding commercial appeals constant makes their effect on residential tax bills clearer: large commercial appeals shift the property tax burden back to residential property owners. In the case of Schaumburg, the drop in commercial AVs during the second level of review (at the Board of Review) contributed to a roughly 11% rise in the median residential tax bill.
 
 Whether or not this is correct is mostly a matter of interpretation. If the Assessor's commercial values are accurate, then the subsequent appeals unjustly shifted tax burden back to residential properties. If the Board of Review's post-appeal values are accurate, then their appeals rightly reversed the unjust increase in commercial tax bills resulting from the 2019 reassessment.
 
