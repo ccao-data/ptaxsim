@@ -363,8 +363,10 @@ sb_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
     left_join(eq_dt_stage, by = "year") %>%
     # Aggregate the total differences for each district
     group_by(agency_num, agency_name) %>%
-    mutate(eav_diff_total = sum(eav_diff_total),
-           exe_diff_total = sum(exe_diff_total)) %>%
+    mutate(
+      eav_diff_total = sum(eav_diff_total),
+      exe_diff_total = sum(exe_diff_total)
+    ) %>%
     ungroup() %>%
     mutate(
       # Recalculate the base in terms of the "tentative" or "final" equalizer
@@ -534,7 +536,8 @@ sb_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
       mutate(
         eav_diff = (stage_av - av) * stage_eq_factor,
         exe_total = rowSums(across(starts_with("exe_"))),
-        exe_diff = (exe_total * stage_eq_factor) -(exe_total * eq_factor_final),
+        exe_diff = (exe_total * stage_eq_factor) -
+          (exe_total * eq_factor_final),
         tax_code = lookup_tax_code(2019, pin)
       ),
     sb_pin_dt_actual %>%
@@ -563,8 +566,10 @@ sb_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
     left_join(sb_pin_diff, by = c("year", "tax_code")) %>%
     left_join(eq_dt_stage, by = "year") %>%
     group_by(agency_num, agency_name) %>%
-    mutate(eav_diff_total = sum(eav_diff_total),
-           exe_diff_total = sum(exe_diff_total)) %>%
+    mutate(
+      eav_diff_total = sum(eav_diff_total),
+      exe_diff_total = sum(exe_diff_total)
+    ) %>%
     ungroup() %>%
     mutate(
       agency_total_eav = round(
