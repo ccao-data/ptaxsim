@@ -361,6 +361,13 @@ sb_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
   sb_agency_dt <- lookup_agency(sb_pin_diff$year, sb_pin_diff$tax_code) %>%
     left_join(sb_pin_diff, by = c("year", "tax_code")) %>%
     left_join(eq_dt_stage, by = "year") %>%
+    # Aggregate the total differences for each district
+    group_by(agency_num, agency_name) %>%
+    mutate(
+      eav_diff_total = sum(eav_diff_total),
+      exe_diff_total = sum(exe_diff_total)
+    ) %>%
+    ungroup() %>%
     mutate(
       # Recalculate the base in terms of the "tentative" or "final" equalizer
       agency_total_eav = round(
@@ -373,6 +380,7 @@ sb_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
       -eav_diff_total, -exe_diff_total,
       -eq_factor_final, -stage_eq_factor
     ) %>%
+    as.data.table() %>%
     setkey(year, tax_code, agency_num)
 
   tax_bill(
@@ -475,7 +483,7 @@ sb_bills_plot <- bind_rows(
 sb_bills_plot
 ```
 
-Overall, post-reassessment appeals in Schaumburg resulted in a roughly 7% increase in the median residential tax bill and a +20% decrease in the median commercial tax bill. Without appeals, particularly at the Board of Review, the median commercial bill would have increased roughly 30% from 2018.
+Overall, post-reassessment appeals in Schaumburg resulted in a roughly 11% increase in the median residential tax bill and a 17% decrease in the median commercial tax bill. Without appeals, particularly at the Board of Review, the median commercial bill would have increased roughly 27% from 2018.
 
 # Counterfactual scenario
 
@@ -557,6 +565,12 @@ sb_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
   sb_agency_dt <- lookup_agency(sb_pin_diff$year, sb_pin_diff$tax_code) %>%
     left_join(sb_pin_diff, by = c("year", "tax_code")) %>%
     left_join(eq_dt_stage, by = "year") %>%
+    group_by(agency_num, agency_name) %>%
+    mutate(
+      eav_diff_total = sum(eav_diff_total),
+      exe_diff_total = sum(exe_diff_total)
+    ) %>%
+    ungroup() %>%
     mutate(
       agency_total_eav = round(
         (agency_total_eav / eq_factor_final) * stage_eq_factor
@@ -568,6 +582,7 @@ sb_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
       -eav_diff_total, -exe_diff_total,
       -eq_factor_final, -stage_eq_factor
     ) %>%
+    as.data.table() %>%
     setkey(year, tax_code, agency_num)
 
   # Commercial PINs don't get appeals, so their EAVs only come from the
@@ -743,7 +758,7 @@ sb_cntr_plot <- bind_rows(
 sb_cntr_plot
 ```
 
-Holding commercial appeals constant makes their effect on residential tax bills clearer: large commercial appeals shift the property tax burden back to residential property owners. In the case of Schaumburg, the drop in commercial AVs during the second level of review (at the Board of Review) contributed to a roughly 7% rise in the median residential tax bill.
+Holding commercial appeals constant makes their effect on residential tax bills clearer: large commercial appeals shift the property tax burden back to residential property owners. In the case of Schaumburg, the drop in commercial AVs during the second level of review (at the Board of Review) contributed to a roughly 11% rise in the median residential tax bill.
 
 Whether or not this is correct is mostly a matter of interpretation. If the Assessor's commercial values are accurate, then the subsequent appeals unjustly shifted tax burden back to residential properties. If the Board of Review's post-appeal values are accurate, then their appeals rightly reversed the unjust increase in commercial tax bills resulting from the 2019 reassessment.
 
