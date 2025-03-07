@@ -38,7 +38,7 @@ runs:
       shell: bash
 
     - name: Cache database
-      uses: actions/cache@v4
+      uses: actions/cache@v3.3.2
       id: cache_db
       with:
         path: ${{ env.PTAXSIM_DB_DIR }}/ptaxsim.db.bz2
