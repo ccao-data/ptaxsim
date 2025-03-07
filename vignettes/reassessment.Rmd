@@ -784,6 +784,7 @@ cw_fut_pins_dt <- cw_fut_pins %>%
   select(year, pin, class, av, eav, starts_with("exe_")) %>%
   mutate(across(c(av, eav), as.integer)) %>%
   filter(pin %in% cw_pins) %>%
+  # relocate(exe_longtime_homeowner, .before = "exe_disabled") %>%
   mutate(year = 2021) %>%
   setDT(key = c("year", "pin"))
 
