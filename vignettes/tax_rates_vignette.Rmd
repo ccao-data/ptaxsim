@@ -63,35 +63,33 @@ base_url <- "https://datacatalog.cookcountyil.gov/resource/nj4t-kc8j.json"
 north_tri_pins <- GET(
   base_url,
   query = list(
-    year = 2023,
-    triad_code = "2",
-    `$select` = "pin, township_name, tax_code", 
-    `$limit` = 500000L
+    `$where` = "year >= 2012 and triad_code = '2'",
+    `$select` = "pin, year, township_name, tax_code", 
+    `$group` = "year, township_name, tax_code",
+    `$limit` = 100000L
   )
 )
 
 north_tri_pins <- fromJSON(rawToChar(north_tri_pins$content))
 
-# Get the township names for each taxcode so we find the tax rate distributions for each North Tri township. In some rare cases in Cook County, a taxcode can cover multiple townships, but in the North Tri each taxcode is unique to a township.
-tax_code_to_townships <- north_tri_pins %>%
-  group_by(tax_code) %>%
-  summarise(township_name = first(township_name))
-
-# Query the PTAXSIM database for taxcode tax rates from 2012 to 2023
-north_tri_tax_codes <- dbGetQuery(
-  ptaxsim_db_conn,
-  glue_sql("
-    SELECT DISTINCT year, tax_code_num, tax_code_rate
-    FROM tax_code
-    WHERE tax_code_num IN ({north_tri_pins$tax_code*})
-    AND year >= 2012
-    ",
-    .con = ptaxsim_db_conn
+# Get the township names for each tax code so we find the tax rate distributions for each North Tri township. In some rare cases in Cook County, a tax code can cover multiple townships, but in the North Tri each tax code is unique to a township.
+north_tri_tax_codes <- north_tri_pins %>%
+  group_by(tax_code, year) %>%
+  summarise(township_name = first(township_name)) %>%
+  # Query the PTAXSIM database for tax code tax rates from 2012 to 2023
+  inner_join(
+    dbGetQuery(
+      ptaxsim_db_conn,
+      glue_sql("
+      SELECT DISTINCT year, tax_code_num, tax_code_rate
+      FROM tax_code
+      AND year >= 2012
+      ",
+        .con = ptaxsim_db_conn
+      )
+    ),
+    by = c("tax_code" = "tax_code_num", "year")
   )
-) %>% 
-  left_join(tax_code_to_townships, by = c("tax_code_num" = "tax_code"))
-
-rm(tax_code_to_townships)
 
 # Summarize and prepare data for plots
 township_rate_summ <- north_tri_tax_codes %>%
@@ -203,14 +201,14 @@ We'll define these ratios, convert the assessment ratios to sales ratios, and th
 
 ```{r}
 # Define class 2, 3 and 5 ratios which are taken from the reports cited above
-class_2_ratio <- .081
-class_3_ratio <- .0594
-class_5_ratio <- .7179
+class_2_assessment_ratio <- .081
+class_3_assessment_ratio <- .0594
+class_5_sale_ratio <- .7179
 
 est_increases <- data.frame(
   class = c("2", "3", "5"),
   ratio =
-    c(class_2_ratio, class_3_ratio, class_5_ratio)
+    c(class_2_assessment_ratio, class_3_assessment_ratio, class_5_sale_ratio)
 ) %>%
   mutate(
     fmv_ratio = ifelse(stringr::str_sub(class, 1, 1) == "5", ratio,
