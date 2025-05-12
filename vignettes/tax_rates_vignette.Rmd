@@ -1,6 +1,7 @@
 ---
 title: "Estimating Tax Rates"
-output: html_document
+output:
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -282,10 +283,9 @@ north_tri_agencies <- lookup_agency(
 ) %>%
   filter(agency_total_ext > 0)
 ```
+## Applying the estimated increase
 
 Next, we need to estimate the total <em>added</em> EAV of each tax code. This involves applying the estimated increases previously derived from the ratio statistics by major class, as well as taking other factors into consideration, such as whether a PIN is subject to a Senior Freeze exemption (in which case we need to make sure taxable EAV stays at its frozen amount), or if the tax code is within a TIF, in which case any growth to that tax code's base will be diverted to the TIF rather than tax code EAV. The key variable we'll use in our estimation of the future tax base is the `added_tax_code_eav`, which is the difference between the reconstructed base year (2023) EAV and the estimated 2025 EAV. 
-
-## Applying the estimated increase
 
 ```{r}
 # Join projected EAV increase by class to base year north tri PINs
@@ -443,6 +443,27 @@ rate_summ_2 <- tax_code_rates %>%
   )
 
 datatable(rate_summ_2, rownames = FALSE, options = list(dom = "t"))
+```
+
+We can also look at how estimated 2025 tax rates compare to 2023 rates across township. The table below shows the median tax rates by township for 2023 and the estimated tax rate for 2025. Across
+
+```{r, echo = FALSE, results='asis'}
+# Summarize median 2023 tax rate and median estimated 2025 tax rate by township
+
+rate_town_summ <- tax_code_rates %>%
+  left_join(north_tri_tax_codes %>%
+    select(tax_code, township_name),
+    by = "tax_code"
+  ) %>% 
+  group_by(township_name) %>%
+  summarise(
+    `2023 Median Rate (%)` = round(median(tax_code_rate_2023)*100,2),
+    `Estimated 2025 Median Rate (%)` = round(median(estimated_tax_code_rate_2025)*100,2),
+    `Estimated Rate Difference` = round((median(estimated_tax_code_rate_2025) - median(tax_code_rate_2023)) * 100, 2),
+    `Estimated Rate Difference (%)` = round((median(estimated_tax_code_rate_2025) - median(tax_code_rate_2023)) / median(tax_code_rate_2023) * 100, 2)
+  )
+
+datatable(rate_town_summ, rownames = FALSE, options = list(dom = "t"))
 ```
 All tax code tax rates for the North tri can be viewed and exported with the table below.
 ```{r, echo = FALSE, results='asis'}
