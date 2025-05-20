@@ -50,10 +50,10 @@ ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.db"))
 
 ```{r, echo=FALSE}
 # This is needed to build the vignette using GitHub Actions
-# ptaxsim_db_conn <- DBI::dbConnect(
-#  RSQLite::SQLite(),
-#  Sys.getenv("PTAXSIM_DB_PATH")
-# )
+ ptaxsim_db_conn <- DBI::dbConnect(
+  RSQLite::SQLite(),
+  Sys.getenv("PTAXSIM_DB_PATH")
+)
 ```
 
 ## Gathering North tri PINs and tax codes
