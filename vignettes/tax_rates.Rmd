@@ -87,7 +87,7 @@ A **tax code** is a 5-digit number that identifies the unique combination of ove
 
 ```{r}
 # Get the township names for each tax code so we find the tax rate distributions
-# for each North tri township. 
+# for each North tri township.
 # In some rare cases in Cook County, a tax code can cover multiple townships,
 # but in the North tri each tax code is unique to a township.
 north_tri_tax_codes <- north_tri_pins %>%
@@ -178,8 +178,6 @@ tax_rate_plot <- township_rate_summ %>%
   theme(
     legend.position = c(.9, .1)
   )
-
-
 ```
 </details>
 
@@ -273,9 +271,11 @@ The table below shows the estimated increase in assessed values for each major c
 
 ```{r, echo=FALSE}
 est_increases %>%
-  mutate(`Estimated Increase (%)` = round(est_increase*100,2)) %>%
-  select(`Major Class` = class,
-         `Estimated Increase (%)`)%>%
+  mutate(`Estimated Increase (%)` = round(est_increase * 100, 2)) %>%
+  select(
+    `Major Class` = class,
+    `Estimated Increase (%)`
+  ) %>%
   DT::datatable(
     rownames = FALSE,
     options = list(dom = "t")
@@ -393,7 +393,7 @@ est_eav_tax_code <- north_tri_pins %>%
   )
 ```
 
-Next, we take the growth to the tax code EAV, `added_tax_code_eav` and add that on to the base year EAV of each agency that falls within that tax code as reported by the Cook County clerk. This ensures that our 2025 estimated agency EAV will include the base year EAV from PINs that are not within the North tri. 
+Next, we take the growth to the tax code EAV, `added_tax_code_eav` and add that on to the base year EAV of each agency that falls within that tax code as reported by the Cook County Clerk. This ensures that our 2025 estimated agency EAV will include the base year EAV from PINs that are not within the North tri. 
 
 To illustrate, if we aggregate PIN-level EAVs to calculate the base for the taxing agency of Cook County with only the North tri PINs, we'd be missing a significant portion of that agency's base. In order to estimate a tax base that represents the entire agency, but also incorporates the anticipated increased EAV for the North tri, we need to use the clerk's reported base year EAV and add the estimated growth to that amount. 
 
@@ -482,8 +482,6 @@ rate_summ <- tax_code_rates %>%
   )
 
 
-datatable(rate_summ, rownames = FALSE, options = list(dom = "t"))
-
 rate_summ_2 <- tax_code_rates %>%
   group_by() %>%
   summarise(
@@ -496,7 +494,7 @@ rate_summ_2 <- tax_code_rates %>%
 datatable(rate_summ_2, rownames = FALSE, options = list(dom = "t"))
 ```
 
-We can also look at how estimated 2025 tax rates compare to 2023 rates across township. The table below shows the median tax rates by township for 2023 and the estimated tax rate for 2025. Across
+The table below shows each township's median 2023 Tax Rate and the median Estimated 2025 Tax Rate.
 
 ```{r, echo = FALSE, results='asis'}
 # Summarize median 2023 tax rate and median estimated 2025 tax rate by township
@@ -509,9 +507,7 @@ rate_town_summ <- tax_code_rates %>%
   group_by(township_name) %>%
   summarise(
     `2023 Median Rate (%)` = round(median(tax_code_rate_2023) * 100, 2),
-    `Estimated 2025 Median Rate (%)` = round(median(estimated_tax_code_rate_2025) * 100, 2),
-    `Estimated Rate Difference` = round((median(estimated_tax_code_rate_2025) - median(tax_code_rate_2023)) * 100, 2),
-    `Estimated Rate Difference (%)` = round((median(estimated_tax_code_rate_2025) - median(tax_code_rate_2023)) / median(tax_code_rate_2023) * 100, 2)
+    `Estimated 2025 Median Rate (%)` = round(median(estimated_tax_code_rate_2025) * 100, 2)
   ) %>%
   rename(Township = township_name)
 
@@ -519,15 +515,25 @@ datatable(rate_town_summ, rownames = FALSE, options = list(dom = "t"))
 ```
 All tax code tax rates for the North tri can be viewed and exported with the table below.
 ```{r, echo = FALSE, results='asis'}
-datatable(
-  tax_code_rates %>%
-    mutate(
-      `Tax Code` = tax_code,
-      `Tax Code Rate 2023 (%)` = round(tax_code_rate_2023 * 100, 2),
-      `Estimated Tax Code Rate 2025 (%)` = round(estimated_tax_code_rate_2025 * 100, 2)
-    ) %>%
-    select(-tax_code, -tax_code_rate_2023, -estimated_tax_code_rate_2025),
-  extensions = "Buttons", options = list(
+tax_rates_download <- tax_code_rates %>%
+  left_join(
+    north_tri_tax_codes %>%
+      select(tax_code, township_name),
+    by = "tax_code"
+  ) %>%
+  mutate(
+    `Tax Code` = tax_code,
+    `Tax Code Rate 2023 (%)` = round(tax_code_rate_2023 * 100, 2),
+    `Estimated Tax Code Rate 2025 (%)` = round(estimated_tax_code_rate_2025 * 100, 2)
+  ) %>%
+  rename(Township = township_name) %>%
+  select(-tax_code, -tax_code_rate_2023, -estimated_tax_code_rate_2025)
+
+
+datatable(tax_rates_download,
+  rownames = FALSE,
+  extensions = "Buttons",
+  options = list(
     dom = "Bfrtip",
     buttons = c("copy", "csv", "excel")
   )
