@@ -127,6 +127,8 @@ township_rate_summ <- north_tri_tax_codes %>%
 
 The below visualization contains one graph per North tri township. Each graph shows tax rates: specifically, **median**, **<span style="color: blue;"> 25th percentile</span>**, and **<span style="color: red;"> 75th percentile</span>** tax rates, per tax year. The dashed vertical lines mark the reassessment years of 2013, 2016, 2019, and 2022.
 
+Tax rates can vary within a township, because townships are not the geographic region over which tax rates are calculated. Tax codes are. Evanston is unique in the North tri because tax rates are consistent throughout the township.
+
 There is a clear historical trend: typically, tax rates decrease in reassessment years of 2016, 2019, and 2022. 2013 is an exception to this trend, when lower property values as a result of the Great Recession resulted in lower property assessments, a smaller tax base, and therefore higher tax rates.
 
 <details>
@@ -323,7 +325,17 @@ north_tri_agencies <- lookup_agency(
 ```
 ## Applying the estimated increase
 
-Next, we need to estimate the total <em>added</em> EAV of each tax code. This involves applying the estimated increases previously derived from the ratio statistics by major class, as well as taking other factors into consideration, such as whether a PIN is subject to a Senior Freeze exemption (in which case we need to make sure taxable EAV stays at its frozen amount), or if the tax code is within a TIF, in which case any growth to that tax code's base will be diverted to the TIF rather than tax code EAV. The key variable we'll use in our estimation of the future tax base is the `added_tax_code_eav`, which is the difference between the reconstructed base year (2023) EAV and the estimated 2025 EAV. 
+Next, we need to calculate `added_tax_code_eav`, the total EAV being added to each tax code based on the above estimates.
+
+We'll first apply est_increases to each PIN in our list of `north_tri_pins` based on its major class. This grows EAV, which grows the tax base.
+
+But there are property tax provisions that reduce or freeze taxable value in a way that reduces this tax base growth. Below are the exceptions that the tax rate calculations need to handle:
+
+1. If a **PIN** received a Senior Freeze exemption, its taxable value is the frozen EAV as granted by the exemption.
+2. If a **PIN** didn't receive the Senior Freeze exemption, but it did receive other exemptions that reduce its taxable value, the value of its exemptions must be subtracted from its EAV.
+3. If a **tax code** is within a TIF district, its aggregate EAV cannot exceed that tax code's frozen EAV as set when the TIF was created.
+
+The code below shows how this is accomplished. It culminates in the key variable we'll use in our estimation of the future tax base, `added_tax_code_eav`, which is the difference between the reconstructed base year (2023) EAV and the estimated 2025 EAV.
 
 ```{r}
 # Join projected EAV increase by class to base year north tri PINs
