@@ -13,11 +13,16 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-Tax rates, when applied to a property's Equalized Assessed Value (EAV), determine how much a property owner pays in taxes. The tax rates that appear on a bill are calculated by taking a taxing agency's levy (the amount of money requested by the agency to be collected from tax payers) divided by the total taxable value of property within that agency's jurisdiction, also known as the tax base. 
+Tax rates, when applied to a property's Equalized Assessed Value (EAV), determine how much a property owner pays in taxes. **Tax rates often decline in reassessment years**. Rates are recalculated each year and are affected by two things: the tax levy (the total property tax revenue sought by agencies to fund services), and the tax base (the total taxable value of property).
 
-This means that fluctuations to the tax base, and the levy, impact the tax rate. Let's say that property values have gradually risen over the last several years in a given township. When those properties are up for reassessment, we can anticipate that the tax base will grow, and if the base increases while taxing agencies keep their levies stable, then the tax rate will decrease. But what if taxing agencies increase their levies (as they often do within the limits of PTELL)? Would tax rates still decrease but to a lesser extent? Or would they remain stable?
+This means that reassessments can grow (or shrink) the tax base. When assessed values increase, the tax base can grow -- causing the tax rate to fall.
 
-Enter PTAXSIM, which can help us explore the mechanics of Cook County's property tax rates by simulating tax base growth and levy changes to understand the impact on tax rates. This article  examines the impact of reassessments on tax rates historically, followed by a run through of the method used for estimating future rates based on anticipated changes to the tax base and taxing agency levies.
+This article demonstrates how to use PTAXSIM to:
+
+  * visualize previous tax rates in the North tri to show that, historically, tax rates typically decrease in reassessment years;
+  * apply percent changes to past-year tax levies and tax bases, to estimate new tax rates for every taxing district (e.g., each municipal, school, and county district); and
+
+  * produce estimated cumulative tax rates for every tax code in the North tri.
 
 # The impact of reassessments on tax rates
 
@@ -45,10 +50,10 @@ ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.db"))
 
 ```{r, echo=FALSE}
 # This is needed to build the vignette using GitHub Actions
-#ptaxsim_db_conn <- DBI::dbConnect(
+# ptaxsim_db_conn <- DBI::dbConnect(
 #  RSQLite::SQLite(),
 #  Sys.getenv("PTAXSIM_DB_PATH")
-#)
+# )
 ```
 
 ## Gathering North tri PINs and tax codes
@@ -58,7 +63,8 @@ Since we're interested in looking at tax rate history for the North tri, we'll f
 We can construct a query using Socrata's API selecting only the fields we'll need: `pin`, `township_name`, and `tax_code`.
 
 ```{r}
-# We can query the CCAO Open Data parcel universe to get all PINs that fall within the north tri
+# We can query the CCAO Open Data parcel universe to get all PINs that fall
+# within the north tri
 
 base_url <- "https://datacatalog.cookcountyil.gov/resource/nj4t-kc8j.json"
 
@@ -73,15 +79,17 @@ north_tri_pins <- GET(
 )
 
 north_tri_pins <- fromJSON(rawToChar(north_tri_pins$content))
-
 ```
 
 Now that we have all North tri PINs and their respective tax codes for tax year 2023, we can use the PTAXSIM database to find each of their tax rates in all years from 2012 to 2023. 
 
-Tax rates described in this vignette are at the tax code level. A tax code is a 5-digit number that identifies the unique combination of overlapping tax districts for a given area. Therefore a tax code tax rate is the summation of all agency rates for that tax code. 
+A **tax code** is a 5-digit number that identifies the unique combination of overlapping tax districts, such as city, school, and county districts, for a given area. All PINs in the same tax code pay taxes to the same unique combination of districts, and pay the same tax rate.
 
 ```{r}
-# Get the township names for each tax code so we find the tax rate distributions for each North Tri township. In some rare cases in Cook County, a tax code can cover multiple townships, but in the North tri each tax code is unique to a township.
+# Get the township names for each tax code so we find the tax rate distributions
+# for each North tri township. 
+# In some rare cases in Cook County, a tax code can cover multiple townships,
+# but in the North tri each tax code is unique to a township.
 north_tri_tax_codes <- north_tri_pins %>%
   group_by(tax_code) %>%
   summarise(township_name = first(township_name)) %>%
@@ -109,13 +117,17 @@ Next we'll create a summary of the tax code rates by township and year, calculat
 # Summarize and prepare data for plots
 township_rate_summ <- north_tri_tax_codes %>%
   group_by(township_name, year) %>%
-  summarize(median_tax_rate = median(tax_code_rate),
-            perc_25_tax_rate = quantile(tax_code_rate, .25),
-            perc_75_tax_rate = quantile(tax_code_rate, .75)) %>%
-  mutate(tax_rate_perc_change = (median_tax_rate - lag(median_tax_rate))/lag(median_tax_rate) * 100)
+  summarize(
+    median_tax_rate = median(tax_code_rate),
+    perc_25_tax_rate = quantile(tax_code_rate, .25),
+    perc_75_tax_rate = quantile(tax_code_rate, .75)
+  ) %>%
+  mutate(tax_rate_perc_change = (median_tax_rate - lag(median_tax_rate)) / lag(median_tax_rate) * 100)
 ```
 
-Below are median, 25th percentile and 75th percentile tax rates in each North tri township, showing the historical trend of decreased tax rates in the reassessment years of 2016, 2019, and 2022 as a result of reassessments growing the tax base. 2013 is an exception to this trend, when the lower property values as a result of the Great Recession resulted in lower property valuations, a smaller base, and therefor higher rates. 
+The below visualization contains one graph per North tri township. Each graph shows tax rates: specifically, **median**, **<span style="color: blue;"> 25th percentile</span>**, and **<span style="color: red;"> 75th percentile</span>** tax rates, per tax year. The dashed vertical lines mark the reassessment years of 2013, 2016, 2019, and 2022.
+
+There is a clear historical trend: typically, tax rates decrease in reassessment years of 2016, 2019, and 2022. 2013 is an exception to this trend, when lower property values as a result of the Great Recession resulted in lower property assessments, a smaller tax base, and therefore higher tax rates.
 
 <details>
 
@@ -126,37 +138,46 @@ township_order <- township_rate_summ %>%
   arrange(desc(median_tax_rate))
 
 township_order <- township_order$township_name
-
 tax_rate_plot <- township_rate_summ %>%
   filter(!is.na(township_name)) %>%
   ggplot() +
   geom_vline(
     xintercept = c(2013, 2016, 2019, 2022),
     linetype = "dotted"
-    ) +
-  geom_line(
-    aes(x = year, y = median_tax_rate)
   ) +
   geom_line(
-    aes(x = year, y = perc_25_tax_rate),
-    color = "blue",
+    aes(x = year, y = median_tax_rate, color = "Median"),
+    linewidth = 0.5
+  ) +
+  geom_line(
+    aes(x = year, y = perc_25_tax_rate, color = "25th Percentile"),
     linewidth = 0.15
   ) +
   geom_line(
-    aes(x = year, y = perc_75_tax_rate),
-    color = "red",
+    aes(x = year, y = perc_75_tax_rate, color = "75th Percentile"),
     linewidth = 0.15
   ) +
-  scale_x_continuous(breaks = seq(2013, 2022, 3)
-                     ) +
-  facet_wrap(~factor(township_name, township_order)
-             ) +
+  scale_color_manual(
+    name = "Tax Rate Measure",
+    values = c(
+      "Median" = "black",
+      "25th Percentile" = "blue",
+      "75th Percentile" = "red"
+    )
+  ) +
+  scale_x_continuous(breaks = seq(2013, 2022, 3)) +
+  facet_wrap(~ factor(township_name, township_order)) +
   labs(
     x = "Year",
     y = "Tax Rate (%)",
     caption = "Dotted lines represent reassessment years"
   ) +
-  theme_minimal()
+  theme_minimal() +
+  theme(
+    legend.position = c(.9, .1)
+  )
+
+
 ```
 </details>
 
@@ -171,9 +192,11 @@ The plot below illustrates the percent change in the median tax rate for each to
 
 <summary><strong>Click here</strong> to show plot code</summary>
 ```{r, echo=FALSE}
-perc_diff_plot  <- township_rate_summ %>%
-  filter(!is.na(township_name),
-         !is.na(tax_rate_perc_change)) %>%
+perc_diff_plot <- township_rate_summ %>%
+  filter(
+    !is.na(township_name),
+    !is.na(tax_rate_perc_change)
+  ) %>%
   ggplot() +
   geom_vline(
     xintercept = c(2013, 2016, 2019, 2022),
@@ -181,18 +204,19 @@ perc_diff_plot  <- township_rate_summ %>%
   ) +
   geom_hline(
     yintercept = 0
-    ) +
+  ) +
   geom_col(
     aes(x = year, y = tax_rate_perc_change, fill = tax_rate_perc_change),
     width = 0.5,
     color = "black",
-    linewidth = .2) +
+    linewidth = .2
+  ) +
   scale_x_continuous(breaks = seq(2013, 2022, 3)) +
   facet_wrap(vars(township_name)) +
   scale_fill_distiller(palette = "RdBu", direction = 1) +
   labs(
     x = "Tax Year",
-    y =  "Tax Rate Percent Change (%)",
+    y = "Tax Rate Percent Change (%)",
     caption = "Dotted lines represent reassessment years"
   ) +
   theme_minimal() +
@@ -243,12 +267,25 @@ est_increases <- data.frame(
   )
 ```
 
+The table below shows the estimated increase in assessed values for each major class. For example, class 2 properties are estimated to increase by 23.5% to achieve a sales ratio of 100% accuracy.
+
+```{r, echo=FALSE}
+est_increases %>%
+  mutate(`Estimated Increase (%)` = round(est_increase*100,2)) %>%
+  select(`Major Class` = class,
+         `Estimated Increase (%)`)%>%
+  DT::datatable(
+    rownames = FALSE,
+    options = list(dom = "t")
+  )
+```
 ## Gathering PIN exemptions, TIF and agency data
 
 So far we have each North tri PIN and its tax code, but we'll also need information about the PIN's assessed value, the class code, and any exemptions that the PIN qualified for in Tax Year 2023. For this analysis we'll assume that the exemptions received in 2023 will remain in place through Tax Year 2025.
 
 ```{r}
-# The lookup_pin function queries the PTAXSIM database for all info related to the PIN's AV, EAV and exemptions
+# The lookup_pin function queries the PTAXSIM database for all info related to
+# the PIN's AV, EAV and exemptions
 north_tri_pins_exemptions <- lookup_pin(
   2023,
   north_tri_pins$pin
@@ -257,8 +294,10 @@ north_tri_pins_exemptions <- lookup_pin(
 # Join the data with AV and exemption info to our other data.frame with PINs and tax codes
 north_tri_pins <- north_tri_pins_exemptions %>%
   left_join(north_tri_pins, by = "pin") %>%
-  mutate(exe_total = rowSums(across(starts_with("exe_"))),
-         major_class_code = substr(class, 1, 1))
+  mutate(
+    exe_total = rowSums(across(starts_with("exe_"))),
+    major_class_code = substr(class, 1, 1)
+  )
 ```
 
 Next, we'll query the PTAXSIM database to collect data on all taxing agencies and TIFs within the North tri. To calculate a tax code's tax rate, we need to calculate the individual tax rates of each agency that covers that tax code. 
@@ -325,7 +364,8 @@ est_eav_tax_code <- north_tri_pins %>%
       tax_code = tax_code_num,
       tax_code_frozen_eav
     ), by = "tax_code") %>%
-  # If tax code is in TIF, keep EAV frozen if the estimated EAV is greater than frozen EAV
+  # If tax code is in TIF, keep EAV frozen if the estimated EAV is greater
+  # than frozen EAV
   mutate(
     base_year_taxable_eav = case_when(
       tax_code_frozen_eav <= base_year_taxable_eav ~
@@ -339,7 +379,6 @@ est_eav_tax_code <- north_tri_pins %>%
     ),
     added_tax_code_eav = est_taxable_eav - base_year_taxable_eav
   )
-
 ```
 
 Next, we take the growth to the tax code EAV, `added_tax_code_eav` and add that on to the base year EAV of each agency that falls within that tax code as reported by the Cook County clerk. This ensures that our 2025 estimated agency EAV will include the base year EAV from PINs that are not within the North tri. 
@@ -369,7 +408,8 @@ Finally, we apply an estimated levy increase to each agency's total 2023 extensi
 
 ```{r}
 # Define anticipated agency levy growth from 2023 to 2025
-# We assume a 4% yoy growth for agency levies, meaning an approximate 8% growth for 2023-2025
+# We assume a 4% yoy growth for agency levies, meaning an approximate
+# 8% growth for 2023-2025
 levy_perc_growth <- .08
 
 # Calculate the agency tax rates, calculating new base by adding
@@ -415,19 +455,19 @@ tax_code_rates <- agency_rates %>%
 
 ## Summarizing the results
 
-*Not sure if we want to show distribution w/ median, min, max or just medians w/ diff between medians, two tables show those options*
-
 As anticipated, the estimated increase in assessed values for the North tri leads to lower tax rates across all tax codes. The median estimated tax rate for 2025 is 7.76%, which is a -1.32% difference from the 2023 median tax rate of 9.08%. 
 
 ```{r, echo = FALSE, results='asis'}
 rate_summ <- tax_code_rates %>%
   group_by() %>%
-  summarise(`2023 Min Rate (%)` = round(min(tax_code_rate_2023)*100,2),
-            `2023 Median Rate (%)` = round(median(tax_code_rate_2023)*100,2),
-            `2023 Max Rate (%)` = round(max(tax_code_rate_2023)*100,2),
-            `Estimated 2025 Min Rate (%)` = round(min(estimated_tax_code_rate_2025)*100,2),
-            `Estimated 2025 Median Rate (%)` = round(median(estimated_tax_code_rate_2025)*100,2),
-            `Estimated 2025 Max Rate (%)` = round(max(estimated_tax_code_rate_2025)*100,2))
+  summarise(
+    `2023 Min Rate (%)` = round(min(tax_code_rate_2023) * 100, 2),
+    `2023 Median Rate (%)` = round(median(tax_code_rate_2023) * 100, 2),
+    `2023 Max Rate (%)` = round(max(tax_code_rate_2023) * 100, 2),
+    `Estimated 2025 Min Rate (%)` = round(min(estimated_tax_code_rate_2025) * 100, 2),
+    `Estimated 2025 Median Rate (%)` = round(median(estimated_tax_code_rate_2025) * 100, 2),
+    `Estimated 2025 Max Rate (%)` = round(max(estimated_tax_code_rate_2025) * 100, 2)
+  )
 
 
 datatable(rate_summ, rownames = FALSE, options = list(dom = "t"))
@@ -435,8 +475,8 @@ datatable(rate_summ, rownames = FALSE, options = list(dom = "t"))
 rate_summ_2 <- tax_code_rates %>%
   group_by() %>%
   summarise(
-    `2023 Median Rate (%)` = round(median(tax_code_rate_2023)*100,2),
-    `Estimated 2025 Median Rate (%)` = round(median(estimated_tax_code_rate_2025)*100,2),
+    `2023 Median Rate (%)` = round(median(tax_code_rate_2023) * 100, 2),
+    `Estimated 2025 Median Rate (%)` = round(median(estimated_tax_code_rate_2025) * 100, 2),
     `Estimated Rate Difference` = round((median(estimated_tax_code_rate_2025) - median(tax_code_rate_2023)) * 100, 2),
     `Estimated Rate Difference (%)` = round((median(estimated_tax_code_rate_2025) - median(tax_code_rate_2023)) / median(tax_code_rate_2023) * 100, 2)
   )
@@ -448,16 +488,16 @@ We can also look at how estimated 2025 tax rates compare to 2023 rates across to
 
 ```{r, echo = FALSE, results='asis'}
 # Summarize median 2023 tax rate and median estimated 2025 tax rate by township
-
 rate_town_summ <- tax_code_rates %>%
-  left_join(north_tri_tax_codes %>%
-    select(tax_code, township_name),
+  left_join(
+    north_tri_tax_codes %>%
+      select(tax_code, township_name),
     by = "tax_code"
-  ) %>% 
+  ) %>%
   group_by(township_name) %>%
   summarise(
-    `2023 Median Rate (%)` = round(median(tax_code_rate_2023)*100,2),
-    `Estimated 2025 Median Rate (%)` = round(median(estimated_tax_code_rate_2025)*100,2),
+    `2023 Median Rate (%)` = round(median(tax_code_rate_2023) * 100, 2),
+    `Estimated 2025 Median Rate (%)` = round(median(estimated_tax_code_rate_2025) * 100, 2),
     `Estimated Rate Difference` = round((median(estimated_tax_code_rate_2025) - median(tax_code_rate_2023)) * 100, 2),
     `Estimated Rate Difference (%)` = round((median(estimated_tax_code_rate_2025) - median(tax_code_rate_2023)) / median(tax_code_rate_2023) * 100, 2)
   ) %>%
@@ -469,13 +509,15 @@ All tax code tax rates for the North tri can be viewed and exported with the tab
 ```{r, echo = FALSE, results='asis'}
 datatable(
   tax_code_rates %>%
-    mutate(`Tax Code` = tax_code, 
-           `Tax Code Rate 2023 (%)` = round(tax_code_rate_2023*100, 2), 
-           `Estimated Tax Code Rate 2025 (%)` = round(estimated_tax_code_rate_2025*100, 2)) %>%
+    mutate(
+      `Tax Code` = tax_code,
+      `Tax Code Rate 2023 (%)` = round(tax_code_rate_2023 * 100, 2),
+      `Estimated Tax Code Rate 2025 (%)` = round(estimated_tax_code_rate_2025 * 100, 2)
+    ) %>%
     select(-tax_code, -tax_code_rate_2023, -estimated_tax_code_rate_2025),
-  extensions = 'Buttons', options = list(
-    dom = 'Bfrtip',
-    buttons = c('copy', 'csv', 'excel')
-  ))
+  extensions = "Buttons", options = list(
+    dom = "Bfrtip",
+    buttons = c("copy", "csv", "excel")
+  )
+)
 ```
-
