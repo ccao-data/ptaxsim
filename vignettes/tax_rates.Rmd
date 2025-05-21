@@ -49,7 +49,7 @@ ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.db"))
 
 ```{r, echo=FALSE}
 # This is needed to build the vignette using GitHub Actions
- ptaxsim_db_conn <- DBI::dbConnect(
+ptaxsim_db_conn <- DBI::dbConnect(
   RSQLite::SQLite(),
   Sys.getenv("PTAXSIM_DB_PATH")
 )
@@ -121,7 +121,8 @@ township_rate_summ <- north_tri_tax_codes %>%
     perc_25_tax_rate = quantile(tax_code_rate, .25),
     perc_75_tax_rate = quantile(tax_code_rate, .75)
   ) %>%
-  mutate(tax_rate_perc_change = (median_tax_rate - lag(median_tax_rate)) / lag(median_tax_rate) * 100)
+  mutate(tax_rate_perc_change = (median_tax_rate - lag(median_tax_rate)) /
+    lag(median_tax_rate) * 100)
 ```
 
 The below visualization contains one graph per North tri township. Each graph shows tax rates: specifically, **median**, **<span style="color: blue;"> 25th percentile</span>**, and **<span style="color: red;"> 75th percentile</span>** tax rates, per tax year. The dashed vertical lines mark the reassessment years of 2013, 2016, 2019, and 2022.
@@ -292,7 +293,8 @@ north_tri_pins_exemptions <- lookup_pin(
   north_tri_pins$pin
 )
 
-# Join the data with AV and exemption info to our other data.frame with PINs and tax codes
+# Join the data with AV and exemption info to our other data.frame with PINs
+# and tax codes
 north_tri_pins <- north_tri_pins_exemptions %>%
   left_join(north_tri_pins, by = "pin") %>%
   mutate(
@@ -475,19 +477,27 @@ rate_summ <- tax_code_rates %>%
     `2023 Min Rate (%)` = round(min(tax_code_rate_2023) * 100, 2),
     `2023 Median Rate (%)` = round(median(tax_code_rate_2023) * 100, 2),
     `2023 Max Rate (%)` = round(max(tax_code_rate_2023) * 100, 2),
-    `Estimated 2025 Min Rate (%)` = round(min(estimated_tax_code_rate_2025) * 100, 2),
-    `Estimated 2025 Median Rate (%)` = round(median(estimated_tax_code_rate_2025) * 100, 2),
-    `Estimated 2025 Max Rate (%)` = round(max(estimated_tax_code_rate_2025) * 100, 2)
+    `Estimated 2025 Min Rate (%)` =
+      round(min(estimated_tax_code_rate_2025) * 100, 2),
+    `Estimated 2025 Median Rate (%)` =
+      round(median(estimated_tax_code_rate_2025) * 100, 2),
+    `Estimated 2025 Max Rate (%)` =
+      round(max(estimated_tax_code_rate_2025) * 100, 2)
   )
-
 
 rate_summ_2 <- tax_code_rates %>%
   group_by() %>%
   summarise(
     `2023 Median Rate (%)` = round(median(tax_code_rate_2023) * 100, 2),
-    `Estimated 2025 Median Rate (%)` = round(median(estimated_tax_code_rate_2025) * 100, 2),
-    `Estimated Rate Difference` = round((median(estimated_tax_code_rate_2025) - median(tax_code_rate_2023)) * 100, 2),
-    `Estimated Rate Difference (%)` = round((median(estimated_tax_code_rate_2025) - median(tax_code_rate_2023)) / median(tax_code_rate_2023) * 100, 2)
+    `Estimated 2025 Median Rate (%)` =
+      round(median(estimated_tax_code_rate_2025) * 100, 2),
+    `Estimated Rate Difference` =
+      round((median(estimated_tax_code_rate_2025) -
+        median(tax_code_rate_2023)) * 100, 2),
+    `Estimated Rate Difference (%)` =
+      round((median(estimated_tax_code_rate_2025) -
+        median(tax_code_rate_2023)) /
+        median(tax_code_rate_2023) * 100, 2)
   )
 
 DT::datatable(rate_summ_2, rownames = FALSE, options = list(dom = "t"))
@@ -506,7 +516,8 @@ rate_town_summ <- tax_code_rates %>%
   group_by(township_name) %>%
   summarise(
     `2023 Median Rate (%)` = round(median(tax_code_rate_2023) * 100, 2),
-    `Estimated 2025 Median Rate (%)` = round(median(estimated_tax_code_rate_2025) * 100, 2)
+    `Estimated 2025 Median Rate (%)` =
+      round(median(estimated_tax_code_rate_2025) * 100, 2)
   ) %>%
   rename(Township = township_name)
 
@@ -523,7 +534,8 @@ tax_rates_download <- tax_code_rates %>%
   mutate(
     `Tax Code` = tax_code,
     `Tax Code Rate 2023 (%)` = round(tax_code_rate_2023 * 100, 2),
-    `Estimated Tax Code Rate 2025 (%)` = round(estimated_tax_code_rate_2025 * 100, 2)
+    `Estimated Tax Code Rate 2025 (%)` =
+      round(estimated_tax_code_rate_2025 * 100, 2)
   ) %>%
   rename(Township = township_name) %>%
   select(-tax_code, -tax_code_rate_2023, -estimated_tax_code_rate_2025)
