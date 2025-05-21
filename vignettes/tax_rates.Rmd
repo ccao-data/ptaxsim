@@ -32,7 +32,6 @@ To begin, we will load some useful libraries and instantiate a PTAXSIM database 
 library(DBI)
 library(data.table)
 library(dplyr)
-library(DT)
 library(ggplot2)
 library(ggspatial)
 library(here)
@@ -491,7 +490,7 @@ rate_summ_2 <- tax_code_rates %>%
     `Estimated Rate Difference (%)` = round((median(estimated_tax_code_rate_2025) - median(tax_code_rate_2023)) / median(tax_code_rate_2023) * 100, 2)
   )
 
-datatable(rate_summ_2, rownames = FALSE, options = list(dom = "t"))
+DT::datatable(rate_summ_2, rownames = FALSE, options = list(dom = "t"))
 ```
 
 The table below shows each township's median 2023 Tax Rate and the median Estimated 2025 Tax Rate.
@@ -511,7 +510,7 @@ rate_town_summ <- tax_code_rates %>%
   ) %>%
   rename(Township = township_name)
 
-datatable(rate_town_summ, rownames = FALSE, options = list(dom = "t"))
+DT::datatable(rate_town_summ, rownames = FALSE, options = list(dom = "t"))
 ```
 All tax code tax rates for the North tri can be viewed and exported with the table below.
 ```{r, echo = FALSE, results='asis'}
@@ -530,7 +529,7 @@ tax_rates_download <- tax_code_rates %>%
   select(-tax_code, -tax_code_rate_2023, -estimated_tax_code_rate_2025)
 
 
-datatable(tax_rates_download,
+DT::datatable(tax_rates_download,
   rownames = FALSE,
   extensions = "Buttons",
   options = list(
