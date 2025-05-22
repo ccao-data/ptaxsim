@@ -191,7 +191,7 @@ The plot below illustrates the percent change in the median tax rate for each to
 <details>
 
 <summary><strong>Click here</strong> to show plot code</summary>
-```{r, echo=FALSE}
+```{r}
 perc_diff_plot <- township_rate_summ %>%
   filter(
     !is.na(township_name),
