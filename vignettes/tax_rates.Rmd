@@ -349,7 +349,7 @@ est_eav_tax_code <- north_tri_pins %>%
     est_eav = round(eav * (1 + est_increase)),
     # For PINs w/ senior freeze exemptions, their taxable EAV is calculated
     # with base year EAV minus total exemptions, as the senior freeze exemption
-    # amount contingent on the base year EAV. For these PINs, their taxable
+    # amount is contingent on the base year EAV. For these PINs, their taxable
     # EAV will remain the frozen EAV amount, minus any other exemptions they
     # may have.
     taxable_frozen_eav = ifelse(
