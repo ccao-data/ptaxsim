@@ -59,7 +59,7 @@ ptaxsim_db_conn <- DBI::dbConnect(
 
 Since we're interested in looking at tax rate history for the North tri, we'll first need to gather all PINs that fall within North tri townships. We can query these PINs from the [Assessor's Office Open Data PIN Universe asset](https://datacatalog.cookcountyil.gov/Property-Taxation/Assessor-Parcel-Universe/nj4t-kc8j/), filtering by fields `triad_code` and `year` to select only North tri PINs (triad code 2) and in tax year 2023. 
 
-We can construct a query using Socrata's API selecting only the fields we'll need: `pin`, `township_name`, and `tax_code`.
+We can construct a query using the open data portal API, selecting only the fields we'll need: `pin`, `township_name`, and `tax_code`.
 
 ```{r}
 # We can query the CCAO Open Data parcel universe to get all PINs that fall
