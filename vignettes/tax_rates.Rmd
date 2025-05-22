@@ -246,7 +246,7 @@ We will use two sources to base our estimated AV increases for class 2 (Resident
 
 ## Converting ratio statistics to anticipated AV growth
 
-We'll define these ratios, convert the assessment ratios to sales ratios, and then derive the anticipated increase to Assessed Values. Eventually we'll apply these increases to each PIN based on that PIN's major class.
+We'll define these ratios, convert the assessment ratios to sales ratios, and then derive the anticipated increase to assessed values. Eventually we'll apply these increases to each PIN based on that PIN's major class.
 
 ```{r}
 # Define class 2, 3 and 5 ratios which are taken from the reports cited above
