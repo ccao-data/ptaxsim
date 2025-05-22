@@ -186,7 +186,7 @@ tax_rate_plot <- township_rate_summ %>%
 tax_rate_plot
 ```
 
-The plot below illustrates the percent change in the median tax rate for each township as compared to the prior tax year's rates. Reassessment years 2016, 2019 and 2022 show a consistent pattern of tax rate decreases. In 2022 the median tax rate across the entire North tri was 9.05%, a 10.57% decrease the median 2021 tax rate of 10.12%.
+The plot below illustrates the percent change in the median tax rate for each township as compared to the prior tax year's rates. Reassessment years 2016, 2019 and 2022 show a consistent pattern of tax rate decreases. In 2022 the median tax rate across the entire North tri was 9.05%, a 10.57% decrease from the median 2021 tax rate of 10.12%.
 
 <details>
 
