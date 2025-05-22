@@ -238,7 +238,7 @@ In 2025, the CCAO is estimating local tax rates for Tax Year 2025, incorporating
 
 Estimating tax rates necessitates estimating the future tax base for all North tri taxing agencies, as well as the levy amount to be collected by these properties. 
 
-First, we need to calculate an estimated 2025 tax base for North tri agencies using ratio statistics. Ratio statistics are an analytical tool used to measure assessment performance by comparing assessed values to sale prices of sold properties. Specifically, the statistic median ratio quantifies whether assessments are typically close to 100% of the sale price of the property, or whether they are, for example, below sale prices (80%) or above sale prices (120%). 
+First, we need to calculate an estimated 2025 tax base for North tri agencies using ratio statistics. Ratio statistics are an analytical tool used to measure assessment performance by comparing assessed values to sale prices of sold properties. Specifically, the median ratio statistic quantifies whether assessments are typically close to 100% of the sale price of the property, or whether they are, for example, below sale prices (80%) or above sale prices (120%). 
 
 If, for example, a median sales ratio is 90%, then this indicates that for properties that have sold, their assessments are typically 10% lower than their sale prices. To get to a ratio of 100% accuracy, we can calculate what an increase would be by taking (100%-90%) ÷ 90% = 10% ÷ 90% = 11%. This means that property assessments meeting a ratio of 90% could achieve a ratio of 100% if their assessments increased 11%.
 
