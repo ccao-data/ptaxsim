@@ -271,14 +271,17 @@ The table below shows the estimated increase in assessed values for each major c
 
 ```{r, echo=FALSE}
 est_increases %>%
-  mutate(`Estimated Increase (%)` = round(est_increase * 100, 2)) %>%
-  select(
-    `Major Class` = class,
-    `Estimated Increase (%)`
+  mutate(est_increase_round = paste0(round(est_increase * 100, 2), "%")) %>%
+  select(class, est_increase_round) %>%
+  pivot_wider(
+    values_from = est_increase_round,
+    names_from = class,
+    names_prefix = "Major Class ",
   ) %>%
   DT::datatable(
-    rownames = FALSE,
-    options = list(dom = "t")
+    rownames = c("<b>Estimated Increase</b>"),
+    options = list(dom = "t"),
+    escape = FALSE
   )
 ```
 ## Gathering PIN exemptions, TIF and agency data
