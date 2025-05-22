@@ -429,7 +429,7 @@ Finally, we apply an estimated levy increase to each agency's total 2023 extensi
 levy_perc_growth <- .08
 
 # Calculate the agency tax rates, calculating new base by adding
-# "est_added_agency_eav_25" to the "agency_base_year_eav_clerk" in order
+# "added_agency_eav" to the "agency_base_year_eav_clerk" in order
 # to account for non-north tri portions of the base
 agency_rates <- agencies_new_eav %>%
   mutate(
