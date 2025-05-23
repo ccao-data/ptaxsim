@@ -477,20 +477,6 @@ As anticipated, the estimated increase in assessed values for the North tri lead
 rate_summ <- tax_code_rates %>%
   group_by() %>%
   summarise(
-    `2023 Min Rate (%)` = round(min(tax_code_rate_2023) * 100, 2),
-    `2023 Median Rate (%)` = round(median(tax_code_rate_2023) * 100, 2),
-    `2023 Max Rate (%)` = round(max(tax_code_rate_2023) * 100, 2),
-    `Estimated 2025 Min Rate (%)` =
-      round(min(estimated_tax_code_rate_2025) * 100, 2),
-    `Estimated 2025 Median Rate (%)` =
-      round(median(estimated_tax_code_rate_2025) * 100, 2),
-    `Estimated 2025 Max Rate (%)` =
-      round(max(estimated_tax_code_rate_2025) * 100, 2)
-  )
-
-rate_summ_2 <- tax_code_rates %>%
-  group_by() %>%
-  summarise(
     `2023 Median Rate (%)` = round(median(tax_code_rate_2023) * 100, 2),
     `Estimated 2025 Median Rate (%)` =
       round(median(estimated_tax_code_rate_2025) * 100, 2),
@@ -503,7 +489,7 @@ rate_summ_2 <- tax_code_rates %>%
         median(tax_code_rate_2023) * 100, 2)
   )
 
-DT::datatable(rate_summ_2, rownames = FALSE, options = list(dom = "t"))
+DT::datatable(rate_summ, rownames = FALSE, options = list(dom = "t"))
 ```
 
 The table below shows each township's median 2023 Tax Rate and the median Estimated 2025 Tax Rate.
