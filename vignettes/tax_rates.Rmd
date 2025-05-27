@@ -335,8 +335,8 @@ We'll first apply est_increases to each PIN in our list of `north_tri_pins` base
 
 But there are property tax provisions that reduce or freeze taxable value in a way that reduces this tax base growth. Below are the exceptions that the tax rate calculations need to handle:
 
-1. If a **PIN** received a Senior Freeze exemption, its taxable value is the frozen EAV as granted by the exemption.
-2. If a **PIN** didn't receive the Senior Freeze exemption, but it did receive other exemptions that reduce its taxable value, the value of its exemptions must be subtracted from its EAV.
+1. If a **PIN** received any exemptions *except* for the Senior Freeze, its taxable value is its EAV with the increase applied, minus all applicable exemption amounts.
+2. If a **PIN** did receive the Senior Freeze exemption, then the increase is not applied as the Senior Freeze exemption amount must be subtracted from the base year EAV to calculate its frozen, taxable EAV. If a PIN received any other exemptions, those exemptions are subtracted from the base year EAV as well.
 3. If a **tax code** is within a TIF district, its aggregate EAV cannot exceed that tax code's frozen EAV as set when the TIF was created.
 
 The code below shows how this is accomplished. It culminates in the key variable we'll use in our estimation of the future tax base, `added_tax_code_eav`, which is the difference between the reconstructed base year (2023) EAV and the estimated 2025 EAV.
