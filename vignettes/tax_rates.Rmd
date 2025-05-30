@@ -98,7 +98,8 @@ north_tri_tax_codes <- distinct(north_tri_tax_codes)
 Now that we have all North tri tax codes from years 2012 to 2023, we can query the PTAXSIM database to find each of their tax rates for those years.
 
 ```{r}
-# Query the PTAXSIM database for tax code tax rates from 2012 to 2023 which are joined to our list of North tri tax codes that have existed in each of those years
+# Query the PTAXSIM database for tax code tax rates from 2012 to 2023 which are
+# joined to our list of North tri tax codes
 north_tri_tax_codes <- north_tri_tax_codes %>%
   mutate(
     year = as.integer(year)
@@ -300,7 +301,8 @@ est_increases %>%
 We've already queried the CCAO Open Data PIN Universe to gather all North tri tax codes from 2012 to 2023, but we'll need to query that open data asset again to bring in all North tri PINs that existed in tax year 2023. We then will query the PTAXSIM data base to join information about each PIN's assessed value, the class code, and any exemptions that the PIN qualified for in Tax Year 2023. For this analysis we'll assume that the exemptions received in 2023 will remain in place through Tax Year 2025.
 
 ```{r}
-# Query the CCAO Open Data PIN Universe to get all North tri PINs for tax year 2023
+# Query the CCAO Open Data PIN Universe to get all North tri PINs for
+# tax year 2023
 north_tri_pins <- GET(
   base_url,
   query = list(
@@ -333,11 +335,11 @@ north_tri_pins <- north_tri_pins_exemptions %>%
 Next, we'll query the PTAXSIM database to collect data on all taxing agencies and TIFs within the North tri. To calculate a tax code's tax rate, we need to calculate the individual tax rates of each agency that covers that tax code. 
 
 ```{r}
-# We'll need to use the North tri tax codes in our TIF and agency queries, 
-# so let's filter our existing north_tri_tax_codes dataframe to just include 
+# We'll need to use the North tri tax codes in our TIF and agency queries,
+# so let's filter our existing north_tri_tax_codes dataframe to just include
 # tax codes that existed in 2023
 north_tri_tax_codes <- north_tri_tax_codes %>%
-  filter(year == 2023) 
+  filter(year == 2023)
 
 # Query TIF distributions by tax code
 north_tri_tif_dists <- dbGetQuery(
