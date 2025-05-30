@@ -21,7 +21,6 @@ This article demonstrates how to use PTAXSIM to:
 
   * visualize previous tax rates in the North tri to show that, historically, tax rates typically decrease in reassessment years;
   * apply percent changes to past-year tax levies and tax bases, to estimate new tax rates for every taxing district (e.g., each municipal, school, and county district); and
-
   * produce estimated cumulative tax rates for every tax code in the North tri.
 
 # The impact of reassessments on tax rates
@@ -55,44 +54,55 @@ ptaxsim_db_conn <- DBI::dbConnect(
 )
 ```
 
-## Gathering North tri PINs and tax codes
+## Gathering North tri tax codes
 
-Since we're interested in looking at tax rate history for the North tri, we'll first need to gather all PINs that fall within North tri townships. We can query these PINs from the [Assessor's Office Open Data PIN Universe asset](https://datacatalog.cookcountyil.gov/Property-Taxation/Assessor-Parcel-Universe/nj4t-kc8j/), filtering by fields `triad_code` and `year` to select only North tri PINs (triad code 2) and in tax year 2023. 
+Since we're interested in looking at tax rate history for the North tri, we'll first need to gather all tax codes that fall within North tri townships for the years of interest. We can identify these tax codes and their respective townships by querying the tax codes associated with all North tri PINs from the [Assessor's Office Open Data PIN Universe asset](https://datacatalog.cookcountyil.gov/Property-Taxation/Assessor-Parcel-Universe/nj4t-kc8j/), filtering by fields `triad_code` and `year` to select only North tri PINs (triad code 2) and from tax years 2012 to 2023.  
 
-We can construct a query using the open data portal API, selecting only the fields we'll need: `pin`, `township_name`, and `tax_code`.
+We can construct a query using the open data portal API, selecting only the fields we'll need: `tax_code`, `township_name`, and `year`. Since we don't need each individual PIN for all of these years, we can omit `pin` from the output and then remove all duplicates so we're left with unique tax codes, their townships, and year. In some rare cases in Cook County, a tax code can cover multiple townships, but in the North tri each tax code is unique to a township.) 
+
+*Some notes about tax codes:* A **tax code** is a 5-digit number that identifies the unique combination of overlapping tax districts, such as city, school, and county districts, for a given area. All PINs in the same tax code pay taxes to the same unique combination of districts, and pay the same tax rate. It is possible for that combination of tax districts to change year over year (say, if a new SSA is created or a TIF expires) meaning a PIN's tax code can change as well. This results in new tax codes being created over time, while others are retired. This necessitates querying the tax codes for each year of interest to ensure we have the entire universe of tax codes from 2012 to 2023.
 
 ```{r}
-# We can query the CCAO Open Data parcel universe to get all PINs that fall
-# within the north tri
-
+# We can query the CCAO Open Data parcel universe to get all tax codes that fall
+# within the north tri for each year of interest
 base_url <- "https://datacatalog.cookcountyil.gov/resource/nj4t-kc8j.json"
 
-north_tri_pins <- GET(
-  base_url,
-  query = list(
-    year = 2023,
-    triad_code = "2",
-    `$select` = "pin, township_name, tax_code",
-    `$limit` = 500000L
-  )
+north_tri_tax_codes <- data.frame(
+  tax_code = character(),
+  township_name = character(),
+  year = character(),
+  stringsAsFactors = FALSE
 )
 
-north_tri_pins <- fromJSON(rawToChar(north_tri_pins$content))
+for (year in 2012:2023) {
+  response <- GET(
+    base_url,
+    query = list(
+      year = year,
+      triad_code = "2",
+      `$select` = "tax_code, township_name, year",
+      `$limit` = 500000L
+    )
+  )
+
+  north_tri_all_rows <- fromJSON(rawToChar(response$content)) %>%
+    as.data.frame() %>%
+    unique()
+
+  north_tri_tax_codes <- bind_rows(north_tri_tax_codes, north_tri_all_rows)
+}
+
+north_tri_tax_codes <- distinct(north_tri_tax_codes)
 ```
 
-Now that we have all North tri PINs and their respective tax codes for tax year 2023, we can use the PTAXSIM database to find each of their tax rates in all years from 2012 to 2023. 
-
-A **tax code** is a 5-digit number that identifies the unique combination of overlapping tax districts, such as city, school, and county districts, for a given area. All PINs in the same tax code pay taxes to the same unique combination of districts, and pay the same tax rate.
+Now that we have all North tri tax codes from years 2012 to 2023, we can query the PTAXSIM database to find each of their tax rates for those years.
 
 ```{r}
-# Get the township names for each tax code so we find the tax rate distributions
-# for each North tri township.
-# In some rare cases in Cook County, a tax code can cover multiple townships,
-# but in the North tri each tax code is unique to a township.
-north_tri_tax_codes <- north_tri_pins %>%
-  group_by(tax_code) %>%
-  summarise(township_name = first(township_name)) %>%
-  # Query the PTAXSIM database for tax code tax rates from 2012 to 2023
+# Query the PTAXSIM database for tax code tax rates from 2012 to 2023 which are joined to our list of North tri tax codes that have existed in each of those years
+north_tri_tax_codes <- north_tri_tax_codes %>%
+  mutate(
+    year = as.integer(year)
+  ) %>%
   inner_join(
     dbGetQuery(
       ptaxsim_db_conn,
@@ -100,11 +110,12 @@ north_tri_tax_codes <- north_tri_pins %>%
       SELECT DISTINCT year, tax_code_num, tax_code_rate
       FROM tax_code
       WHERE year >= 2012
+      AND year <= 2023
       ",
         .con = ptaxsim_db_conn
       )
     ),
-    by = c("tax_code" = "tax_code_num")
+    by = c("tax_code" = "tax_code_num", "year")
   )
 ```
 
@@ -186,7 +197,7 @@ tax_rate_plot <- township_rate_summ %>%
 tax_rate_plot
 ```
 
-The plot below illustrates the percent change in the median tax rate for each township as compared to the prior tax year's rates. Reassessment years 2016, 2019 and 2022 show a consistent pattern of tax rate decreases. In 2022 the median tax rate across the entire North tri was 9.05%, a 10.57% decrease from the median 2021 tax rate of 10.12%.
+The plot below illustrates the percent change in the median tax rate for each township as compared to the prior tax year's rates. Reassessment years 2016, 2019 and 2022 show a consistent pattern of tax rate decreases. In 2022 the median tax rate across the entire North tri was 9.06%, a 10.51% decrease from the median 2021 tax rate of 10.13%.
 
 <details>
 
@@ -284,11 +295,24 @@ est_increases %>%
     escape = FALSE
   )
 ```
-## Gathering PIN exemptions, TIF and agency data
+## Gathering PINs, exemptions, TIF and agency data
 
-So far we have each North tri PIN and its tax code, but we'll also need information about the PIN's assessed value, the class code, and any exemptions that the PIN qualified for in Tax Year 2023. For this analysis we'll assume that the exemptions received in 2023 will remain in place through Tax Year 2025.
+We've already queried the CCAO Open Data PIN Universe to gather all North tri tax codes from 2012 to 2023, but we'll need to query that open data asset again to bring in all North tri PINs that existed in tax year 2023. We then will query the PTAXSIM data base to join information about each PIN's assessed value, the class code, and any exemptions that the PIN qualified for in Tax Year 2023. For this analysis we'll assume that the exemptions received in 2023 will remain in place through Tax Year 2025.
 
 ```{r}
+# Query the CCAO Open Data PIN Universe to get all North tri PINs for tax year 2023
+north_tri_pins <- GET(
+  base_url,
+  query = list(
+    year = 2023,
+    triad_code = "2",
+    `$select` = "pin, tax_code",
+    `$limit` = 500000L
+  )
+)
+
+north_tri_pins <- fromJSON(rawToChar(north_tri_pins$content))
+
 # The lookup_pin function queries the PTAXSIM database for all info related to
 # the PIN's AV, EAV and exemptions
 north_tri_pins_exemptions <- lookup_pin(
@@ -309,6 +333,12 @@ north_tri_pins <- north_tri_pins_exemptions %>%
 Next, we'll query the PTAXSIM database to collect data on all taxing agencies and TIFs within the North tri. To calculate a tax code's tax rate, we need to calculate the individual tax rates of each agency that covers that tax code. 
 
 ```{r}
+# We'll need to use the North tri tax codes in our TIF and agency queries, 
+# so let's filter our existing north_tri_tax_codes dataframe to just include 
+# tax codes that existed in 2023
+north_tri_tax_codes <- north_tri_tax_codes %>%
+  filter(year == 2023) 
+
 # Query TIF distributions by tax code
 north_tri_tif_dists <- dbGetQuery(
   ptaxsim_db_conn,
@@ -336,7 +366,7 @@ We'll first apply est_increases to each PIN in our list of `north_tri_pins` base
 But there are property tax provisions that reduce or freeze taxable value in a way that reduces this tax base growth. Below are the exceptions that the tax rate calculations need to handle:
 
 1. If a **PIN** received any exemptions *except* for the Senior Freeze, its taxable value is its EAV with the increase applied, minus all applicable exemption amounts.
-2. If a **PIN** did receive the Senior Freeze exemption, then the increase is not applied as the Senior Freeze exemption amount must be subtracted from the base year EAV to calculate its frozen, taxable EAV. If a PIN received any other exemptions, those exemptions are subtracted from the base year EAV as well.
+2. If a **PIN** did receive the Senior Freeze exemption, then the increase is not applied, since the frozen taxable EAV should be exactly the same as the EAV at the time when the exemption first went into effect (the "base year" EAV).If a PIN received any other exemptions, those exemptions are subtracted from the base year EAV.
 3. If a **tax code** is within a TIF district, its aggregate EAV cannot exceed that tax code's frozen EAV as set when the TIF was created.
 
 The code below shows how this is accomplished. It culminates in the key variable we'll use in our estimation of the future tax base, `added_tax_code_eav`, which is the difference between the reconstructed base year (2023) EAV and the estimated 2025 EAV.
