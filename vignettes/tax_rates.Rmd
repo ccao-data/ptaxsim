@@ -91,8 +91,6 @@ for (year in 2012:2023) {
 
   north_tri_tax_codes <- bind_rows(north_tri_tax_codes, north_tri_all_rows)
 }
-
-north_tri_tax_codes <- distinct(north_tri_tax_codes)
 ```
 
 Now that we have all North tri tax codes from years 2012 to 2023, we can query the PTAXSIM database to find each of their tax rates for those years.
