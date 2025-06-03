@@ -28,6 +28,7 @@ Suggests:
     covr,
     devtools,
     dplyr,
+    DT,
     geoarrow,
     ggplot2,
     ggspatial,
