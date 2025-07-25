@@ -171,10 +171,13 @@ tax_bill <- function(year_vec,
       .(i.agency_num, i.agency_name, i.tif_share)
   ]
 
-  # Add an indicator for when the PIN is in the special Red-Purple Modernization
+  # Add an indicator for when the PIN is in a special transit
   # TIF, which has different rules than other TIFs
+
+  #temporary hotfix to include both RPM and RLE tif
   in_rpm_tif <- tif_agency_num <- tif_agency_name <- tif_share <- NULL
-  dt[, in_rpm_tif := any(tif_agency_num == "030210900"), by = .(year, pin)]
+  dt[, in_rpm_tif := any(tif_agency_num == "030210900" |
+                           tif_agency_num == "030210901"), by = .(year, pin)]
   dt[is.na(in_rpm_tif), in_rpm_tif := FALSE]
   data.table::setnafill(dt, "const", 0, cols = "tif_share")
 
