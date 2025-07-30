@@ -363,7 +363,11 @@ tax_bill <- function(year_vec,
     )
     dt[, (drop_cols) := NULL]
     data.table::setnames(dt, "final_tax_to_dist", "final_tax")
-    dt <- rbind(dt, tif_row, cps_tif_row)
+
+    dt <- rbind(dt, tif_row)
+    if(cps_tif_row$final_tax > 0){
+      dt <- rbind(dt, cps_tif_row)
+    }
     data.table::setcolorder(
       dt,
       neworder = c(
