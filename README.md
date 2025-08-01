@@ -581,7 +581,12 @@ data was available in mid-2020.
   Red-Purple Modernization (RPM) TIF are slightly flawed. However, the
   total tax bill per PIN is still accurate. See issue
   [\#4](https://github.com/ccao-data/ptaxsim/issues/4) for more
-  information.
+  information or issue
+  [\#56](https://github.com/ccao-data/ptaxsim/issues/56). As a side
+  effect of how the Transit TIF calculations are done, the total revenue
+  for Transit TIFs includes only the final total revenue after all
+  distributions to other taxing bodies. This does not align with the
+  pre-distribution numbers shown in the Clerk TIF reports.
 - Special Service Area (SSA) rates must be calculated manually when
   creating counterfactual bills. See issue
   [\#3](https://github.com/ccao-data/ptaxsim/issues/3) for more

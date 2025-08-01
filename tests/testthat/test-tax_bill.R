@@ -82,8 +82,8 @@ test_that("function returns expected data type/structure", {
       "agency_num", "agency_name", "agency_major_type", "agency_minor_type",
       "agency_total_ext", "agency_total_eav", "agency_tax_rate",
       "tax_amt_exe", "tax_amt_pre_exe", "tax_amt_post_exe", "tif_agency_num",
-      "tif_agency_name", "tif_share", "rpm_tif_to_cps", "rpm_tif_to_rpm",
-      "rpm_tif_to_dist", "final_tax_to_tif", "final_tax_to_dist"
+      "tif_agency_name", "tif_share", "transit_tif_to_cps", "transit_tif_to_rpm",
+      "transit_tif_to_dist", "final_tax_to_tif", "final_tax_to_dist"
     )
   )
   expect_equal(

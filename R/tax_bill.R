@@ -392,7 +392,9 @@ tax_bill <- function(year_vec,
         "agency_tax_rate", "final_tax"
       )
     )
-  } else {
+  }
+
+  if (!simplify && !simplify_transit) {
     data.table::setcolorder(
       dt,
       neworder = c(
