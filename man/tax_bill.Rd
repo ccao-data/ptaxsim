@@ -11,7 +11,8 @@ tax_bill(
   agency_dt = lookup_agency(year_vec, tax_code_vec),
   pin_dt = lookup_pin(year_vec, pin_vec),
   tif_dt = lookup_tif(year_vec, tax_code_vec),
-  simplify = TRUE
+  simplify = TRUE,
+  simplify_transit = FALSE
 )
 }
 \arguments{
@@ -48,6 +49,13 @@ and \code{tax_code_vec}.}
 appear on a real tax bill. Additionally, collapses the TIF output column
 \code{final_tax_to_tif} to a line-item, similar to the format on a real
 tax bill.}
+
+\item{simplify_transit}{Default \code{FALSE}. Must be used in combination
+with \code{simplify=FALSE}.
+Boolean to keep only the columns that appear on a real tax bill
+which also includes the "Board of Education - from Transit TIF" line.
+Additionally, collapses the TIF output column \code{final_tax_to_tif}
+to a line-item, similar to the format on a real tax bill.}
 }
 \value{
 A \code{data.table} which contains a tax bill for each specified PIN

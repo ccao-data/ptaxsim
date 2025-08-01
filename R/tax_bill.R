@@ -62,6 +62,12 @@
 #'   appear on a real tax bill. Additionally, collapses the TIF output column
 #'   \code{final_tax_to_tif} to a line-item, similar to the format on a real
 #'   tax bill.
+#' @param simplify_transit Default \code{FALSE}. Must be used in combination
+#'   with \code{simplify=FALSE}.
+#'   Boolean to keep only the columns that appear on a real tax bill
+#'   which also includes the "Board of Education - from Transit TIF" line.
+#'   Additionally, collapses the TIF output column \code{final_tax_to_tif}
+#'   to a line-item, similar to the format on a real tax bill.
 #'
 #' @return A \code{data.table} which contains a tax bill for each specified PIN
 #'   and year. Each tax bill is broken out by taxing district, meaning there is
@@ -86,62 +92,6 @@
 #' @md
 #' @family tax_bill
 #' @export
-
-
-transit_tif <- function(dt){
-  # Special handling for any transit tifs. For these TIF specifically:
-  # 1. CPS receives their proportionate share of revenue (they ignore the TIF)
-  # 2. 80% of the remaining revenue goes to the transit TIF
-  # 3. 20% of the remaining revenue goes to all taxing districts besides CPS
-
-  # Start by calculating the portion that ignores the TIF and goes to CPS
-  # Using chaining here to discard unneeded intermediate variables
-  crate <- cprop <- transit_tif_to_cps <- transit_tif_to_tif <- transit_tif_to_dist <- NULL
-  dt[
-    (in_transit_tif),
-    crate := agency_tax_rate[agency_num == "044060000"],
-    by = .(year, pin)
-  ][
-    (in_transit_tif),
-    cprop := crate / sum(agency_tax_rate),
-    by = .(year, pin)
-  ][
-    (in_transit_tif),
-    transit_tif_to_cps := final_tax_to_tif * cprop
-  ][, c("crate", "cprop") := NULL]
-
-  # Get total amount from TIF held for transit tifs, which is 80% of the
-  # funds remaining after the CPS cut
-  dt[(in_transit_tif), transit_tif_to_tif := (final_tax_to_tif - transit_tif_to_cps) * 0.8]
-
-  # Assign the remaining 20% to each district, then divvy up CPS's 20%
-  # proportionate to each district's tax rate
-  dt[
-    (in_transit_tif),
-    transit_tif_to_dist := (final_tax_to_tif - transit_tif_to_cps) * 0.2
-  ][
-    (in_transit_tif),
-    transit_tif_to_dist :=
-      transit_tif_to_dist + transit_tif_to_dist[agency_num == "044060000"] *
-      (agency_tax_rate / sum(agency_tax_rate[agency_num != "044060000"])),
-    by = .(year, pin)
-  ]
-
-  # Set CPS share that goes back to districts to 0, since they have their own
-  # special distribution
-  dt[in_transit_tif & agency_num == "044060000", transit_tif_to_dist := 0]
-
-  # Fill transit tif distributions with 0 for any non-transit property
-  data.table::setnafill(
-    x = dt,
-    type = "const",
-    fill = 0,
-    cols = c("transit_tif_to_cps", "transit_tif_to_tif", "transit_tif_to_dist")
-  )
-
-  return(dt)
-}
-
 
 
 tax_bill <- function(year_vec,
@@ -236,7 +186,7 @@ tax_bill <- function(year_vec,
   # TIF, which has different rules than other TIFs
   in_transit_tif <- tif_agency_num <- tif_agency_name <- tif_share <- NULL
   dt[, in_transit_tif := any(tif_agency_num == "030210900" |
-                               tif_agency_num == "030210901"), by = .(year, pin)]
+    tif_agency_num == "030210901"), by = .(year, pin)]
   dt[is.na(in_transit_tif), in_transit_tif := FALSE]
 
   data.table::setnafill(dt, "const", 0, cols = "tif_share")
@@ -264,7 +214,68 @@ tax_bill <- function(year_vec,
   dt[tax_amt_post_exe < 0, tax_amt_post_exe := 0]
   dt[, final_tax_to_tif := tax_amt_post_exe * tif_share]
 
-  #add transit tifs
+  # add transit tifs
+  transit_tif <- function(dt) {
+    # Special handling for any transit tifs. For these TIF specifically:
+    # 1. CPS receives their proportionate share of revenue (they ignore the TIF)
+    # 2. 80% of the remaining revenue goes to the transit TIF
+    # 3. 20% of the remaining revenue goes to all taxing districts besides CPS
+
+    # Start by calculating the portion that ignores the TIF and goes to CPS
+    # Using chaining here to discard unneeded intermediate variables
+    crate <- cprop <- transit_tif_to_cps <-
+      transit_tif_to_tif <- transit_tif_to_dist <- NULL
+    dt[
+      (in_transit_tif),
+      crate := agency_tax_rate[agency_num == "044060000"],
+      by = .(year, pin)
+    ][
+      (in_transit_tif),
+      cprop := crate / sum(agency_tax_rate),
+      by = .(year, pin)
+    ][
+      (in_transit_tif),
+      transit_tif_to_cps := final_tax_to_tif * cprop
+    ][, c("crate", "cprop") := NULL]
+
+    # Get total amount from TIF held for transit tifs, which is 80% of the
+    # funds remaining after the CPS cut
+    dt[
+      (in_transit_tif),
+      transit_tif_to_tif := (final_tax_to_tif - transit_tif_to_cps) * 0.8
+    ]
+
+    # Assign the remaining 20% to each district, then divvy up CPS's 20%
+    # proportionate to each district's tax rate
+    dt[
+      (in_transit_tif),
+      transit_tif_to_dist := (final_tax_to_tif - transit_tif_to_cps) * 0.2
+    ][
+      (in_transit_tif),
+      transit_tif_to_dist :=
+        transit_tif_to_dist + transit_tif_to_dist[agency_num == "044060000"] *
+          (agency_tax_rate / sum(agency_tax_rate[agency_num != "044060000"])),
+      by = .(year, pin)
+    ]
+
+    # Set CPS share that goes back to districts to 0, since they have their own
+    # special distribution
+    dt[in_transit_tif & agency_num == "044060000", transit_tif_to_dist := 0]
+
+    # Fill transit tif distributions with 0 for any non-transit property
+    data.table::setnafill(
+      x = dt,
+      type = "const",
+      fill = 0,
+      cols = c(
+        "transit_tif_to_cps", "transit_tif_to_tif",
+        "transit_tif_to_dist"
+      )
+    )
+
+    dt
+  }
+
   dt <- transit_tif(dt)
 
   # Calculate the final tax amount for districts by subtracting the TIF amount
@@ -300,7 +311,8 @@ tax_bill <- function(year_vec,
     drop_cols <- c(
       "exe_total", "agency_total_ext", "agency_total_eav", "tax_amt_exe",
       "tax_amt_pre_exe", "tax_amt_post_exe", "tif_agency_num",
-      "tif_agency_name", "tif_share", "transit_tif_to_cps", "transit_tif_to_tif",
+      "tif_agency_name", "tif_share",
+      "transit_tif_to_cps", "transit_tif_to_tif",
       "transit_tif_to_dist", "final_tax_to_tif"
     )
     dt[, (drop_cols) := NULL]
@@ -315,9 +327,9 @@ tax_bill <- function(year_vec,
       )
     )
   }
-  if (simplify_transit){ #simplify the result as the tax bills do for transit tifs
-    # Collapse per-district TIF amounts into a single row, just like on a
-    # real tax bill
+  if (simplify_transit) { # simplify the result as the
+    # tax bills do for transit tifs.# Collapse per-district TIF
+    # amounts into a single row, just like on a real tax bill
     tif_row <- dt[
       !is.na(tif_agency_num),
       .(final_tax = sum(final_tax_to_tif - transit_tif_to_cps)),
@@ -347,25 +359,29 @@ tax_bill <- function(year_vec,
 
     cps_tif_row[
       ,
-      c("agency_num", "agency_name",
-        "agency_major_type", "agency_minor_type", "agency_tax_rate") :=
+      c(
+        "agency_num", "agency_name",
+        "agency_major_type", "agency_minor_type", "agency_tax_rate"
+      ) :=
         list(
           "044060000", "BOARD OF EDUCATION - from TRANSIT TIF",
-          "SCHOOL", "UNIFIED", 0.0)
+          "SCHOOL", "UNIFIED", 0.0
+        )
     ]
 
     # Keep only necessary columns, then merge with the TIF row(s)
     drop_cols <- c(
       "exe_total", "agency_total_ext", "agency_total_eav", "tax_amt_exe",
       "tax_amt_pre_exe", "tax_amt_post_exe", "tif_agency_num",
-      "tif_agency_name", "tif_share", "transit_tif_to_cps", "transit_tif_to_tif",
+      "tif_agency_name", "tif_share",
+      "transit_tif_to_cps", "transit_tif_to_tif",
       "transit_tif_to_dist", "final_tax_to_tif"
     )
     dt[, (drop_cols) := NULL]
     data.table::setnames(dt, "final_tax_to_dist", "final_tax")
 
     dt <- rbind(dt, tif_row)
-    if(cps_tif_row$final_tax > 0){
+    if (max(cps_tif_row$final_tax) > 0) {
       dt <- rbind(dt, cps_tif_row)
     }
     data.table::setcolorder(
@@ -384,7 +400,8 @@ tax_bill <- function(year_vec,
         "agency_num", "agency_name", "agency_major_type", "agency_minor_type",
         "agency_total_ext", "agency_total_eav", "agency_tax_rate",
         "tax_amt_exe", "tax_amt_pre_exe", "tax_amt_post_exe", "tif_agency_num",
-        "tif_agency_name", "tif_share", "transit_tif_to_cps", "transit_tif_to_tif",
+        "tif_agency_name", "tif_share",
+        "transit_tif_to_cps", "transit_tif_to_tif",
         "transit_tif_to_dist", "final_tax_to_tif", "final_tax_to_dist"
       )
     )
