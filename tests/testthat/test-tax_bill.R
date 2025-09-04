@@ -7,8 +7,6 @@ library(dplyr)
 ptaxsim_db_conn <- DBI::dbConnect(
   RSQLite::SQLite(),
   Sys.getenv("PTAXSIM_DB_PATH")
-  #'./ptaxsim.db'
-  #Sys.setenv("PTAXSIM_DB_PATH"="~/GitHub/ptaxsim_rle/ptaxsim.db")
 )
 assign("ptaxsim_db_conn", ptaxsim_db_conn, envir = .GlobalEnv)
 
