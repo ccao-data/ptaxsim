@@ -11,8 +11,7 @@ tax_bill(
   agency_dt = lookup_agency(year_vec, tax_code_vec),
   pin_dt = lookup_pin(year_vec, pin_vec),
   tif_dt = lookup_tif(year_vec, tax_code_vec),
-  simplify = TRUE,
-  simplify_transit = FALSE
+  simplify = TRUE
 )
 }
 \arguments{
@@ -45,14 +44,8 @@ the property. Data \emph{must} be identical to the format returned by
 used to retrieve the tax code's TIF share based on \code{year_vec}
 and \code{tax_code_vec}.}
 
-\item{simplify}{Default \code{TRUE}. Boolean to keep only the columns that
-appear on a real tax bill. Additionally, collapses the TIF output column
-\code{final_tax_to_tif} to a line-item, similar to the format on a real
-tax bill.}
-
-\item{simplify_transit}{Default \code{FALSE}. Must be used in combination
-with \code{simplify=FALSE}.
-Boolean to keep only the columns that appear on a real tax bill
+\item{simplify}{Default \code{TRUE}. Boolean to keep only the columns
+that appear on a real tax bill
 which also includes the "Board of Education - from Transit TIF" line.
 Additionally, collapses the TIF output column \code{final_tax_to_tif}
 to a line-item, similar to the format on a real tax bill.}

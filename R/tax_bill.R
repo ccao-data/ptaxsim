@@ -58,13 +58,8 @@
 #'   \code{\link{lookup_tif}}. If missing, \code{\link{lookup_tif}} is
 #'   used to retrieve the tax code's TIF share based on \code{year_vec}
 #'   and \code{tax_code_vec}.
-#' @param simplify Default \code{TRUE}. Boolean to keep only the columns that
-#'   appear on a real tax bill. Additionally, collapses the TIF output column
-#'   \code{final_tax_to_tif} to a line-item, similar to the format on a real
-#'   tax bill.
-#' @param simplify_transit Default \code{FALSE}. Must be used in combination
-#'   with \code{simplify=FALSE}.
-#'   Boolean to keep only the columns that appear on a real tax bill
+#' @param simplify Default \code{TRUE}. Boolean to keep only the columns
+#'   that appear on a real tax bill
 #'   which also includes the "Board of Education - from Transit TIF" line.
 #'   Additionally, collapses the TIF output column \code{final_tax_to_tif}
 #'   to a line-item, similar to the format on a real tax bill.
@@ -100,8 +95,7 @@ tax_bill <- function(year_vec,
                      agency_dt = lookup_agency(year_vec, tax_code_vec),
                      pin_dt = lookup_pin(year_vec, pin_vec),
                      tif_dt = lookup_tif(year_vec, tax_code_vec),
-                     simplify = TRUE,
-                     simplify_transit = FALSE) {
+                     simplify = TRUE) {
   # Basic type/input checking for vector inputs
   stopifnot(
     is.numeric(year_vec),
@@ -111,9 +105,7 @@ tax_bill <- function(year_vec,
     all(nchar(tax_code_vec) == 5 | is.na(tax_code_vec)),
     is.character(tax_code_vec),
     is.logical(simplify),
-    length(simplify) == 1,
-    is.logical(simplify_transit),
-    length(simplify_transit) == 1
+    length(simplify) == 1
   )
 
   # Check input lengths are either Cartesian product OR all equal to each other
@@ -285,50 +277,9 @@ tax_bill <- function(year_vec,
   dt[, final_tax_to_tif := round(final_tax_to_tif - transit_tif_to_dist, 2)]
   dt[, in_transit_tif := NULL]
 
-  if (simplify) {
-    # Collapse per-district TIF amounts into a single row, just like on a
-    # real tax bill
-    tif_row <- dt[
-      !is.na(tif_agency_num),
-      .(final_tax = sum(final_tax_to_tif)),
-      by = .(
-        year, pin, class, tax_code, av, eav,
-        tif_agency_num, tif_agency_name
-      )
-    ]
-    data.table::setnames(
-      tif_row,
-      c("tif_agency_num", "tif_agency_name"),
-      c("agency_num", "agency_name")
-    )
-    tif_row[
-      ,
-      c("agency_major_type", "agency_minor_type", "agency_tax_rate") :=
-        list("MUNICIPALITY/TOWNSHIP", "TIF", 0.0)
-    ]
-
-    # Keep only necessary columns, then merge with the TIF row(s)
-    drop_cols <- c(
-      "exe_total", "agency_total_ext", "agency_total_eav", "tax_amt_exe",
-      "tax_amt_pre_exe", "tax_amt_post_exe", "tif_agency_num",
-      "tif_agency_name", "tif_share",
-      "transit_tif_to_cps", "transit_tif_to_tif",
-      "transit_tif_to_dist", "final_tax_to_tif"
-    )
-    dt[, (drop_cols) := NULL]
-    data.table::setnames(dt, "final_tax_to_dist", "final_tax")
-    dt <- rbind(dt, tif_row)
-    data.table::setcolorder(
-      dt,
-      neworder = c(
-        "year", "pin", "class", "tax_code", "av", "eav", "agency_num",
-        "agency_name", "agency_major_type", "agency_minor_type",
-        "agency_tax_rate", "final_tax"
-      )
-    )
-  }
-  if (simplify_transit) { # simplify the result as the
-    # tax bills do for transit tifs.# Collapse per-district TIF
+  if (simplify) { # simplify the result as the
+    # tax bills do for transit tifs.
+    # Collapse per-district TIF
     # amounts into a single row, just like on a real tax bill
     tif_row <- dt[
       !is.na(tif_agency_num),
@@ -381,8 +332,8 @@ tax_bill <- function(year_vec,
     data.table::setnames(dt, "final_tax_to_dist", "final_tax")
 
     dt <- rbind(dt, tif_row)
-    if (max(cps_tif_row$final_tax) > 0) {
-      dt <- rbind(dt, cps_tif_row)
+    if (nrow(cps_tif_row) > 0) {
+      dt <- rbind(dt, cps_tif_row[final_tax > 0])
     }
     data.table::setcolorder(
       dt,
@@ -394,7 +345,7 @@ tax_bill <- function(year_vec,
     )
   }
 
-  if (!simplify && !simplify_transit) {
+  if (!simplify) {
     data.table::setcolorder(
       dt,
       neworder = c(
