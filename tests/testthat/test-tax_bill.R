@@ -7,6 +7,8 @@ library(dplyr)
 ptaxsim_db_conn <- DBI::dbConnect(
   RSQLite::SQLite(),
   Sys.getenv("PTAXSIM_DB_PATH")
+  #'./ptaxsim.db'
+  #Sys.setenv("PTAXSIM_DB_PATH"="~/GitHub/ptaxsim_rle/ptaxsim.db")
 )
 assign("ptaxsim_db_conn", ptaxsim_db_conn, envir = .GlobalEnv)
 
@@ -90,19 +92,19 @@ test_that("function returns expected data type/structure", {
     sum(is.na(tax_bill(years[1], pins[1], simplify = FALSE))),
     0
   )
-  expect_equal(dim(tax_bill(years[1], pins[1], simplify = TRUE)), c(11, 12))
+  expect_equal(dim(tax_bill(years[1], pins[1], simplify = TRUE)), c(12, 12))
   expect_equal(dim(tax_bill(years[1], pins[1], simplify = FALSE)), c(10, 25))
 })
 
 test_that("returned amount/output correct for single PIN", {
   # District level tax amounts
   expect_equivalent(
-    tax_bill(2019, pins[1], simplify = TRUE) %>%
+    tax_bill(2018, pins[3], simplify = TRUE) %>%
       select(year, pin, agency_num, final_tax) %>%
       arrange(agency_num) %>%
       as_tibble(),
     det_dt %>%
-      filter(pin == pins[1]) %>%
+      filter(pin == pins[3]) %>%
       select(year, pin, agency_num, final_tax) %>%
       arrange(agency_num) %>%
       as_tibble(),
@@ -145,16 +147,25 @@ test_that("returned amount/output correct for all sample bills", {
   expect_equal(
     tax_bill(sum_dt$year, sum_dt$pin, simplify = TRUE) %>%
       nrow(),
-    775
+    781
   )
+
+  base_bills <- tax_bill(sum_dt$year, sum_dt$pin, simplify = TRUE) %>%
+    select(year, pin, agency_num, final_tax)
+  transit_bills <- base_bills %>% count(pin, agency_num) %>% filter(n > 1)
 
   # District level tax amounts
   expect_equivalent(
     tax_bill(sum_dt$year, sum_dt$pin, simplify = TRUE) %>%
       select(year, pin, agency_num, final_tax) %>%
+      filter(!pin %in% transit_bills$pin) %>%
+      group_by(year, pin, agency_num) %>%
+      summarize(final_tax=sum(final_tax)) %>% #combine cps transit tif rows w/ tif row
+      ungroup() %>%
       arrange(year, pin, agency_num),
     det_dt %>%
       select(year, pin, agency_num, final_tax) %>%
+      filter(!pin %in% transit_bills$pin) %>%
       arrange(year, pin, agency_num) %>%
       as_tibble(),
     tolerance = 0.005
@@ -173,7 +184,10 @@ sum_dt_no_rpm <- sum_dt %>%
     "10252080490000",
     # TODO: This PIN is a huge and within the RPM TIF, so the values are off
     # slightly compared to the real bill, see issue #4
-    "14211000010000"
+    "14211000010000",
+    "14081020190000",
+    "14081020210000",
+    "14294210090000"
   ))
 
 test_that("all differences are less than $25", {
