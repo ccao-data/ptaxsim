@@ -274,7 +274,7 @@ tax_bill <- function(year_vec,
   final_tax_to_dist <- NULL
   dt[, final_tax_to_dist :=
     round(tax_amt_post_exe - final_tax_to_tif + transit_tif_to_dist, 2)]
-  dt[, final_tax_to_tif := round(final_tax_to_tif - transit_tif_to_dist, 2)]
+  dt[, final_tax_to_tif := round(final_tax_to_tif, 2)]
   dt[, in_transit_tif := NULL]
 
   if (simplify) { # simplify the result as the
