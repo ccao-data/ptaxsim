@@ -47,10 +47,11 @@ runs:
       id: fetch_db
       if: steps.cache_db.outputs.cache-hit != 'true'
       run: |
-        curl \
+        aws s3 cp \
           ${{ inputs.PTAXSIM_DB_BASE_URI }}/ptaxsim-${{ env.PTAXSIM_VERSION }}.db.bz2 \
-          --no-progress-meter \
-          --output ptaxsim.db.bz2
+          ptaxsim.db.bz2 \
+          --quiet \
+          --no-sign-request
       shell: bash
       working-directory: ${{ env.PTAXSIM_DB_DIR }}
 
