@@ -44,4 +44,30 @@ test_that("no agency names are missing from the sample of bills", {
   )
 })
 
+test_that("total tax code revenue aligns with correct value", {
+  transit_tif_pins <- tbl(ptaxsim_db_conn, "pin") %>%
+    filter(tax_code_num == "73103", year == 2023) %>%
+    select(pin) %>%
+    collect() %>%
+    pull(pin)
+
+  tax_code_rate <- tbl(ptaxsim_db_conn, "tax_code") %>%
+    filter(year == 2023, tax_code_num == "73103") %>%
+    distinct(tax_code_rate) %>%
+    collect() %>%
+    pull(tax_code_rate)
+
+  not_simp_bills <- tax_bill(2023, transit_tif_pins, simplify = FALSE)
+
+  total_taxes <- not_simp_bills %>%
+    distinct(pin, .keep_all = TRUE) %>%
+    summarize(total_tax = sum(eav - exe_total) * tax_code_rate / 100)
+
+  expect_equivalent(
+    not_simp_bills %>% summarize(total_tax = sum(final_tax_to_tif + final_tax_to_dist - transit_tif_to_dist)),
+    total_taxes,
+    tolerance = 0.005
+  )
+})
+
 DBI::dbDisconnect(ptaxsim_db_conn)

@@ -289,7 +289,7 @@ tax_bill <- function(year_vec,
     tif_row <- dt[
       !is.na(tif_agency_num),
       .(final_tax = sum(final_tax_to_tif - transit_tif_to_cps -
-                          transit_tif_to_dist)),
+        transit_tif_to_dist)),
       by = .(
         year, pin, class, tax_code, av, eav,
         tif_agency_num, tif_agency_name
