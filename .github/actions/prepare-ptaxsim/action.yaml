@@ -5,8 +5,6 @@ inputs:
     required: false
     description: S3 URI of PTAXSIM database versions
     default: "s3://ccao-data-public-us-east-1/ptaxsim"
-  ASSUMED_ROLE:
-    description: AWS role used for S3 actions
 outputs:
   PTAXSIM_DB_DIR:
     description: "PTAXSIM database directory on runner"
@@ -45,18 +43,15 @@ runs:
         key: ${{ format('{0}-{1}', env.PTAXSIM_VERSION, hashFiles('DESCRIPTION')) }}
         enableCrossOsArchive: true
 
-    - name: Configure AWS credentials
-      if: steps.cache_db.outputs.cache-hit != 'true'
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: ${{ inputs.ASSUMED_ROLE }}
-        aws-region: us-east-1
-
     - name: Fetch database file
       id: fetch_db
       if: steps.cache_db.outputs.cache-hit != 'true'
       run: |
-        aws s3 cp ${{ inputs.PTAXSIM_DB_BASE_URI }}/ptaxsim-${{ env.PTAXSIM_VERSION }}.db.bz2 ptaxsim.db.bz2 --quiet
+        aws s3 cp \
+          ${{ inputs.PTAXSIM_DB_BASE_URI }}/ptaxsim-${{ env.PTAXSIM_VERSION }}.db.bz2 \
+          ptaxsim.db.bz2 \
+          --quiet \
+          --no-sign-request
       shell: bash
       working-directory: ${{ env.PTAXSIM_DB_DIR }}
 
