@@ -3,6 +3,8 @@ context("test accuracy")
 ##### TEST accuracy #####
 
 library(dplyr)
+library(dbplyr)
+
 ptaxsim_db_conn <- DBI::dbConnect(
   RSQLite::SQLite(),
   Sys.getenv("PTAXSIM_DB_PATH")
@@ -64,7 +66,9 @@ test_that("total tax code revenue aligns with correct value", {
     summarize(total_tax = sum(eav - exe_total) * tax_code_rate / 100)
 
   expect_equivalent(
-    not_simp_bills %>% summarize(total_tax = sum(final_tax_to_tif + final_tax_to_dist - transit_tif_to_dist)),
+    not_simp_bills %>%
+      summarize(total_tax = sum(final_tax_to_tif +
+                                  final_tax_to_dist - transit_tif_to_dist)),
     total_taxes,
     tolerance = 0.005
   )

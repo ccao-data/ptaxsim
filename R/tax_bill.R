@@ -212,6 +212,10 @@ tax_bill <- function(year_vec,
   dt[, final_tax_to_tif := tax_amt_post_exe * tif_share]
 
   # add transit tifs
+  crate <- cprop <- transit_tif_to_cps <-
+    transit_tif_to_tif <- transit_tif_to_dist <-
+    final_tax <- NULL
+
   transit_tif <- function(dt) {
     # Special handling for any transit tifs. For these TIF specifically:
     # 1. CPS receives their proportionate share of revenue (they ignore the TIF)
@@ -220,8 +224,6 @@ tax_bill <- function(year_vec,
 
     # Start by calculating the portion that ignores the TIF and goes to CPS
     # Using chaining here to discard unneeded intermediate variables
-    crate <- cprop <- transit_tif_to_cps <-
-      transit_tif_to_tif <- transit_tif_to_dist <- NULL
     dt[
       (in_transit_tif),
       crate := agency_tax_rate[agency_num == "044060000"],

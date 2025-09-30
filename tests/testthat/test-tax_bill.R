@@ -4,6 +4,7 @@ context("test tax_bill()")
 
 library(data.table)
 library(dplyr)
+library(dbplyr)
 ptaxsim_db_conn <- DBI::dbConnect(
   RSQLite::SQLite(),
   Sys.getenv("PTAXSIM_DB_PATH")
@@ -82,7 +83,8 @@ test_that("function returns expected data type/structure", {
       "agency_num", "agency_name", "agency_major_type", "agency_minor_type",
       "agency_total_ext", "agency_total_eav", "agency_tax_rate",
       "tax_amt_exe", "tax_amt_pre_exe", "tax_amt_post_exe", "tif_agency_num",
-      "tif_agency_name", "tif_share", "transit_tif_to_cps", "transit_tif_to_tif",
+      "tif_agency_name", "tif_share",
+      "transit_tif_to_cps", "transit_tif_to_tif",
       "transit_tif_to_dist", "final_tax_to_tif", "final_tax_to_dist"
     )
   )
@@ -160,7 +162,8 @@ test_that("returned amount/output correct for all sample bills", {
       select(year, pin, agency_num, final_tax) %>%
       filter(!pin %in% transit_bills$pin) %>%
       group_by(year, pin, agency_num) %>%
-      summarize(final_tax = sum(final_tax)) %>% # combine cps transit tif rows w/ tif row
+      summarize(final_tax = sum(final_tax)) %>%
+      # combine cps transit tif rows w/ tif row
       ungroup() %>%
       arrange(year, pin, agency_num),
     det_dt %>%
@@ -281,7 +284,9 @@ test_that("Simplify FALSE / TRUE identical", {
 
   expect_equivalent(
     simp_bills %>% summarize(total_tax = sum(final_tax)),
-    not_simp_bills %>% summarize(total_tax = sum(final_tax_to_tif + final_tax_to_dist - transit_tif_to_dist)),
+    not_simp_bills %>%
+      summarize(total_tax = sum(final_tax_to_tif +
+                                  final_tax_to_dist - transit_tif_to_dist)),
     tolerance = 0.005
   )
 })
