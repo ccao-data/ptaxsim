@@ -4,7 +4,7 @@ context("test tax_bill()")
 
 library(data.table)
 library(dplyr)
-library(dbplyr)
+
 ptaxsim_db_conn <- DBI::dbConnect(
   RSQLite::SQLite(),
   Sys.getenv("PTAXSIM_DB_PATH")
@@ -272,11 +272,15 @@ test_that("Returns 0 for agency with base/levy of 0", {
 
 test_that("Simplify FALSE / TRUE identical", {
   # transit tif tax code
-  transit_tif_pins <- tbl(ptaxsim_db_conn, "pin") %>%
-    filter(tax_code_num == "73105", year == 2023) %>%
+  transit_tif_pins <- DBI::dbGetQuery(
+    ptaxsim_db_conn,
+    "
+  SELECT pin
+  FROM pin
+  WHERE tax_code_num = '73105' AND year = 2023
+  "
+  ) %>%
     slice_sample(n = 100) %>%
-    select(pin) %>%
-    collect() %>%
     pull(pin)
 
   simp_bills <- tax_bill(2023, transit_tif_pins, simplify = TRUE)
@@ -286,7 +290,7 @@ test_that("Simplify FALSE / TRUE identical", {
     simp_bills %>% summarize(total_tax = sum(final_tax)),
     not_simp_bills %>%
       summarize(total_tax = sum(final_tax_to_tif +
-                                  final_tax_to_dist - transit_tif_to_dist)),
+        final_tax_to_dist - transit_tif_to_dist)),
     tolerance = 0.005
   )
 })

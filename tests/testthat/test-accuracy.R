@@ -3,7 +3,6 @@ context("test accuracy")
 ##### TEST accuracy #####
 
 library(dplyr)
-library(dbplyr)
 
 ptaxsim_db_conn <- DBI::dbConnect(
   RSQLite::SQLite(),
@@ -47,17 +46,23 @@ test_that("no agency names are missing from the sample of bills", {
 })
 
 test_that("total tax code revenue aligns with correct value", {
-  transit_tif_pins <- tbl(ptaxsim_db_conn, "pin") %>%
-    filter(tax_code_num == "73103", year == 2023) %>%
-    select(pin) %>%
-    collect() %>%
-    pull(pin)
+  transit_tif_pins <- DBI::dbGetQuery(
+    ptaxsim_db_conn,
+    "
+  SELECT pin
+  FROM pin
+  WHERE tax_code_num = '73103' AND year = 2023
+  "
+  ) %>% pull(pin)
 
-  tax_code_rate <- tbl(ptaxsim_db_conn, "tax_code") %>%
-    filter(year == 2023, tax_code_num == "73103") %>%
-    distinct(tax_code_rate) %>%
-    collect() %>%
-    pull(tax_code_rate)
+  tax_code_rate <- DBI::dbGetQuery(
+    ptaxsim_db_conn,
+    "
+  SELECT DISTINCT tax_code_rate
+  FROM tax_code
+  WHERE tax_code_num = '73103' AND year = 2023
+  "
+  ) %>% pull(tax_code_rate)
 
   not_simp_bills <- tax_bill(2023, transit_tif_pins, simplify = FALSE)
 
@@ -68,7 +73,7 @@ test_that("total tax code revenue aligns with correct value", {
   expect_equivalent(
     not_simp_bills %>%
       summarize(total_tax = sum(final_tax_to_tif +
-                                  final_tax_to_dist - transit_tif_to_dist)),
+        final_tax_to_dist - transit_tif_to_dist)),
     total_taxes,
     tolerance = 0.005
   )
