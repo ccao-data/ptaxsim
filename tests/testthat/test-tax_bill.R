@@ -150,7 +150,9 @@ test_that("returned amount/output correct for all sample bills", {
 
   base_bills <- tax_bill(sum_dt$year, sum_dt$pin, simplify = TRUE) %>%
     select(year, pin, agency_num, final_tax)
-  transit_bills <- base_bills %>% count(pin, agency_num) %>% filter(n > 1)
+  transit_bills <- base_bills %>%
+    count(pin, agency_num) %>%
+    filter(n > 1)
 
   # District level tax amounts
   expect_equivalent(
@@ -158,7 +160,7 @@ test_that("returned amount/output correct for all sample bills", {
       select(year, pin, agency_num, final_tax) %>%
       filter(!pin %in% transit_bills$pin) %>%
       group_by(year, pin, agency_num) %>%
-      summarize(final_tax=sum(final_tax)) %>% #combine cps transit tif rows w/ tif row
+      summarize(final_tax = sum(final_tax)) %>% # combine cps transit tif rows w/ tif row
       ungroup() %>%
       arrange(year, pin, agency_num),
     det_dt %>%
@@ -262,6 +264,25 @@ test_that("agnostic to input data.table row order", {
 test_that("Returns 0 for agency with base/levy of 0", {
   expect_false(
     any(is.nan(tax_bill(2022, c("12283000140000", "12284120030000"))$final_tax))
+  )
+})
+
+test_that("Simplify FALSE / TRUE identical", {
+  # transit tif tax code
+  transit_tif_pins <- tbl(ptaxsim_db_conn, "pin") %>%
+    filter(tax_code_num == "73105", year == 2023) %>%
+    slice_sample(n = 100) %>%
+    select(pin) %>%
+    collect() %>%
+    pull(pin)
+
+  simp_bills <- tax_bill(2023, transit_tif_pins, simplify = TRUE)
+  not_simp_bills <- tax_bill(2023, transit_tif_pins, simplify = FALSE)
+
+  expect_equivalent(
+    simp_bills %>% summarize(total_tax = sum(final_tax)),
+    not_simp_bills %>% summarize(total_tax = sum(final_tax_to_tif + final_tax_to_dist - transit_tif_to_dist)),
+    tolerance = 0.005
   )
 })
 

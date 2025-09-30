@@ -62,7 +62,12 @@
 #'   that appear on a real tax bill
 #'   which also includes the "Board of Education - from Transit TIF" line.
 #'   Additionally, collapses the TIF output column \code{final_tax_to_tif}
-#'   to a line-item, similar to the format on a real tax bill.
+#'   to a line-item, similar to the format on a real tax bill. Note: In order to
+#'   more completely show information for transit TIF districts both
+#'   \code{final_tax_to_tif} and \code{final_tax_to_dist} include
+#'   \code{transit_tif_to_dist}. Therefore, to calculate final total taxes
+#'   when \code{FALSE}, use
+#'   \code{final_tax_to_tif + final_tax_to_dist - transit_tif_to_dist}
 #'
 #' @return A \code{data.table} which contains a tax bill for each specified PIN
 #'   and year. Each tax bill is broken out by taxing district, meaning there is
@@ -283,7 +288,8 @@ tax_bill <- function(year_vec,
     # amounts into a single row, just like on a real tax bill
     tif_row <- dt[
       !is.na(tif_agency_num),
-      .(final_tax = sum(final_tax_to_tif - transit_tif_to_cps)),
+      .(final_tax = sum(final_tax_to_tif - transit_tif_to_cps -
+                          transit_tif_to_dist)),
       by = .(
         year, pin, class, tax_code, av, eav,
         tif_agency_num, tif_agency_name
