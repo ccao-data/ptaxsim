@@ -99,8 +99,6 @@
 #' @md
 #' @family tax_bill
 #' @export
-
-
 tax_bill <- function(year_vec,
                      pin_vec,
                      tax_code_vec = lookup_tax_code(year_vec, pin_vec),
