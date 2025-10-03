@@ -284,8 +284,7 @@ tax_bill <- function(year_vec,
   dt[, final_tax_to_tif := round(final_tax_to_tif, 2)]
   dt[, in_transit_tif := NULL]
 
-  if (simplify) { # simplify the result as the
-    # tax bills do for transit tifs.
+  if (simplify) {
     # Collapse per-district TIF
     # amounts into a single row, just like on a real tax bill
     tif_row <- dt[
