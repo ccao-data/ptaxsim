@@ -59,10 +59,17 @@
 #'   used to retrieve the tax code's TIF share based on \code{year_vec}
 #'   and \code{tax_code_vec}.
 #' @param simplify Default \code{TRUE}. Boolean to keep only the columns
-#'   that appear on a real tax bill
-#'   which also includes the "Board of Education - from Transit TIF" line.
-#'   Additionally, collapses the TIF output column \code{final_tax_to_tif}
-#'   to a line-item, similar to the format on a real tax bill. Note: In order to
+#'   that appear on a real tax bill.
+#'   If the parcel is in a TIF, simplified output will collapse the TIF output
+#'   column \code{final_tax_to_tif} to a line item, similar to the format on a
+#'   real tax bill; further, if the parcel is in a transit TIF, simplified
+#'   output will also collapse the column \code{transit_tif_to_cps} to a line
+#'   item called "Board of Education - from Transit TIF". Note: In order to
+#'   more completely show information for transit TIF districts both
+#'   \code{final_tax_to_tif} and \code{final_tax_to_dist} include
+#'   \code{transit_tif_to_dist}. Therefore, to calculate final total taxes
+#'   when \code{FALSE}, use
+#'   \code{final_tax_to_tif + final_tax_to_dist - transit_tif_to_dist}.
 #'   more completely show information for transit TIF districts both
 #'   \code{final_tax_to_tif} and \code{final_tax_to_dist} include
 #'   \code{transit_tif_to_dist}. Therefore, to calculate final total taxes
