@@ -45,7 +45,7 @@ test_that("no agency names are missing from the sample of bills", {
   )
 })
 
-test_that("total tax code revenue aligns with correct value", {
+test_that("total tax code revenue aligns with correct value for transit TIFs", {
   transit_tif_pins <- DBI::dbGetQuery(
     ptaxsim_db_conn,
     "
