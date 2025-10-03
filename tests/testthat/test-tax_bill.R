@@ -154,6 +154,8 @@ test_that("returned amount/output correct for all sample bills", {
     select(year, pin, agency_num, final_tax)
   transit_bills <- base_bills %>%
     count(pin, agency_num) %>%
+    # PINs in transit TIFs will have two line items with the CPS agency number,
+    # one being the TIF distribution
     filter(n > 1)
 
   # District level tax amounts
