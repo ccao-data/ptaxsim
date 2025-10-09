@@ -69,11 +69,6 @@
 #'   \code{final_tax_to_tif} and \code{final_tax_to_dist} include
 #'   \code{transit_tif_to_dist}. Therefore, to calculate final total taxes
 #'   when \code{FALSE}, use
-#'   \code{final_tax_to_tif + final_tax_to_dist - transit_tif_to_dist}.
-#'   more completely show information for transit TIF districts both
-#'   \code{final_tax_to_tif} and \code{final_tax_to_dist} include
-#'   \code{transit_tif_to_dist}. Therefore, to calculate final total taxes
-#'   when \code{FALSE}, use
 #'   \code{final_tax_to_tif + final_tax_to_dist - transit_tif_to_dist}
 #'
 #' @return A \code{data.table} which contains a tax bill for each specified PIN
