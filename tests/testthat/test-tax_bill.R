@@ -163,7 +163,6 @@ test_that("returned amount/output correct for all sample bills", {
     tax_bill(sum_dt$year, sum_dt$pin, simplify = TRUE) %>%
       select(year, pin, agency_num, final_tax) %>%
       filter(!pin %in% transit_bills$pin) %>%
-      ungroup() %>%
       arrange(year, pin, agency_num),
     det_dt %>%
       select(year, pin, agency_num, final_tax) %>%
