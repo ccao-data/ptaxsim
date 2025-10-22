@@ -3,6 +3,7 @@ context("test accuracy")
 ##### TEST accuracy #####
 
 library(dplyr)
+
 ptaxsim_db_conn <- DBI::dbConnect(
   RSQLite::SQLite(),
   Sys.getenv("PTAXSIM_DB_PATH")
@@ -41,6 +42,40 @@ test_that("no agency names are missing from the sample of bills", {
   expect_equal(
     sum(!is.na(bills_raw$agency_name)),
     nrow(bills_raw)
+  )
+})
+
+test_that("total tax code revenue aligns with correct value for transit TIFs", {
+  transit_tif_pins <- DBI::dbGetQuery(
+    ptaxsim_db_conn,
+    "
+  SELECT pin
+  FROM pin
+  WHERE tax_code_num = '73103' AND year = 2023
+  "
+  ) %>% pull(pin)
+
+  tax_code_rate <- DBI::dbGetQuery(
+    ptaxsim_db_conn,
+    "
+  SELECT DISTINCT tax_code_rate
+  FROM tax_code
+  WHERE tax_code_num = '73103' AND year = 2023
+  "
+  ) %>% pull(tax_code_rate)
+
+  not_simp_bills <- tax_bill(2023, transit_tif_pins, simplify = FALSE)
+
+  total_taxes <- not_simp_bills %>%
+    distinct(pin, .keep_all = TRUE) %>%
+    summarize(total_tax = sum(eav - exe_total) * tax_code_rate / 100)
+
+  expect_equivalent(
+    not_simp_bills %>%
+      summarize(total_tax = sum(final_tax_to_tif +
+        final_tax_to_dist - transit_tif_to_dist)),
+    total_taxes,
+    tolerance = 0.005
   )
 })
 

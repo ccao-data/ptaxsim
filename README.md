@@ -130,11 +130,11 @@ levies and tax bases of all taxing districts associated with the PIN.
 The table below lists each input, along with some complications and
 options:
 
-|                                                             Input                                                              |                                                                               What this means                                                                                |                                                                                                                                                                                                            Complications and possible implementation option(s)                                                                                                                                                                                                             |
-|:------------------------------------------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|
-|                                                  The PIN’s **taxable value**                                                   |                              The PIN’s Equalized Assessed Value (EAV), which incorporates the assessed value, exemptions, and IDOR’s equalizer.                              |                                                                                     *Complications*: In a tax year, AVs can change at the Assessor’s Office and at the Board of Review. Also, IDOR calculates a new equalizer every year. <br><br> *Option*: Predict what you think is an accurate AV, apply what exemptions you qualify for, and use past equalizers issued by IDOR.                                                                                      |
-| **Tax extensions**, also called levies, for each taxing agency associated with that PIN’s tax code (typically, 10-14 agencies) |               The total extension is the total dollar amount each taxing agency decides to collect from property owners within the boundaries of its district.               |                                                                                                                              *Complication*: Each agency sets their own tax levy. <br><br> *Option*: For each agency associated with that PIN’s tax code, you might use the past year extension, and apply a percentage increase or decrease.                                                                                                                              |
-|              **Tax bases** for each taxing agency associated with that PIN’s tax code (typically, 10-14 agencies)              | For each agency, the tax base equals the sum of the EAVs of all properties in its district, except for any region of the agency that is in a TIF (where the base is frozen). | *Complication*: Even after a township has been reassessed, many agencies span across township boundaries. (For example: the taxing district of the City of Chicago is divided up into eight assessment townships, but property tax bills for Chicagoans depend on assessments throughout all eight townships). <br><br> *Option*: For each agency associated with that PIN’s tax code, you might use the past year total EAV, and apply a percentage increase or decrease. |
+| Input | What this means | Complications and possible implementation option(s) |
+|:--:|:--:|:--:|
+| The PIN’s **taxable value** | The PIN’s Equalized Assessed Value (EAV), which incorporates the assessed value, exemptions, and IDOR’s equalizer. | *Complications*: In a tax year, AVs can change at the Assessor’s Office and at the Board of Review. Also, IDOR calculates a new equalizer every year. <br><br> *Option*: Predict what you think is an accurate AV, apply what exemptions you qualify for, and use past equalizers issued by IDOR. |
+| **Tax extensions**, also called levies, for each taxing agency associated with that PIN’s tax code (typically, 10-14 agencies) | The total extension is the total dollar amount each taxing agency decides to collect from property owners within the boundaries of its district. | *Complication*: Each agency sets their own tax levy. <br><br> *Option*: For each agency associated with that PIN’s tax code, you might use the past year extension, and apply a percentage increase or decrease. |
+| **Tax bases** for each taxing agency associated with that PIN’s tax code (typically, 10-14 agencies) | For each agency, the tax base equals the sum of the EAVs of all properties in its district, except for any region of the agency that is in a TIF (where the base is frozen). | *Complication*: Even after a township has been reassessed, many agencies span across township boundaries. (For example: the taxing district of the City of Chicago is divided up into eight assessment townships, but property tax bills for Chicagoans depend on assessments throughout all eight townships). <br><br> *Option*: For each agency associated with that PIN’s tax code, you might use the past year total EAV, and apply a percentage increase or decrease. |
 
 ## Installation
 
@@ -282,142 +282,243 @@ single_bill %>%
 ```
 
 <table>
+
 <thead>
+
 <tr>
+
 <th style="text-align:left;">
+
 Agency
 </th>
+
 <th style="text-align:right;">
+
 2020 Tax
 </th>
+
 <th style="text-align:right;">
+
 2020 Rate
 </th>
+
 </tr>
+
 </thead>
+
 <tbody>
+
 <tr>
+
 <td style="text-align:left;">
+
 METRO WATER RECLAMATION DISTRICT OF GREATER CHICAGO
 </td>
+
 <td style="text-align:right;">
+
 48.04
 </td>
+
 <td style="text-align:right;">
+
 0.378
 </td>
+
 </tr>
+
 <tr>
+
 <td style="text-align:left;">
+
 CHICAGO PARK DISTRICT AQUARIUM & MUSEUM BONDS
 </td>
+
 <td style="text-align:right;">
+
 0.00
 </td>
+
 <td style="text-align:right;">
+
 0.000
 </td>
+
 </tr>
+
 <tr>
+
 <td style="text-align:left;">
+
 CHICAGO PARK DISTRICT
 </td>
+
 <td style="text-align:right;">
+
 41.81
 </td>
+
 <td style="text-align:right;">
+
 0.329
 </td>
+
 </tr>
+
 <tr>
+
 <td style="text-align:left;">
+
 BOARD OF EDUCATION
 </td>
+
 <td style="text-align:right;">
+
 464.62
 </td>
+
 <td style="text-align:right;">
+
 3.656
 </td>
+
 </tr>
+
 <tr>
+
 <td style="text-align:left;">
+
 CHICAGO COMMUNITY COLLEGE DISTRICT 508
 </td>
+
 <td style="text-align:right;">
+
 19.19
 </td>
+
 <td style="text-align:right;">
+
 0.151
 </td>
+
 </tr>
+
 <tr>
+
 <td style="text-align:left;">
+
 TIF - CHICAGO - BRONZEVILLE
 </td>
+
 <td style="text-align:right;">
+
 1698.69
 </td>
+
 <td style="text-align:right;">
+
 0.000
 </td>
+
 </tr>
+
 <tr>
+
 <td style="text-align:left;">
+
 CITY OF CHICAGO SCHOOL BLDG & IMP FUND
 </td>
+
 <td style="text-align:right;">
+
 21.10
 </td>
+
 <td style="text-align:right;">
+
 0.166
 </td>
+
 </tr>
+
 <tr>
+
 <td style="text-align:left;">
+
 CITY OF CHICAGO LIBRARY FUND
 </td>
+
 <td style="text-align:right;">
+
 17.79
 </td>
+
 <td style="text-align:right;">
+
 0.140
 </td>
+
 </tr>
+
 <tr>
+
 <td style="text-align:left;">
+
 CITY OF CHICAGO
 </td>
+
 <td style="text-align:right;">
+
 200.79
 </td>
+
 <td style="text-align:right;">
+
 1.580
 </td>
+
 </tr>
+
 <tr>
+
 <td style="text-align:left;">
+
 FOREST PRESERVE DISTRICT OF COOK COUNTY
 </td>
+
 <td style="text-align:right;">
+
 7.37
 </td>
+
 <td style="text-align:right;">
+
 0.058
 </td>
+
 </tr>
+
 <tr>
+
 <td style="text-align:left;">
+
 COUNTY OF COOK
 </td>
+
 <td style="text-align:right;">
+
 57.57
 </td>
+
 <td style="text-align:right;">
+
 0.453
 </td>
+
 </tr>
+
 </tbody>
+
 </table>
 
 Here’s the real 2020 tax bill for this PIN for comparison:
@@ -448,11 +549,11 @@ multiple_years
 #>   4:  2010 14081020210000    206    73001 69062 227905  030210001
 #>   5:  2010 14081020210000    206    73001 69062 227905  030210002
 #>  ---                                                             
-#> 144:  2023 14081020210000    206    73105 70000 211141  043030000
-#> 145:  2023 14081020210000    206    73105 70000 211141  044060000
-#> 146:  2023 14081020210000    206    73105 70000 211141  050200000
-#> 147:  2023 14081020210000    206    73105 70000 211141  050200001
-#> 148:  2023 14081020210000    206    73105 70000 211141  080180000
+#> 152:  2023 14081020210000    206    73105 70000 211141  044060000
+#> 153:  2023 14081020210000    206    73105 70000 211141  044060000
+#> 154:  2023 14081020210000    206    73105 70000 211141  050200000
+#> 155:  2023 14081020210000    206    73105 70000 211141  050200001
+#> 156:  2023 14081020210000    206    73105 70000 211141  080180000
 #>                       agency_name     agency_major_type agency_minor_type
 #>                            <char>                <char>            <char>
 #>   1:               COUNTY OF COOK           COOK COUNTY              COOK
@@ -461,24 +562,24 @@ multiple_years
 #>   4: CITY OF CHICAGO LIBRARY F... MUNICIPALITY/TOWNSHIP           LIBRARY
 #>   5: CITY OF CHICAGO SCHOOL BL... MUNICIPALITY/TOWNSHIP              MISC
 #>  ---                                                                     
-#> 144: CHICAGO COMMUNITY COLLEGE...                SCHOOL         COMM COLL
-#> 145:           BOARD OF EDUCATION                SCHOOL           UNIFIED
-#> 146:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
-#> 147: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
-#> 148: METRO WATER RECLAMATION D...         MISCELLANEOUS             WATER
+#> 152:           BOARD OF EDUCATION                SCHOOL           UNIFIED
+#> 153: BOARD OF EDUCATION - from...                SCHOOL           UNIFIED
+#> 154:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
+#> 155: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
+#> 156: METRO WATER RECLAMATION D...         MISCELLANEOUS             WATER
 #>      agency_tax_rate final_tax
 #>                <num>     <num>
-#>   1:         0.00423    964.04
-#>   2:         0.00051    116.23
-#>   3:         0.00914   2083.05
-#>   4:         0.00102    232.46
-#>   5:         0.00116    264.37
+#>   1:         0.00423   964.040
+#>   2:         0.00051   116.230
+#>   3:         0.00914  2083.050
+#>   4:         0.00102   232.460
+#>   5:         0.00116   264.370
 #>  ---                          
-#> 144:         0.00158    245.36
-#> 145:         0.03829   5411.54
-#> 146:         0.00318    493.83
-#> 147:         0.00000      0.00
-#> 148:         0.00345    535.76
+#> 152:         0.03829  5411.540
+#> 153:         0.00000  2673.052
+#> 154:         0.00318   493.830
+#> 155:         0.00000     0.000
+#> 156:         0.00345   535.760
 ```
 
 The `tax_bill()` function will automatically combine the years and PIN
@@ -502,7 +603,9 @@ multiple_years_summ <- multiple_years %>%
 ```
 
 <details>
+
 <summary>
+
 <strong>Click here</strong> to show plot code
 </summary>
 
@@ -553,19 +656,19 @@ data was available in mid-2020.
 
 ### Data sources
 
-| Table Name       | Source Agency     | Source Link                                                                                                                                          | Ingest Script                                                    | Contains                                                          |
-|------------------|-------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|-------------------------------------------------------------------|
-| agency           | Clerk             | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates)                                  | [data-raw/agency/agency.R](data-raw/agency/agency.R)             | Taxing district extensions, limits, and base EAV                  |
-| agency_info      | Clerk + imputed   | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates)                                  | [data-raw/agency/agency.R](data-raw/agency/agency.R)             | Taxing district name, type, and subtype                           |
-| agency_fund      | Clerk             | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates)                                  | [data-raw/agency/agency.R](data-raw/agency/agency.R)             | Funds and line-items that contribute to each district’s extension |
-| agency_fund_info | Clerk             | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates)                                  | [data-raw/agency/agency.R](data-raw/agency/agency.R)             | Fund name and whether the fund is statutorily capped              |
-| cpi              | IDOR              | [History of CPI’s Used for the PTELL](https://www2.illinois.gov/rev/localgovernments/property/Documents/cpihistory.pdf)                              | [data-raw/cpi/cpi.R](data-raw/cpi/cpi.R)                         | CPI-U used to calculate PTELL limits                              |
-| eq_factor        | Clerk             | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates)                                  | [data-raw/eq_factor/eq_factor.R](data-raw/eq_factor/eq_factor.R) | Equalization factor applied to AV to get EAV                      |
-| pin              | Clerk + Treasurer | CLERKVALUES and TAXBILLAMOUNTS internal SQL tables                                                                                                   | [data-raw/pin/pin.R](data-raw/pin/pin.R)                         | PIN-level tax code, AV, and exemptions                            |
-| tax_code         | Clerk             | [Tax Extension - Tax Code Agency Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates)                             | [data-raw/tax_code/tax_code.R](data-raw/tax_code/tax_code.R)     | Crosswalk of tax codes by district                                |
-| tif              | Clerk             | [TIF Reports - Cook County Summary Reports](https://www.cookcountyclerkil.gov/property-taxes/tifs-tax-increment-financing/tif-reports)               | [data-raw/tif/tif.R](data-raw/tif/tif.R)                         | TIF revenue, start year, and cancellation year                    |
-| tif_crosswalk    | Clerk             | Manually created from TIF summary and distribution reports                                                                                           | [data-raw/tif/tif.R](data-raw/tif/tif.R)                         | Fix for data issue identified in \#39                             |
-| tif_distribution | Clerk             | [TIF Reports - Tax Increment Agency Distribution Reports](https://www.cookcountyclerkil.gov/property-taxes/tifs-tax-increment-financing/tif-reports) | [data-raw/tif/tif.R](data-raw/tif/tif.R)                         | TIF EAV, frozen EAV, and distribution percentage by tax code      |
+| Table Name | Source Agency | Source Link | Ingest Script | Contains |
+|----|----|----|----|----|
+| agency | Clerk | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/agency/agency.R](data-raw/agency/agency.R) | Taxing district extensions, limits, and base EAV |
+| agency_info | Clerk + imputed | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/agency/agency.R](data-raw/agency/agency.R) | Taxing district name, type, and subtype |
+| agency_fund | Clerk | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/agency/agency.R](data-raw/agency/agency.R) | Funds and line-items that contribute to each district’s extension |
+| agency_fund_info | Clerk | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/agency/agency.R](data-raw/agency/agency.R) | Fund name and whether the fund is statutorily capped |
+| cpi | IDOR | [History of CPI’s Used for the PTELL](https://www2.illinois.gov/rev/localgovernments/property/Documents/cpihistory.pdf) | [data-raw/cpi/cpi.R](data-raw/cpi/cpi.R) | CPI-U used to calculate PTELL limits |
+| eq_factor | Clerk | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/eq_factor/eq_factor.R](data-raw/eq_factor/eq_factor.R) | Equalization factor applied to AV to get EAV |
+| pin | Clerk + Treasurer | CLERKVALUES and TAXBILLAMOUNTS internal SQL tables | [data-raw/pin/pin.R](data-raw/pin/pin.R) | PIN-level tax code, AV, and exemptions |
+| tax_code | Clerk | [Tax Extension - Tax Code Agency Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/tax_code/tax_code.R](data-raw/tax_code/tax_code.R) | Crosswalk of tax codes by district |
+| tif | Clerk | [TIF Reports - Cook County Summary Reports](https://www.cookcountyclerkil.gov/property-taxes/tifs-tax-increment-financing/tif-reports) | [data-raw/tif/tif.R](data-raw/tif/tif.R) | TIF revenue, start year, and cancellation year |
+| tif_crosswalk | Clerk | Manually created from TIF summary and distribution reports | [data-raw/tif/tif.R](data-raw/tif/tif.R) | Fix for data issue identified in \#39 |
+| tif_distribution | Clerk | [TIF Reports - Tax Increment Agency Distribution Reports](https://www.cookcountyclerkil.gov/property-taxes/tifs-tax-increment-financing/tif-reports) | [data-raw/tif/tif.R](data-raw/tif/tif.R) | TIF EAV, frozen EAV, and distribution percentage by tax code |
 
 ### Database diagram
 
@@ -581,7 +684,8 @@ data was available in mid-2020.
   Red-Purple Modernization (RPM) TIF are slightly flawed. However, the
   total tax bill per PIN is still accurate. See issue
   [\#4](https://github.com/ccao-data/ptaxsim/issues/4) for more
-  information.
+  information or issue
+  [\#56](https://github.com/ccao-data/ptaxsim/issues/56).
 - Special Service Area (SSA) rates must be calculated manually when
   creating counterfactual bills. See issue
   [\#3](https://github.com/ccao-data/ptaxsim/issues/3) for more

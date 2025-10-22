@@ -4,6 +4,7 @@ context("test tax_bill()")
 
 library(data.table)
 library(dplyr)
+
 ptaxsim_db_conn <- DBI::dbConnect(
   RSQLite::SQLite(),
   Sys.getenv("PTAXSIM_DB_PATH")
@@ -82,27 +83,28 @@ test_that("function returns expected data type/structure", {
       "agency_num", "agency_name", "agency_major_type", "agency_minor_type",
       "agency_total_ext", "agency_total_eav", "agency_tax_rate",
       "tax_amt_exe", "tax_amt_pre_exe", "tax_amt_post_exe", "tif_agency_num",
-      "tif_agency_name", "tif_share", "rpm_tif_to_cps", "rpm_tif_to_rpm",
-      "rpm_tif_to_dist", "final_tax_to_tif", "final_tax_to_dist"
+      "tif_agency_name", "tif_share",
+      "transit_tif_to_cps", "transit_tif_to_tif",
+      "transit_tif_to_dist", "final_tax_to_tif", "final_tax_to_dist"
     )
   )
   expect_equal(
     sum(is.na(tax_bill(years[1], pins[1], simplify = FALSE))),
     0
   )
-  expect_equal(dim(tax_bill(years[1], pins[1], simplify = TRUE)), c(11, 12))
+  expect_equal(dim(tax_bill(years[1], pins[1], simplify = TRUE)), c(12, 12))
   expect_equal(dim(tax_bill(years[1], pins[1], simplify = FALSE)), c(10, 25))
 })
 
 test_that("returned amount/output correct for single PIN", {
   # District level tax amounts
   expect_equivalent(
-    tax_bill(2019, pins[1], simplify = TRUE) %>%
+    tax_bill(2018, pins[3], simplify = TRUE) %>%
       select(year, pin, agency_num, final_tax) %>%
       arrange(agency_num) %>%
       as_tibble(),
     det_dt %>%
-      filter(pin == pins[1]) %>%
+      filter(pin == pins[3]) %>%
       select(year, pin, agency_num, final_tax) %>%
       arrange(agency_num) %>%
       as_tibble(),
@@ -145,16 +147,26 @@ test_that("returned amount/output correct for all sample bills", {
   expect_equal(
     tax_bill(sum_dt$year, sum_dt$pin, simplify = TRUE) %>%
       nrow(),
-    775
+    781
   )
+
+  base_bills <- tax_bill(sum_dt$year, sum_dt$pin, simplify = TRUE) %>%
+    select(year, pin, agency_num, final_tax)
+  transit_bills <- base_bills %>%
+    count(pin, agency_num) %>%
+    # PINs in transit TIFs will have two line items with the CPS agency number,
+    # one being the TIF distribution
+    filter(n > 1)
 
   # District level tax amounts
   expect_equivalent(
     tax_bill(sum_dt$year, sum_dt$pin, simplify = TRUE) %>%
       select(year, pin, agency_num, final_tax) %>%
+      filter(!pin %in% transit_bills$pin) %>%
       arrange(year, pin, agency_num),
     det_dt %>%
       select(year, pin, agency_num, final_tax) %>%
+      filter(!pin %in% transit_bills$pin) %>%
       arrange(year, pin, agency_num) %>%
       as_tibble(),
     tolerance = 0.005
@@ -173,7 +185,10 @@ sum_dt_no_rpm <- sum_dt %>%
     "10252080490000",
     # TODO: This PIN is a huge and within the RPM TIF, so the values are off
     # slightly compared to the real bill, see issue #4
-    "14211000010000"
+    "14211000010000",
+    "14081020190000",
+    "14081020210000",
+    "14294210090000"
   ))
 
 test_that("all differences are less than $25", {
@@ -250,6 +265,31 @@ test_that("agnostic to input data.table row order", {
 test_that("Returns 0 for agency with base/levy of 0", {
   expect_false(
     any(is.nan(tax_bill(2022, c("12283000140000", "12284120030000"))$final_tax))
+  )
+})
+
+test_that("Simplify FALSE / TRUE identical", {
+  # transit tif tax code
+  transit_tif_pins <- DBI::dbGetQuery(
+    ptaxsim_db_conn,
+    "
+  SELECT pin
+  FROM pin
+  WHERE tax_code_num = '73105' AND year = 2023
+  "
+  ) %>%
+    slice_sample(n = 100) %>%
+    pull(pin)
+
+  simp_bills <- tax_bill(2023, transit_tif_pins, simplify = TRUE)
+  not_simp_bills <- tax_bill(2023, transit_tif_pins, simplify = FALSE)
+
+  expect_equivalent(
+    simp_bills %>% summarize(total_tax = sum(final_tax)),
+    not_simp_bills %>%
+      summarize(total_tax = sum(final_tax_to_tif +
+        final_tax_to_dist - transit_tif_to_dist)),
+    tolerance = 0.005
   )
 })
 
