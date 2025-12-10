@@ -4,6 +4,7 @@ library(dplyr)
 library(geoarrow)
 library(noctua)
 library(odbc)
+library(readr)
 library(sf)
 library(tidyr)
 
@@ -20,6 +21,47 @@ remote_path_pin_geometry_raw <- file.path(
 
 
 # pin --------------------------------------------------------------------------
+
+# Load 2025 data from the temp tax roll export
+# TODO: Questions:
+#  - Is CL_DIS_VET the sanme as ex_disabled_person_eav?
+#  - Do we need to roll dis vet exemptions into a single column?
+#  - What about exe_abate?
+pin_temp_tax_roll <- readr::read_csv(
+  file = "data-raw/pin/pin_temp_tax_roll_export.csv",
+  col_types = cols(
+    pin = col_character(),
+    tax_year = col_character(),
+    class = col_character(),
+    tax_code = col_character(),
+    tax_rate = col_double(),
+    assessed_value = col_integer(),
+    equalized_assessed_value = col_integer(),
+    ex_homeowner_eav = col_integer(),
+    ex_senior_eav = col_integer(),
+    ex_senior_freeze_eav = col_integer(),
+    ex_longtime_homeowner_eav = col_integer(),
+    ex_disabled_vet_eav = col_integer(),
+    ex_returning_vet_eav = col_integer(),
+    ex_disabled_person_eav = col_integer(),
+    tax_billed_1 = col_double(),
+    tax_billed_2 = col_double(),
+    tax_billed_tot = col_double()
+  )
+) %>%
+  rename(
+    year = tax_year,
+    tax_code_num = tax_code,
+    av_clerk = assessed_value,
+    exe_homeowner = ex_homeowner_eav,
+    exe_senior = ex_senior_eav,
+    exe_freeze = ex_senior_freeze_eav,
+    exe_longtime_homeowner = ex_longtime_homeowner_eav,
+    exe_disabled = ex_disabled_vet_eav,
+    exe_vet_returning = ex_returning_vet_eav,
+    tax_bill_total = tax_billed_tot
+  ) %>%
+  arrange(year, pin, desc(av_clerk))
 
 # Get data frame of all AVs, tax codes, and exemptions per PIN since 2006. These
 # values come from the legacy CCAO database, which mirrors the county mainframe
