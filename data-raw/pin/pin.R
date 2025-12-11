@@ -22,47 +22,6 @@ remote_path_pin_geometry_raw <- file.path(
 
 # pin --------------------------------------------------------------------------
 
-# Load 2025 data from the temp tax roll export
-# TODO: Questions:
-#  - Is CL_DIS_VET the sanme as ex_disabled_person_eav?
-#  - Do we need to roll dis vet exemptions into a single column?
-#  - What about exe_abate?
-pin_temp_tax_roll <- readr::read_csv(
-  file = "data-raw/pin/pin_temp_tax_roll_export.csv",
-  col_types = cols(
-    pin = col_character(),
-    tax_year = col_character(),
-    class = col_character(),
-    tax_code = col_character(),
-    tax_rate = col_double(),
-    assessed_value = col_integer(),
-    equalized_assessed_value = col_integer(),
-    ex_homeowner_eav = col_integer(),
-    ex_senior_eav = col_integer(),
-    ex_senior_freeze_eav = col_integer(),
-    ex_longtime_homeowner_eav = col_integer(),
-    ex_disabled_vet_eav = col_integer(),
-    ex_returning_vet_eav = col_integer(),
-    ex_disabled_person_eav = col_integer(),
-    tax_billed_1 = col_double(),
-    tax_billed_2 = col_double(),
-    tax_billed_tot = col_double()
-  )
-) %>%
-  rename(
-    year = tax_year,
-    tax_code_num = tax_code,
-    av_clerk = assessed_value,
-    exe_homeowner = ex_homeowner_eav,
-    exe_senior = ex_senior_eav,
-    exe_freeze = ex_senior_freeze_eav,
-    exe_longtime_homeowner = ex_longtime_homeowner_eav,
-    exe_disabled = ex_disabled_vet_eav,
-    exe_vet_returning = ex_returning_vet_eav,
-    tax_bill_total = tax_billed_tot
-  ) %>%
-  arrange(year, pin, desc(av_clerk))
-
 # Get data frame of all AVs, tax codes, and exemptions per PIN since 2006. These
 # values come from the legacy CCAO database, which mirrors the county mainframe
 ccaodata <- dbConnect(
@@ -72,7 +31,7 @@ ccaodata <- dbConnect(
 
 # Establish a connection the Data Department's Athena data warehouse. We'll use
 # values from here to fill in any missing values from the legacy system
-ccaoathena <- dbConnect(noctua::athena())
+ccaoathena <- dbConnect(noctua::athena(), rstudio_conn_tab = FALSE)
 
 # Pull AV and class from the Clerk and HEAD tables, giving preference to values
 # from the Clerk table in case of mismatch (except for property class).
@@ -129,24 +88,155 @@ pin <- dbGetQuery(
     tax_bill_total = tidyr::replace_na(tax_bill_total, 0)
   )
 
+# Load 2025 data from the temp tax roll export
+# TODO: Questions:
+#  - Is CL_DIS_VET the sanme as ex_disabled_person_eav?
+#  - Do we need to roll dis vet exemptions into a single column?
+#  - What about exe_abate?
+pin_temp_tax_roll <- readr::read_csv(
+  file = "data-raw/pin/pin_temp_tax_roll_export.csv",
+  col_types = cols(
+    pin = col_character(),
+    tax_year = col_character(),
+    class = col_character(),
+    tax_code = col_character(),
+    tax_rate = col_double(),
+    assessed_value = col_integer(),
+    equalized_assessed_value = col_integer(),
+    ex_homeowner_eav = col_integer(),
+    ex_senior_eav = col_integer(),
+    ex_senior_freeze_eav = col_integer(),
+    ex_longtime_homeowner_eav = col_integer(),
+    ex_disabled_vet_eav = col_integer(),
+    ex_returning_vet_eav = col_integer(),
+    ex_disabled_person_eav = col_integer(),
+    tax_billed_1 = col_double(),
+    tax_billed_2 = col_double(),
+    tax_billed_tot = col_double()
+  )
+) %>%
+  rename(
+    year = tax_year,
+    tax_code_num = tax_code,
+    av_clerk = assessed_value,
+    exe_homeowner = ex_homeowner_eav,
+    exe_senior = ex_senior_eav,
+    exe_freeze = ex_senior_freeze_eav,
+    exe_longtime_homeowner = ex_longtime_homeowner_eav,
+    exe_disabled = ex_disabled_person_eav,
+    exe_vet_dis = ex_disabled_vet_eav,
+    exe_vet_returning = ex_returning_vet_eav,
+    tax_bill_total = tax_billed_tot
+  ) %>%
+  arrange(year, pin, desc(av_clerk))
+
+
 # Pull AVs from Athena to fill in any missingness from the legacy system
 pin_athena <- dbGetQuery(
   ccaoathena,
   "
   SELECT DISTINCT
-      pin,
-      year,
-      mailed_tot,
-      certified_tot,
-      board_tot
-  FROM default.vw_pin_value
-  WHERE year >= '2006'
+      roll.pin,
+      roll.year,
+      val.class,
+      roll.mailed_taxable_av,
+      roll.certified_taxable_av,
+      roll.board_taxable_av,
+      val.board_hie,
+      roll.exe_homeowner,
+      roll.exe_senior,
+      roll.exe_freeze,
+      roll.exe_longtime_homeowner,
+      roll.exe_vet_dis_lt50,
+      roll.exe_vet_dis_50_69,
+      roll.exe_vet_dis_ge70,
+      roll.exe_vet_dis_100,
+      roll.exe_vet_returning,
+      roll.exe_disabled
+  FROM default.vw_pin_tax_roll AS roll
+  -- WHERE year >= '2006'
+  LEFT JOIN default.vw_pin_value AS val
+    ON roll.pin = val.pin
+    AND roll.year = val.year
+  WHERE roll.year = '2024'
   "
-) %>%
+)
+
+pin_athena <- pin_athena %>%
   mutate(
-    across(c(year, pin), as.character),
-    across(c(ends_with("_tot")), as.integer)
+    across(ends_with("_taxable_av"), as.integer),
+    across(starts_with("exe_"), \(x) replace_na(x, 0L)),
+    exe_vet_dis = exe_vet_dis_lt50 + exe_vet_dis_50_69 + exe_vet_dis_ge70 + exe_vet_dis_100,
+    class = if_else(class == "EX", "0", class),
+    class = stringr::str_remove_all(class, "[^0-9]")
   )
+
+pin_in_athena_not_in_temp <- pin_athena %>%
+  anti_join(
+    pin_temp_tax_roll,
+    by = c("year", "pin")
+  )
+
+pin_in_temp_not_in_athena <- pin_temp_tax_roll %>%
+  anti_join(
+    pin_athena,
+    by = c("year", "pin")
+  )
+
+pin_overlap <- pin_athena %>%
+  inner_join(
+    pin_temp_tax_roll,
+    by = c("year", "pin"),
+    suffix = c("_athena", "_temp")
+  )
+
+pin_mismatch <- pin_overlap %>%
+  mutate(
+    chk_class = class_temp != class_athena,
+    chk_av_clerk = av_clerk != board_taxable_av,
+    chk_exe_homeowner = exe_homeowner_temp != exe_homeowner_athena,
+    chk_exe_senior = exe_senior_temp != exe_senior_athena,
+    chk_exe_freeze = exe_freeze_temp != exe_freeze_athena,
+    chk_exe_longtime_homeowner = exe_longtime_homeowner_temp != exe_longtime_homeowner_athena,
+    chk_exe_disabled = exe_disabled_temp != exe_disabled_athena,
+    chk_exe_vet_dis = exe_vet_dis_temp != exe_vet_dis_athena,
+    chk_exe_vet_returning = exe_vet_returning_temp != exe_vet_returning_athena,
+    chk_all = if_any(starts_with("chk_"), \(x) x)
+  ) %>%
+  filter(chk_all) %>%
+  select(
+    pin, year,
+    # Rearrange each check so the order is Athena -> temp -> check
+    class_temp, class_athena, chk_class,
+    av_clerk, board_taxable_av, chk_av_clerk,
+    exe_homeowner_temp, exe_homeowner_athena, chk_exe_homeowner,
+    exe_senior_temp, exe_senior_athena, chk_exe_senior,
+    exe_freeze_temp, exe_freeze_athena, chk_exe_freeze,
+    exe_longtime_homeowner_temp, exe_longtime_homeowner_athena, chk_exe_longtime_homeowner,
+    exe_disabled_temp, exe_disabled_athena, chk_exe_disabled,
+    exe_vet_dis_temp, exe_vet_dis_athena, chk_exe_vet_dis,
+    exe_vet_returning_temp, exe_vet_returning_athena, chk_exe_vet_returning
+  )
+
+pin_mismatch_summ <- pin_mismatch %>%
+  summarise(
+    total_mismatch = n(),
+    class = sum(chk_class),
+    av_clerk = sum(chk_av_clerk),
+    exe_homeowner = sum(chk_exe_homeowner),
+    exe_senior = sum(chk_exe_senior),
+    exe_freeze = sum(chk_exe_freeze),
+    exe_longtime_homeowner = sum(chk_exe_longtime_homeowner),
+    exe_disabled = sum(chk_exe_disabled),
+    exe_vet_dis = sum(chk_exe_vet_dis),
+    exe_vet_returning = sum(chk_exe_vet_returning)
+  ) %>%
+  pivot_longer(
+    everything(),
+    names_to = "mismatch_type",
+    values_to = "n_mismatches"
+  ) %>%
+  arrange(desc(n_mismatches))
 
 pin_fill <- pin %>%
   # There are a few (less than 100) rows with Clerk AVs split for the same PIN.
