@@ -36,18 +36,19 @@ tax_code <- map_dfr(file_names, function(file) {
   df %>%
     set_names(snakecase::to_snake_case(names(.))) %>%
     select(-contains("year")) %>%
-    rename_with(
-      ~ str_replace(.x, "taxcode", "tax_code"),
-      starts_with("taxcode")
-    ) %>%
-    rename_with(
-      ~ str_replace(.x, "ag_rate", "agency_rate"),
-      starts_with("ag_rate")
-    ) %>%
-    rename_with(
-      ~ str_replace(.x, "code_rate", "tax_code_rate"),
-      starts_with("code_rate")
-    ) %>%
+    rename_with(~ str_remove(.x, "_24"), ends_with("_24")) %>%
+    rename_with(~rep("tax_code", length(.x)), any_of(c(
+      "taxcode", "code"
+      ))) %>%
+    rename_with(~rep("agency_name", length(.x)), any_of(c(
+                "authority_name"
+    ))) %>%
+    rename_with(~rep("agency_rate", length(.x)), any_of(c(
+      "ag_rate", "auth_rate"
+      ))) %>%
+    rename_with(~rep("tax_code_rate", length(.x)), any_of(c(
+      "code_rate", "taxcode_rate"
+      ))) %>%
     mutate(
       year = as.character(year_ext),
       agency_rate = as.numeric(agency_rate),
@@ -57,12 +58,17 @@ tax_code <- map_dfr(file_names, function(file) {
 
 # Clean up resulting combined data frame
 tax_code <- tax_code %>%
+  filter(!grepl("TIF", agency_name)) %>%
   select(
     year,
+    agency_name,
     agency_num = agency, agency_rate,
     tax_code_num = tax_code, tax_code_rate
   ) %>%
-  arrange(year, agency_num, tax_code_num)
+  arrange(year, agency_num, tax_code_num) %>%
+  distinct()
+
+
 
 arrow::write_dataset(
   dataset = tax_code,

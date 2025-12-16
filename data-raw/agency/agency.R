@@ -43,8 +43,6 @@ file_names <- list.files(
 )
 
 
-
-
 # agency_fund ------------------------------------------------------------------
 
 # Load the detail sheet from each agency file. This includes the levy and rate
@@ -78,21 +76,26 @@ agency_fund <- map_dfr(file_names, function(file) {
       "ptell_levy", "fund_ptell_levy", "ptell_red_levy",
       "fund_ptell_reduced_levy"
     ))) %>%
-    rename_with(~"ptell_reduced_ind", any_of(c(
-      "ptell_ind", "reduction_ind", "rate_reduction_indicator",
-      "reduction_indicator"
-    ))) %>%
     rename_with(~"final_levy", any_of(c(
       "final_levy", "fund_final_levy"
     ))) %>%
     rename_with(~"final_rate", any_of(c(
       "fund_rate", "final_rate", "fund_final_rate", "final_fund_rate"
     ))) %>%
+    mutate(
+      fund_num =
+        ifelse(
+          str_length(fund) == 3,
+          paste0(fund, "000"),
+          fund
+        ),
+      fund_type_num = substr(fund, 1, 3)
+    ) %>%
     select(
       year,
-      agency_num = agency, fund_num = fund, fund_name, levy, loss_pct,
+      agency_num = agency, fund_type_num, fund_num, fund_name, levy, loss_pct,
       levy_plus_loss, rate_ceiling, max_levy, prelim_rate, ptell_reduced_levy,
-      ptell_reduced_ind, final_levy, final_rate
+      final_levy, final_rate
     ) %>%
     mutate(across(year, as.character))
 }) %>%
@@ -122,8 +125,6 @@ agency_fund <- map_dfr(file_names, function(file) {
     rate_ceiling = replace_na(rate_ceiling, 0),
     rate_ceiling = ifelse(final_rate == 0 & final_levy == 0, 0, rate_ceiling),
     ptell_reduced_levy = na_if(ptell_reduced_levy, 0),
-    ptell_reduced_ind = ptell_reduced_ind == "*",
-    ptell_reduced_ind = replace_na(ptell_reduced_ind, FALSE),
     final_rate = ifelse(
       agency_num == "050200000" & fund_num == "202" & year == 2006,
       0,
@@ -150,13 +151,13 @@ agency_fund <- map_dfr(file_names, function(file) {
 
 # Breakout the fund names into their own table
 agency_fund_info <- agency_fund %>%
-  group_by(fund_num) %>%
+  group_by(fund_type_num, fund_num) %>%
   summarise(fund_name = calc_mode(fund_name)) %>%
   ungroup() %>%
   arrange(fund_num) %>%
   mutate(
     fund_name = str_trim(str_squish(fund_name)),
-    capped_ind = !fund_num %in% c(
+    capped_ind = !fund_type_num %in% c(
       "003", "027", "054", "182", "202", "259", "261", "284", "286", "287",
       "293", "294", "315", "320", "321", "322", "351", "400", "401", "402",
       "404", "405", "406", "407"
@@ -197,8 +198,7 @@ agency <- map_dfr(file_names, function(file) {
       ),
       across(
         c(
-          contains("year"), contains("agency"),
-          contains("reduction_type"), contains("agg_ext_base")
+          contains("year"), contains("agency")
         ),
         as.character
       )
@@ -208,10 +208,6 @@ agency <- map_dfr(file_names, function(file) {
     rename_with(~ str_remove(.x, "_18"), ends_with("_18")) %>%
     rename_with(~ str_remove(.x, "_num"), starts_with("agency")) %>%
     rename_with(~ str_replace(.x, "county", "cook"), any_of("county_eav")) %>%
-    rename_with(~"agg_ext_base_year", any_of(c(
-      "agg_ext_base_year", "agg_ext_base_yr", "agg_ext_base",
-      "prior_year", "agg_yr"
-    ))) %>%
     rename_with(~"lim_numerator", any_of(c(
       "lim_numerator", "prior_agg_ext"
     ))) %>%
@@ -224,17 +220,8 @@ agency <- map_dfr(file_names, function(file) {
     rename_with(~"curr_new_prop", any_of(c(
       "current_new_prop", "new_prop", "curr_new_prop", "current_new_property"
     ))) %>%
-    rename_with(~"lasalle_eav", any_of(c("lasalle_eav", "la_salle_eav"))) %>%
-    rename_with(~"mchenry_eav", any_of(c("mc_henry_eav", "mchency_eav"))) %>%
-    rename_with(
-      ~"reduction_type",
-      any_of(c("reduction_type", "reduction"))
-    ) %>%
     rename_with(~"reduction_pct", any_of(c(
       "reduction_percent", "reduction_factor", "clerk_reduction_factor"
-    ))) %>%
-    rename_with(~"total_non_cap_ext", any_of(c(
-      "total_non_cap_ext", "final_non_cap_ext", "total_non_cap_extension"
     ))) %>%
     rename_with(~"total_ext", any_of(c(
       "total_ext", "final_ext",
@@ -243,18 +230,15 @@ agency <- map_dfr(file_names, function(file) {
     # Select, order, and rename columns
     select(
       year,
-      agency_num = agency, agency_name, home_rule_ind, agg_ext_base_year,
+      agency_num = agency, agency_name, home_rule_ind,
       lim_numerator, lim_denominator, lim_rate, prior_eav, curr_new_prop,
       ends_with("_eav"), percent_burden,
-      starts_with("grand_total_"),
-      reduction_type, reduction_pct, total_non_cap_ext,
+      starts_with("grand_total_"), reduction_pct,
       any_of("total_ext")
     ) %>%
     rename_with(~ paste0("cty_", .x), ends_with("_eav")) %>%
-    select(-any_of("cty_total_eav")) %>%
     rename(
       prior_eav = cty_prior_eav,
-      cty_total_eav = cty_overall_eav,
       pct_burden = percent_burden
     ) %>%
     rename_with(
@@ -266,13 +250,11 @@ agency <- map_dfr(file_names, function(file) {
   mutate(
     agency_num = str_pad(agency_num, 9, "left", "0"),
     agency_name = str_trim(str_squish(agency_name)),
-    agg_ext_base_year = as.integer(agg_ext_base_year),
-    agg_ext_base_year = na_if(agg_ext_base_year, 0),
     home_rule_ind = home_rule_ind %in% c("Y", "HR", "No PTELL"),
     home_rule_ind = replace_na(home_rule_ind, FALSE),
     across(
       c(
-        starts_with("lim_"), "agg_ext_base_year", "total_reduced_levy",
+        starts_with("lim_"), "total_reduced_levy",
         starts_with("reduction_")
       ),
       ~ ifelse(home_rule_ind, NA, .x)
@@ -292,11 +274,6 @@ agency <- map_dfr(file_names, function(file) {
     across(
       reduction_pct,
       ~ ifelse(!year %in% c(2017), .x / 100, .x)
-    ),
-    reduction_type = ifelse(
-      !toupper(reduction_type) %in% c("NO REDUCTION", "NONE"),
-      toupper(reduction_type),
-      NA_character_
     )
   ) %>%
   arrange(year, agency_num) %>%
@@ -313,7 +290,7 @@ agency <- map_dfr(file_names, function(file) {
     across(
       c(
         lim_rate, pct_burden, total_prelim_rate, total_final_rate,
-        reduction_pct, total_non_cap_ext, total_ext
+        reduction_pct, total_ext
       ),
       ~ as.double(.x)
     )
