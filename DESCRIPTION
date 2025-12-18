@@ -25,6 +25,7 @@ Imports:
 RoxygenNote: 7.3.3
 Suggests:
     arrow,
+    aws.s3,
     covr,
     devtools,
     dplyr,
@@ -59,7 +60,7 @@ Suggests:
     usethis
 Depends:
     R (>= 3.5)
-Remotes: 
+Remotes:
     paleolimbot/geoarrow,
     ropensci/tabulapdf
 Config/Requires_DB_Version: 2021.0.4
