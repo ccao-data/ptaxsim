@@ -43,8 +43,6 @@ file_names <- list.files(
 )
 
 
-
-
 # agency_fund ------------------------------------------------------------------
 
 # Load the detail sheet from each agency file. This includes the levy and rate
@@ -144,8 +142,6 @@ agency_fund <- map_dfr(file_names, function(file) {
   arrange(year, agency_num, fund_num)
 
 
-
-
 # agency_fund_info -------------------------------------------------------------
 
 # Breakout the fund names into their own table
@@ -178,8 +174,6 @@ arrow::write_parquet(
   sink = remote_path_agency_fund_info,
   compression = "zstd"
 )
-
-
 
 
 # agency -----------------------------------------------------------------------
@@ -345,8 +339,6 @@ agency <- agency %>%
   filter(year != 2013) %>%
   bind_rows(agency_2013) %>%
   arrange(year, agency_num)
-
-
 
 
 # agency_info ------------------------------------------------------------------
