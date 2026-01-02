@@ -23,8 +23,7 @@ remote_path_pin_geometry_raw <- file.path(
 
 # Start and end years of data to query, inclusive.
 # Set these to the same value if you want to update only one year of data
-# start_year <- 2006
-start_year <- 2024
+start_year <- 2006
 end_year <- 2024
 
 
@@ -103,7 +102,8 @@ ccaoathena <- dbConnect(noctua::athena(), rstudio_conn_tab = FALSE)
 # Pull AVs and exemption data from Athena to fill in any missingness from the
 # legacy system and the tax roll export.
 # TODO:
-#  - Exclude CofEs from exemptions
+#  - Exclude CofEs from exemptions:
+#    https://github.com/ccao-data/data-architecture/issues/962
 #  - Add tax_code_num
 #  - Add tax_bill_total
 pin_athena <- dbGetQuery(
@@ -152,9 +152,9 @@ pin_athena <- dbGetQuery(
     exe_abate = 0L,
     exe_vet_dis =
       exe_vet_dis_lt50 +
-      exe_vet_dis_50_69 +
-      exe_vet_dis_ge70 +
-      exe_vet_dis_100,
+        exe_vet_dis_50_69 +
+        exe_vet_dis_ge70 +
+        exe_vet_dis_100,
     class = ifelse(class == "EX", "0", class),
     class = stringr::str_remove_all(class, "[^0-9]"),
     av_tot = board_taxable_av - hie,
@@ -254,7 +254,8 @@ pin_mismatch <- pin_fill %>%
       exe_longtime_homeowner_tax_roll != exe_longtime_homeowner_athena,
     chk_exe_disabled = exe_disabled_tax_roll != exe_disabled_athena,
     chk_exe_vet_dis = exe_vet_dis_tax_roll != exe_vet_dis_athena,
-    chk_exe_vet_returning = exe_vet_returning_tax_roll != exe_vet_returning_athena,
+    chk_exe_vet_returning =
+      exe_vet_returning_tax_roll != exe_vet_returning_athena,
     chk_all = if_any(starts_with("chk_"), \(x) x)
   ) %>%
   filter(chk_all) %>%
@@ -339,7 +340,7 @@ pin <- pin_fill %>%
     class = coalesce(class_tax_roll, class_athena),
     tax_code_num = coalesce(tax_code_num_tax_roll, tax_code_num_athena),
     tax_bill_total = coalesce(tax_bill_total_tax_roll, tax_bill_total_athena),
-    av_mailed = mailed_taxable_av,  # Stage AVs are only in Athena
+    av_mailed = mailed_taxable_av, # Stage AVs are only in Athena
     av_certified = certified_taxable_av,
     av_board = board_taxable_av,
     av_clerk = coalesce(av_clerk, av_tot),
@@ -376,7 +377,7 @@ pin <- pin_fill %>%
     exe_abate
   )
 
-# pin <- bind_rows(pin, pin_legacy_fill)
+pin <- bind_rows(pin, pin_legacy_fill)
 
 # Write to S3
 arrow::write_dataset(
