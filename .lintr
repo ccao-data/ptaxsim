@@ -5,6 +5,6 @@ linters: linters_with_defaults(
     indentation_linter = NULL,
     return_linter = NULL,
     commented_code_linter = NULL,
-    pipe_consistency_linter = NULL
+    pipe_consistency_linter = pipe_consistency_linter(c("auto"))
   )
 encoding: "UTF-8"
