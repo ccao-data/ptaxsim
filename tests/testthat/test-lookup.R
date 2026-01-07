@@ -230,7 +230,12 @@ test_that("lookup values/data are correct", {
   tryCatch(
     expect_known_hash(agency_2014_to_2019, "cf6dcb93bf"),
     error = function(e) {
-      print(agency_2014_to_2019)
+      cat(
+        capture.output(
+          write.csv(agency_2014_to_2019, row.names = FALSE)
+        ),
+        sep = "\n"
+      )
       stop(e)
     }
   )
@@ -238,7 +243,12 @@ test_that("lookup values/data are correct", {
   tryCatch(
     expect_known_hash(agency_sum_df, "30ede4ede0"),
     error = function(e) {
-      print(agency_sum_df)
+      cat(
+        capture.output(
+          write.csv(agency_sum_df, row.names = FALSE)
+        ),
+        sep = "\n"
+      )
       stop(e)
     }
   )
