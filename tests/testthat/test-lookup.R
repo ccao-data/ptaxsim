@@ -226,13 +226,21 @@ test_that("lookup values/data are correct", {
       3178945619, 286280738, 0, 638172798
     )
   )
-  expect_known_hash(
-    lookup_agency(2014:2019, "12064"),
-    "cf6dcb93bf"
+  agency_2014_to_2019 <- lookup_agency(2014:2019, "12064")
+  tryCatch(
+    expect_known_hash(agency_2014_to_2019, "cf6dcb93bf"),
+    error = function(e) {
+      print(agency_2014_to_2019)
+      stop(e)
+    }
   )
-  expect_known_hash(
-    lookup_agency(sum_df$year, sum_df$tax_code),
-    "30ede4ede0"
+  agency_sum_df <- lookup_agency(sum_df$year, sum_df$tax_code)
+  tryCatch(
+    expect_known_hash(agency_sum_df, "30ede4ede0"),
+    error = function(e) {
+      print(agency_sum_df)
+      stop(e)
+    }
   )
 })
 
