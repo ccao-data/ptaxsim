@@ -232,6 +232,8 @@ test_that("lookup values/data are correct", {
     # Dataframe is necessary for json serialization in expect_snapshot_value,
     # or else jsonlite will raise a warning about null values
     as.data.frame(lookup_agency(2014:2019, "12064")),
+    # `json2` uses `serializeJSON` under the hood, which includes metadata
+    # about the dataframe that `json` (`toJSON`) does not
     style = "json2",
     variant = "lookup_agency_over_time"
   )
