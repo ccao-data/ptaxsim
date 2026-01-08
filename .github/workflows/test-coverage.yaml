@@ -32,6 +32,9 @@ jobs:
         run: echo "PTAXSIM_DB_PATH=${{ steps.prep_ptaxsim_db.outputs.PTAXSIM_DB_DIR }}/ptaxsim.db" >> $GITHUB_ENV
         shell: bash
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+
       - name: Test coverage
         run: |
           covr::package_coverage(
