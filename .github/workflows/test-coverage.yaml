@@ -32,39 +32,6 @@ jobs:
         run: echo "PTAXSIM_DB_PATH=${{ steps.prep_ptaxsim_db.outputs.PTAXSIM_DB_DIR }}/ptaxsim.db" >> $GITHUB_ENV
         shell: bash
 
-      - name: Generate lookup_agency output
-        shell: bash
-        run: |
-          Rscript -e '
-            library(ptaxsim)
-
-            ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), Sys.getenv("PTAXSIM_DB_PATH"))
-            assign("ptaxsim_db_conn", ptaxsim_db_conn, envir = .GlobalEnv)
-
-            saveRDS(
-              lookup_agency(2014:2019, "12064"),
-              file = "agency_2014_to_2019_ci.rds",
-            )
-
-            sum_df <- sample_tax_bills_summary
-            saveRDS(
-              lookup_agency(sum_df$year, sum_df$tax_code),
-              file = "agency_summary_ci.rds"
-            )
-          '
-
-      - name: Upload lookup_agency output part 1
-        uses: actions/upload-artifact@v4
-        with:
-          name: agency-2014-2019-ci
-          path: agency_2014_to_2019_ci.rds
-
-      - name: Upload lookup_agency output part 2
-        uses: actions/upload-artifact@v4
-        with:
-          name: agency-summary-ci
-          path: agency_summary_ci.rds
-
       - name: Test coverage
         run: |
           covr::package_coverage(
