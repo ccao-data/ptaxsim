@@ -32,27 +32,25 @@ jobs:
         run: echo "PTAXSIM_DB_PATH=${{ steps.prep_ptaxsim_db.outputs.PTAXSIM_DB_DIR }}/ptaxsim.db" >> $GITHUB_ENV
         shell: bash
 
-      - name: Generate lookup_agency debug info
+      - name: Generate lookup_agency output
         shell: bash
         run: |
           Rscript -e '
             library(ptaxsim)
             ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), Sys.getenv("PTAXSIM_DB_PATH"))
             assign("ptaxsim_db_conn", ptaxsim_db_conn, envir = .GlobalEnv)
-            agency_2014_to_2019 <- lookup_agency(2014:2019, "12064")
-            cat("=== sapply(class) ===\n")
-            print(sapply(agency_2014_to_2019, class))
-            cat("=== str() ===\n")
-            str(agency_2014_to_2019)
-            cat("=== class() ===\n")
-            print(class(agency_2014_to_2019))
-            cat("=== attributes() ===\n")
-            print(attributes(agency_2014_to_2019))
-            cat("=== head() ===\n")
-            print(head(agency_2014_to_2019))
-            cat("=== dput() (first 5 rows) ===\n")
-            dput(head(agency_2014_to_2019, 5))
+            write.csv(
+              lookup_agency(2014:2019, "12064"),
+              "agency_2014_to_2019_ci.csv",
+              row.names = FALSE
+            )
           '
+
+      - name: Upload lookup_agency output
+        uses: actions/upload-artifact@v4
+        with:
+          name: agency-2014-2019-ci
+          path: agency_2014_to_2019_ci.csv
 
       - name: Test coverage
         run: |
