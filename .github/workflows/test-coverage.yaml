@@ -41,17 +41,15 @@ jobs:
             ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), Sys.getenv("PTAXSIM_DB_PATH"))
             assign("ptaxsim_db_conn", ptaxsim_db_conn, envir = .GlobalEnv)
 
-            write.csv(
+            saveRDS(
               lookup_agency(2014:2019, "12064"),
-              "agency_2014_to_2019_ci.csv",
-              row.names = FALSE
+              file = "agency_2014_to_2019_ci.rds",
             )
 
             sum_df <- sample_tax_bills_summary
-            write.csv(
+            saveRDS(
               lookup_agency(sum_df$year, sum_df$tax_code),
-              "agency_summary_ci.csv",
-              row.names = FALSE
+              file = "agency_summary_ci.rds"
             )
           '
 
@@ -59,13 +57,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: agency-2014-2019-ci
-          path: agency_2014_to_2019_ci.csv
+          path: agency_2014_to_2019_ci.rds
 
       - name: Upload lookup_agency output part 2
         uses: actions/upload-artifact@v4
         with:
           name: agency-summary-ci
-          path: agency_summary_ci.csv
+          path: agency_summary_ci.rds
 
       - name: Test coverage
         run: |
