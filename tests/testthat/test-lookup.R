@@ -226,31 +226,19 @@ test_that("lookup values/data are correct", {
       3178945619, 286280738, 0, 638172798
     )
   )
-  agency_2014_to_2019 <- lookup_agency(2014:2019, "12064")
-  tryCatch(
-    expect_known_hash(agency_2014_to_2019, "cf6dcb93bf"),
-    error = function(e) {
-      cat(
-        capture.output(
-          write.csv(agency_2014_to_2019, row.names = FALSE)
-        ),
-        sep = "\n"
-      )
-      stop(e)
-    }
+
+  local_edition(3) # Enable snapshot testing
+  expect_snapshot_value(
+    # Dataframe is necessary for json serialization in expect_snapshot_value,
+    # or else jsonlite will raise a warning about null values
+    as.data.frame(lookup_agency(2014:2019, "12064")),
+    style = "json2",
+    variant = "lookup_agency_over_time"
   )
-  agency_sum_df <- lookup_agency(sum_df$year, sum_df$tax_code)
-  tryCatch(
-    expect_known_hash(agency_sum_df, "30ede4ede0"),
-    error = function(e) {
-      cat(
-        capture.output(
-          write.csv(agency_sum_df, row.names = FALSE)
-        ),
-        sep = "\n"
-      )
-      stop(e)
-    }
+  expect_snapshot_value(
+    as.data.frame(lookup_agency(sum_df$year, sum_df$tax_code)),
+    style = "json2",
+    variant = "lookup_agency_summary"
   )
 })
 
