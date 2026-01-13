@@ -33,14 +33,14 @@ end_year <- 2024
 # 2023. These values come from the legacy CCAO database, which mirrors the
 # county mainframe.
 # Only query this data if we are pulling data for years up to 2023
-if (start_year <= 2023)  {
+if (start_year <= 2023) {
   ccaodata <- dbConnect(
     odbc::odbc(),
     .connection_string = Sys.getenv("DB_CONFIG_CCAODATA")
   )
 
-  # Pull AV and class from the Clerk and HEAD tables, giving preference to values
-  # from the Clerk table in case of mismatch (except for property class).
+  # Pull AV and class from the Clerk and HEAD tables, giving preference to
+  # values from the Clerk table in case of mismatch (except for property class).
   # These tables are pulled from the AS/400 for 2006-2023.
   # The corresponding AS/400 files are:
   # CLERKVALUES = Library: FOIPRD; File: CLRK_VALUE; Member Y<year>
