@@ -51,8 +51,6 @@ remote_path_crosswalk <- file.path(
 )
 
 
-
-
 # tif --------------------------------------------------------------------------
 
 ## Excel files -----
@@ -61,7 +59,8 @@ remote_path_crosswalk <- file.path(
 summ_file_names_xls <- list.files(
   path = "data-raw/tif/main",
   pattern = "*Cook.*\\.xls*",
-  full.names = TRUE
+  full.names = TRUE,
+  ignore.case = TRUE
 )
 
 # Load each file and cleanup columns, then combine into single df
@@ -81,6 +80,7 @@ tif_main_xls <- map_dfr(summ_file_names_xls, function(file) {
     set_names(snakecase::to_snake_case(names(.))) %>%
     rename_with(~ str_replace(.x, str_c(year_ext, "_"), "curr_year_")) %>%
     rename_with(~ str_replace(.x, str_c(year_ext - 1, "_"), "prev_year_")) %>%
+    rename_with(~ str_replace(.x, "tif_agency", "agency")) %>%
     mutate(
       cancelled_this_year =
         year == str_extract(new_cancelled, "\\d{4}") &
@@ -95,7 +95,6 @@ tif_main_xls <- map_dfr(summ_file_names_xls, function(file) {
       curr_year_revenue, first_year, cancelled_this_year,
     )
 })
-
 
 ## PDF files -----
 
@@ -276,8 +275,6 @@ arrow::write_parquet(
 )
 
 
-
-
 # tif_distribution -------------------------------------------------------------
 
 ## Excel files -----
@@ -286,7 +283,8 @@ arrow::write_parquet(
 dist_file_names_xls <- list.files(
   path = "data-raw/tif/distribution",
   pattern = "*Distribution.*\\.xls*",
-  full.names = TRUE
+  full.names = TRUE,
+  ignore.case = TRUE
 )
 
 # Load each Excel file and cleanup columns, then combine into single df
@@ -301,6 +299,7 @@ tif_distribution_xls <- map_dfr(dist_file_names_xls, function(file) {
     df <- readxl::read_xlsx(file)
   }
 
+
   df %>%
     mutate(year = year_ext) %>%
     set_names(snakecase::to_snake_case(names(.))) %>%
@@ -313,17 +312,28 @@ tif_distribution_xls <- map_dfr(dist_file_names_xls, function(file) {
     ) %>%
     rename_with(~ str_remove(.x, "_tif"), starts_with("tax_code_tif_")) %>%
     rename_with(
-      ~"tax_code_distribution_percent",
+      ~ rep("tax_code_distribution_percent", length(.x)),
       starts_with("tax_code_distribution")
     ) %>%
+    rename_with(
+      ~ rep("tif_tax_code", length(.x)),
+      any_of("tif_code")
+    ) %>%
+    rename_with(
+      ~ rep("tax_code_rate", length(.x)),
+      any_of("tif_code_rate")
+    ) %>%
     mutate(tif_tax_code = str_pad(tif_tax_code, "5", "left", "0")) %>%
-    select(
-      year,
-      agency_name = tif_name,
-      agency_num = tif_agency, tax_code_num = tif_tax_code,
-      tax_code_rate, tax_code_eav, tax_code_frozen_eav, tax_code_revenue,
-      tax_code_distribution_percent
-    )
+    select(any_of(c("year",
+      "agency_num" = "tif_agency",
+      "agency_name" = "tif_name",
+      "tax_code_num" = "tif_tax_code",
+      "tax_code_rate",
+      "tax_code_eav",
+      "tax_code_frozen_eav",
+      "tax_code_revenue",
+      "tax_code_distribution_percent"
+    )))
 })
 
 
@@ -431,8 +441,6 @@ arrow::write_parquet(
 )
 
 
-
-
 # tif_crosswalk ----------------------------------------------------------------
 
 # Some TIFs will have more than 1 agency number. This happens when TIFs are
@@ -501,3 +509,64 @@ arrow::write_parquet(
   sink = remote_path_crosswalk,
   compression = "zstd"
 )
+
+# pin_tif_distribution ---------------------------------------------------------
+# Starting in TY2024, the TIF distribution calculation has changed to be done
+# at the PIN-level rather than the tax code level. This requires a different
+# tif distribution table in the database
+
+## Excel files -----
+
+# Get a list of all TIF distribution report spreadsheets
+pin_dist_file_names_xls <- list.files(
+  path = "data-raw/tif/pin_distribution",
+  pattern = "pin.*\\.xls*",
+  full.names = TRUE,
+  ignore.case = TRUE
+)
+
+# Load each Excel file and cleanup columns, then combine into single df
+pin_tif_distribution <- map_dfr(pin_dist_file_names_xls, function(file) {
+  # Extract year from file name
+  year_ext <- str_extract(file, "\\d{4}")
+
+  # Load file based on extension
+  if (tools::file_ext(file) == "xls") {
+    df <- bind_rows(
+      readxl::read_xls(file, sheet = 1),
+      readxl::read_xls(file, sheet = 2)
+    )
+  } else if (tools::file_ext(file) == "xlsx") {
+    df <- bind_rows(
+      readxl::read_xlsx(file, sheet = 1),
+      readxl::read_xlsx(file, sheet = 2)
+    )
+  }
+
+  df %>%
+    mutate(year = year_ext) %>%
+    set_names(snakecase::to_snake_case(names(.))) %>%
+    select(
+      year,
+      pin = tifpin,
+      agency_num = tif_agency_num,
+      tax_code_num = tif_tax_code,
+      tax_code_rate = code_rate,
+      pin_eav = current_eav,
+      pin_frozen_eav = frozen_eav,
+      pin_increment_eav = increment_eav,
+      pin_revenue = tif_revenue,
+      pin_distribution_pct = pintif,
+      transit_tif_to_cps = cps_transit_tif,
+      transit_tif_to_tif = transit_tif,
+      transit_tif_to_dist = districts_transit_tif
+    ) %>%
+    mutate(
+      is_transit_tif =
+        case_when(
+          !is.na(transit_tif_to_tif) ~
+            TRUE,
+          TRUE ~ FALSE
+        ),
+    )
+})
