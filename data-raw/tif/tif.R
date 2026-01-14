@@ -51,8 +51,6 @@ remote_path_crosswalk <- file.path(
 )
 
 
-
-
 # tif --------------------------------------------------------------------------
 
 ## Excel files -----
@@ -276,8 +274,6 @@ arrow::write_parquet(
 )
 
 
-
-
 # tif_distribution -------------------------------------------------------------
 
 ## Excel files -----
@@ -429,8 +425,6 @@ arrow::write_parquet(
   sink = remote_path_dist,
   compression = "zstd"
 )
-
-
 
 
 # tif_crosswalk ----------------------------------------------------------------

@@ -226,13 +226,21 @@ test_that("lookup values/data are correct", {
       3178945619, 286280738, 0, 638172798
     )
   )
-  expect_known_hash(
-    lookup_agency(2014:2019, "12064"),
-    "cf6dcb93bf"
+
+  local_edition(3) # Enable snapshot testing
+  expect_snapshot_value(
+    # Dataframe is necessary for json serialization in expect_snapshot_value,
+    # or else jsonlite will raise a warning about null values
+    as.data.frame(lookup_agency(2014:2019, "12064")),
+    # `json2` uses `serializeJSON` under the hood, which includes metadata
+    # about the dataframe that `json` (`toJSON`) does not
+    style = "json2",
+    variant = "lookup_agency_over_time"
   )
-  expect_known_hash(
-    lookup_agency(sum_df$year, sum_df$tax_code),
-    "30ede4ede0"
+  expect_snapshot_value(
+    as.data.frame(lookup_agency(sum_df$year, sum_df$tax_code)),
+    style = "json2",
+    variant = "lookup_agency_summary"
   )
 })
 
