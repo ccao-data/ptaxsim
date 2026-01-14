@@ -93,7 +93,9 @@ if (start_year <= 2023) {
       across(c(year, pin, tax_code_num, class), as.character),
       across(c(starts_with("av_"), starts_with("exe_")), as.integer),
       exe_homeowner = ifelse(exe_homeowner < 0L, 0L, exe_homeowner),
-      tax_bill_total = tidyr::replace_na(tax_bill_total, 0)
+      tax_bill_total = tidyr::replace_na(tax_bill_total, 0),
+      # This exemption is new in 2024 and does not exist in the legacy data
+      exe_vet_dis_100 = 0L
     )
 } else {
   # If we are only pulling data post-2024, create an empty tibble for the
@@ -114,7 +116,10 @@ if (start_year <= 2023) {
     exe_longtime_homeowner = integer(),
     exe_disabled = integer(),
     exe_vet_returning = integer(),
-    exe_vet_dis = integer(),
+    exe_vet_dis_lt50 = integer(),
+    exe_vet_dis_50_69 = integer(),
+    exe_vet_dis_ge70 = integer(),
+    exe_vet_dis_100 = integer(),
     exe_abate = integer()
   )
 }
@@ -143,6 +148,90 @@ pin_athena <- dbGetQuery(
     across(c(year, pin), as.character),
     across(c(ends_with("_tot")), as.integer)
   )
+
+# Pull veteran disability exemption breakdowns from Athena to fill in
+# missingness from the tax roll export, which does not include specific
+# disability levels
+pin_exe_vetdis_athena <- dbGetQuery(
+  ccaoathena,
+  glue_sql("
+  WITH long AS (
+    SELECT
+      det.parid AS pin,
+      det.taxyr AS year,
+      CASE
+        WHEN
+          det.excode IN ('DV1', 'C-DV1', 'DV0', 'C-DV0', 'DV-1')
+          THEN 'exe_vet_dis_lt50'
+        WHEN det.excode IN ('DV2', 'C-DV2', 'DV-2') THEN 'exe_vet_dis_50_69'
+        WHEN det.excode IN ('DV3', 'DV3-M', 'DV-3') THEN 'exe_vet_dis_ge70'
+        WHEN det.excode IN ('DV4', 'DV4-M', 'DV-4') THEN 'exe_vet_dis_100'
+      END AS exe_name,
+      COALESCE(cast(det.apother AS INT), 0) AS exe_amount
+    FROM iasworld.exdet AS det
+    INNER JOIN iasworld.exadmn AS admn
+      ON det.parid = admn.parid
+      AND det.caseno = admn.caseno
+      AND det.taxyr = admn.taxyr
+      AND det.excode = admn.excode
+      AND admn.cur = 'Y'
+      AND admn.deactivat IS NULL
+      AND admn.exstat = 'A'
+      AND (admn.user126 IS NULL OR admn.user126 = 'N')
+    INNER JOIN iasworld.excode AS code
+      ON det.excode = code.excode
+      AND det.taxyr = code.taxyr
+      AND code.cur = 'Y'
+      AND code.deactivat IS NULL
+    WHERE det.cur = 'Y'
+      AND det.deactivat IS NULL
+      AND det.excode IN (
+        'DV1', 'C-DV1', 'DV0', 'C-DV0', 'DV-1',
+        'DV2', 'C-DV2', 'DV-2',
+        'DV3', 'DV3-M', 'DV-3',
+        'DV4', 'DV4-M', 'DV-4'
+      )
+      AND det.taxyr >= '2024'
+      AND det.taxyr <= '{end_year}'
+  )
+  SELECT
+    pin,
+    year,
+    CAST(
+      SUM(
+        CASE WHEN exe_name = 'exe_vet_dis_lt50' THEN exe_amount ELSE 0 END
+      )
+    AS INT) AS exe_vet_dis_lt50,
+    CAST(
+      SUM(
+        CASE WHEN exe_name = 'exe_vet_dis_50_69' THEN exe_amount ELSE 0 END
+      )
+    AS INT) AS exe_vet_dis_50_69,
+    CAST(
+      SUM(
+        CASE WHEN exe_name = 'exe_vet_dis_ge70' THEN exe_amount ELSE 0 END
+      )
+    AS INT) AS exe_vet_dis_ge70,
+    CAST(
+      SUM(
+        CASE WHEN exe_name = 'exe_vet_dis_100' THEN exe_amount ELSE 0 END
+      )
+    AS INT) AS exe_vet_dis_100
+  FROM long
+  GROUP BY pin, year
+  ", .con = ccaoathena)
+) %>%
+  mutate(
+    across(c(year, pin), as.character),
+    across(starts_with("exe_"), as.integer)
+  ) %>%
+  mutate(
+    exe_vet_dis_tot = exe_vet_dis_lt50 +
+      exe_vet_dis_50_69 +
+      exe_vet_dis_ge70 +
+      exe_vet_dis_100
+  ) %>%
+  rename_with(~ paste0(.x, "_athena"), starts_with("exe_"))
 
 # Load post-2024 data from the tax roll export in S3.
 # We upload these manually to the raw S3 bucket when we receive them
@@ -196,9 +285,10 @@ pin_tax_roll <- map_dfr(pin_tax_roll_csv_files$Key, \(f) {
       exe_vet_returning = ex_returning_vet_eav,
       tax_bill_total = tax_billed_tot
     ) %>%
-    # Tax rate is only present post-2024, and it duplicates a value in the
-    # tax code table, so drop it
-    select(-tax_rate) %>%
+    # Drop some fields that are only present post-2024
+    select(
+      -tax_rate, -equalized_assessed_value, -tax_billed_1, -tax_billed_2
+    ) %>%
     arrange(year, pin, desc(av_clerk))
 })
 
@@ -234,7 +324,74 @@ pin_tax_roll_fill <- pin_tax_roll %>%
     av_mailed = mailed_tot,
     av_certified = certified_tot,
     av_board = board_tot
-  )
+  ) %>%
+  # Fill missing vetdis exemptions in post-2024 data, since the tax roll
+  # export reports total vetdis exemptions and does not break them out by
+  # disability level
+  left_join(pin_exe_vetdis_athena, by = c("year", "pin")) %>%
+  mutate(across(ends_with("_athena"), \(x) replace_na(x, 0L))) %>%
+  mutate(
+    exe_vet_dis_lt50 = ifelse(
+      # If the vetdis total from the tax bill export matches the sum of all
+      # individual vetdis exemptions from Athena (ias), then we can be confident
+      # filling the individual vetdis exemptions directly from Athena
+      exe_vet_dis == exe_vet_dis_tot_athena,
+      exe_vet_dis_lt50_athena,
+      ifelse(
+        # If the total from the tax bill export does _not_ match the sum from
+        # Athena, then one of two cases is true, according to our investigation:
+        #
+        #  1. The tax bill export has a vetdis total that is >0 but different
+        #     from the Athena sum. If Athena has a value >0 for this particular
+        #     vetdis exemption, then we use the total from the tax bill export
+        #     for this exemption, because we assume the Athena data just has the
+        #     wrong amount (in theory, it is not possible for multiple vetdis
+        #     exemption types to be >0 for the same PIN). If instead there are
+        #     no vetdis exemptions with a value >0, then we fill the value into
+        #     the >70% vetdis exemption type, which is the most common vetdis
+        #     exemption type in the Athena data
+        #
+        #  2. The tax bill export has a vetdis total of 0, but Athena has
+        #     a sum >0 for vetdis exemptions. In this case, we assume the tax
+        #     bill export is correct, and we fill 0 for all individual
+        #     exemption types.
+        exe_vet_dis > 0 & exe_vet_dis_lt50_athena > 0,
+        exe_vet_dis,
+        0L
+      )
+    ),
+    exe_vet_dis_50_69 = ifelse(
+      exe_vet_dis == exe_vet_dis_tot_athena,
+      exe_vet_dis_50_69_athena,
+      ifelse(
+        exe_vet_dis > 0 & exe_vet_dis_50_69_athena > 0,
+        exe_vet_dis,
+        0L
+      )
+    ),
+    exe_vet_dis_ge70 = ifelse(
+      exe_vet_dis == exe_vet_dis_tot_athena,
+      exe_vet_dis_ge70_athena,
+      case_when(
+        exe_vet_dis > 0 & exe_vet_dis_ge70_athena > 0 ~ exe_vet_dis,
+        # This is the most common type of vetdis exemption, so fill it with
+        # the total from the tax bill export if no vetdis exemption types
+        # have a value >0 in the Athena data
+        exe_vet_dis > 0 & exe_vet_dis_tot_athena == 0 ~ exe_vet_dis,
+        TRUE ~ 0L
+      )
+    ),
+    exe_vet_dis_100 = ifelse(
+      exe_vet_dis == exe_vet_dis_tot_athena,
+      exe_vet_dis_100_athena,
+      ifelse(
+        exe_vet_dis > 0 & exe_vet_dis_100_athena > 0,
+        exe_vet_dis,
+        0L
+      )
+    )
+  ) %>%
+  select(-exe_vet_dis, -ends_with("_athena"))
 
 # Join pre- and post-2024 data
 pin <- bind_rows(pin_legacy_fill, pin_tax_roll_fill)
