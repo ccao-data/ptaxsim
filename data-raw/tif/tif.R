@@ -49,7 +49,9 @@ remote_path_dist <- file.path(
 remote_path_crosswalk <- file.path(
   remote_bucket, "tif_crosswalk", "part-0.parquet"
 )
-
+remote_path_pin_dist <- file.path(
+  remote_bucket, "pin_tif_distribution", "part-0.parquet"
+)
 
 # tif --------------------------------------------------------------------------
 
@@ -570,3 +572,10 @@ pin_tif_distribution <- map_dfr(pin_dist_file_names_xls, function(file) {
         ),
     )
 })
+
+# Write to S3
+arrow::write_parquet(
+  x = pin_tif_distribution,
+  sink = remote_path_pin_dist,
+  compression = "zstd"
+)
