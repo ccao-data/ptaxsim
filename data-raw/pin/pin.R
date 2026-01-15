@@ -17,8 +17,6 @@ remote_path_pin_geometry_raw <- file.path(
 )
 
 
-
-
 # pin --------------------------------------------------------------------------
 
 # Get data frame of all AVs, tax codes, and exemptions per PIN since 2006. These
@@ -139,8 +137,6 @@ arrow::write_dataset(
   hive_style = TRUE,
   compression = "zstd"
 )
-
-
 
 
 # pin_geometry -----------------------------------------------------------------
