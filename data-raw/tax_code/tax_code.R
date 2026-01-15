@@ -37,18 +37,18 @@ tax_code <- map_dfr(file_names, function(file) {
     set_names(snakecase::to_snake_case(names(.))) %>%
     select(-contains("year")) %>%
     rename_with(~ str_remove(.x, "_24"), ends_with("_24")) %>%
-    rename_with(~rep("tax_code", length(.x)), any_of(c(
+    rename_with(~ rep("tax_code", length(.x)), any_of(c(
       "taxcode", "code"
-      ))) %>%
-    rename_with(~rep("agency_name", length(.x)), any_of(c(
-                "authority_name"
     ))) %>%
-    rename_with(~rep("agency_rate", length(.x)), any_of(c(
+    rename_with(~ rep("agency_name", length(.x)), any_of(c(
+      "authority_name"
+    ))) %>%
+    rename_with(~ rep("agency_rate", length(.x)), any_of(c(
       "ag_rate", "auth_rate"
-      ))) %>%
-    rename_with(~rep("tax_code_rate", length(.x)), any_of(c(
+    ))) %>%
+    rename_with(~ rep("tax_code_rate", length(.x)), any_of(c(
       "code_rate", "taxcode_rate"
-      ))) %>%
+    ))) %>%
     mutate(
       year = as.character(year_ext),
       agency_rate = as.numeric(agency_rate),
@@ -67,7 +67,6 @@ tax_code <- tax_code %>%
   ) %>%
   arrange(year, agency_num, tax_code_num) %>%
   distinct()
-
 
 
 arrow::write_dataset(
