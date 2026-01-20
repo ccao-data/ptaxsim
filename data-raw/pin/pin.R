@@ -428,10 +428,13 @@ pin_geometry_df_full <- aws.s3::get_bucket_df(
   mutate(year_from_path = as.integer(str_extract(Key, "(?<=year=)\\d{4}"))) %>%
   filter(year_from_path >= 2006 & year_from_path <= max_year) %>%
   mutate(full_path = paste0("s3://ccao-data-warehouse-us-east-1/", Key)) %>%
-  pull(full_path) %>%
-  map_dfr(\(file_path) {
-    message("Reading: ", file_path)
-    geoarrow::read_geoparquet_sf(file_path)
+  select(full_path, year_from_path) %>%
+  pmap_dfr(\(full_path, year_from_path) {
+    message("Reading: ", full_path)
+    geoarrow::read_geoparquet_sf(full_path) %>%
+      # Year is a partition so it is not included in the file by default, and
+      # we need to add it back in
+      mutate(year = year_from_path)
   })
 
 # For each PIN10, keep only records where the shape/area of the PIN have changed
