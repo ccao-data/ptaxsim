@@ -164,7 +164,7 @@ agency_fund_info <- agency_fund %>%
 
 # Drop names from the fund table since they're now stored separately
 agency_fund <- agency_fund %>%
-  select(-fund_name)
+  select(-fund_name, -fund_type_num)
 
 # Write the resulting datasets to S3
 arrow::write_parquet(
@@ -223,13 +223,17 @@ agency <- map_dfr(file_names, function(file) {
       "total_ext", "final_ext",
       "grand_total_ext"
     ))) %>%
+    rename_with(~ rep("lasalle_eav", length(.x)), any_of(c("lasalle_eav", "la_salle_eav"))) %>%
+    rename_with(~ rep("mchenry_eav", length(.x)), any_of(c("mc_henry_eav", "mchency_eav"))) %>%
     # Select, order, and rename columns
     select(
       year,
+      authority_num = any_of("authority"),
       agency_num = agency, agency_name, home_rule_ind,
       lim_numerator, lim_denominator, lim_rate, prior_eav, curr_new_prop,
       ends_with("_eav"), percent_burden,
-      starts_with("grand_total_"), reduction_pct,
+      reduction_pct,
+      starts_with("grand_total_"),
       any_of("total_ext")
     ) %>%
     rename_with(~ paste0("cty_", .x), ends_with("_eav")) %>%
@@ -240,21 +244,9 @@ agency <- map_dfr(file_names, function(file) {
     rename_with(
       ~ gsub("grand_total_", "total_", .x),
       starts_with("grand_total_")
-    ) %>%
-    relocate(total_ext, .after = everything())
+    )
 }) %>%
   mutate(
-    agency_num = str_pad(agency_num, 9, "left", "0"),
-    agency_name = str_trim(str_squish(agency_name)),
-    home_rule_ind = home_rule_ind %in% c("Y", "HR", "No PTELL"),
-    home_rule_ind = replace_na(home_rule_ind, FALSE),
-    across(
-      c(
-        starts_with("lim_"), "total_reduced_levy",
-        starts_with("reduction_")
-      ),
-      ~ ifelse(home_rule_ind, NA, .x)
-    ),
     # One row is missing a Cook EAV value. Fill manually from prior year
     cty_cook_eav = ifelse(
       agency_num == "030580002" & year == "2006",
@@ -262,6 +254,29 @@ agency <- map_dfr(file_names, function(file) {
       cty_cook_eav
     ),
     across(starts_with("cty_"), ~ replace_na(.x, 0)),
+    agency_num = str_pad(agency_num, 9, "left", "0"),
+    agency_name = str_trim(str_squish(agency_name)),
+    home_rule_ind = home_rule_ind %in% c("Y", "HR", "No PTELL"),
+    home_rule_ind = replace_na(home_rule_ind, FALSE),
+    cty_overlap_eav = ifelse(year < "2024",
+                             rowSums(across(starts_with(c("cty_dupage_eav",
+                                                   "cty_lake_eav",
+                                                   "cty_will_eav",
+                                                   "cty_kane_eav",
+                                                   "cty_mchenry_eav",
+                                                   "cty_dekalb_eav",
+                                                   "cty_kankakee_eav",
+                                                   "cty_grundy_eav",
+                                                   "cty_la_salle_eav",
+                                                   "cty_livingston_eav")))),
+                             cty_overlap_eav),
+    across(
+      c(
+        starts_with("lim_"), "total_reduced_levy",
+        starts_with("reduction_")
+      ),
+      ~ ifelse(home_rule_ind, NA, .x)
+    ),
     # Make all percentages decimals
     across(
       pct_burden,
@@ -290,7 +305,9 @@ agency <- map_dfr(file_names, function(file) {
       ),
       ~ as.double(.x)
     )
-  )
+  ) %>%
+  select(-cty_overall_eav, -total_reduced_levy) %>%
+  relocate(total_ext, .after = everything())
 
 # Tax year 2013 is missing the total levy columns from its overview sheet, but
 # we can fill it in by joining the totals from each fund sheet
