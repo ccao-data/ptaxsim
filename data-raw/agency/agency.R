@@ -223,8 +223,10 @@ agency <- map_dfr(file_names, function(file) {
       "total_ext", "final_ext",
       "grand_total_ext"
     ))) %>%
-    rename_with(~ rep("lasalle_eav", length(.x)), any_of(c("lasalle_eav", "la_salle_eav"))) %>%
-    rename_with(~ rep("mchenry_eav", length(.x)), any_of(c("mc_henry_eav", "mchency_eav"))) %>%
+    rename_with(~ rep("lasalle_eav", length(.x)), any_of(c("lasalle_eav",
+                                                           "la_salle_eav"))) %>%
+    rename_with(~ rep("mchenry_eav", length(.x)), any_of(c("mc_henry_eav",
+                                                           "mchency_eav"))) %>%
     # Select, order, and rename columns
     select(
       year,
@@ -259,17 +261,20 @@ agency <- map_dfr(file_names, function(file) {
     home_rule_ind = home_rule_ind %in% c("Y", "HR", "No PTELL"),
     home_rule_ind = replace_na(home_rule_ind, FALSE),
     cty_overlap_eav = ifelse(year < "2024",
-                             rowSums(across(starts_with(c("cty_dupage_eav",
-                                                   "cty_lake_eav",
-                                                   "cty_will_eav",
-                                                   "cty_kane_eav",
-                                                   "cty_mchenry_eav",
-                                                   "cty_dekalb_eav",
-                                                   "cty_kankakee_eav",
-                                                   "cty_grundy_eav",
-                                                   "cty_la_salle_eav",
-                                                   "cty_livingston_eav")))),
-                             cty_overlap_eav),
+      rowSums(across(starts_with(c(
+        "cty_dupage_eav",
+        "cty_lake_eav",
+        "cty_will_eav",
+        "cty_kane_eav",
+        "cty_mchenry_eav",
+        "cty_dekalb_eav",
+        "cty_kankakee_eav",
+        "cty_grundy_eav",
+        "cty_la_salle_eav",
+        "cty_livingston_eav"
+      )))),
+      cty_overlap_eav
+    ),
     across(
       c(
         starts_with("lim_"), "total_reduced_levy",
@@ -547,13 +552,15 @@ agency_info <- agency_info %>%
 
 # Load 2024 tax cod agency rate file to import legacy-new agency_num crosswalk
 agency_legacy_cw <-
-  openxlsx::read.xlsx("data-raw/tax_code/2024-tax-code-agency-rate-file.xlsx") %>%
+  openxlsx::read.xlsx(
+    "data-raw/tax_code/2024-tax-code-agency-rate-file.xlsx") %>%
   set_names(snakecase::to_snake_case(names(.))) %>%
   select(
     agency_num_24_update = agency,
     agency_num = legacy_num,
     authority_num = authority,
-    agency_name_24_update = authority_name) %>%
+    agency_name_24_update = authority_name
+  ) %>%
   unique()
 
 
@@ -568,21 +575,26 @@ agency_info <- agency_info %>%
       ),
     agency_num_24_update =
       ifelse(agency_change_24,
-            agency_num_24_update,
-            NA),
+        agency_num_24_update,
+        NA
+      ),
     agency_name_24_update =
       ifelse(agency_change_24,
-             agency_name_24_update,
-             NA)) %>%
-      select(agency_num,
-             agency_num_24_update,
-             agency_name,
-             agency_name_24_update,
-             agency_name_short,
-             agency_name_original,
-             major_type,
-             minor_type,
-             agency_change_24)
+        agency_name_24_update,
+        NA
+      )
+  ) %>%
+  select(
+    agency_num,
+    agency_num_24_update,
+    agency_name,
+    agency_name_24_update,
+    agency_name_short,
+    agency_name_original,
+    major_type,
+    minor_type,
+    agency_change_24
+  )
 
 # Write both data sets to S3
 arrow::write_parquet(
