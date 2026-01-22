@@ -223,10 +223,14 @@ agency <- map_dfr(file_names, function(file) {
       "total_ext", "final_ext",
       "grand_total_ext"
     ))) %>%
-    rename_with(~ rep("lasalle_eav", length(.x)), any_of(c("lasalle_eav",
-                                                           "la_salle_eav"))) %>%
-    rename_with(~ rep("mchenry_eav", length(.x)), any_of(c("mc_henry_eav",
-                                                           "mchency_eav"))) %>%
+    rename_with(~ rep("lasalle_eav", length(.x)), any_of(c(
+      "lasalle_eav",
+      "la_salle_eav"
+    ))) %>%
+    rename_with(~ rep("mchenry_eav", length(.x)), any_of(c(
+      "mc_henry_eav",
+      "mchency_eav"
+    ))) %>%
     # Select, order, and rename columns
     select(
       year,
@@ -553,7 +557,8 @@ agency_info <- agency_info %>%
 # Load 2024 tax cod agency rate file to import legacy-new agency_num crosswalk
 agency_legacy_cw <-
   openxlsx::read.xlsx(
-    "data-raw/tax_code/2024-tax-code-agency-rate-file.xlsx") %>%
+    "data-raw/tax_code/2024-tax-code-agency-rate-file.xlsx"
+  ) %>%
   set_names(snakecase::to_snake_case(names(.))) %>%
   select(
     agency_num_24_update = agency,
