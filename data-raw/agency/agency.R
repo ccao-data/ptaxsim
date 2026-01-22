@@ -327,7 +327,7 @@ agency_2013 <- agency %>%
   filter(year == 2013) %>%
   select(-c(
     total_levy, total_max_levy, total_prelim_rate,
-    total_reduced_levy, total_final_levy, total_final_rate
+    total_final_levy, total_final_rate
   )) %>%
   left_join(agency_fund_2013, by = "agency_num")
 
@@ -544,6 +544,45 @@ agency_info <- agency_info %>%
       TRUE ~ minor_type
     )
   )
+
+# Load 2024 tax cod agency rate file to import legacy-new agency_num crosswalk
+agency_legacy_cw <-
+  openxlsx::read.xlsx("data-raw/tax_code/2024-tax-code-agency-rate-file.xlsx") %>%
+  set_names(snakecase::to_snake_case(names(.))) %>%
+  select(
+    agency_num_24_update = agency,
+    agency_num = legacy_num,
+    authority_num = authority,
+    agency_name_24_update = authority_name) %>%
+  unique()
+
+
+agency_info <- agency_info %>%
+  left_join(agency_legacy_cw, by = "agency_num") %>%
+  mutate(
+    agency_change_24 =
+      ifelse(
+        agency_num != agency_num_24_update,
+        TRUE,
+        FALSE
+      ),
+    agency_num_24_update =
+      ifelse(agency_change_24,
+            agency_num_24_update,
+            NA),
+    agency_name_24_update =
+      ifelse(agency_change_24,
+             agency_name_24_update,
+             NA)) %>%
+      select(agency_num,
+             agency_num_24_update,
+             agency_name,
+             agency_name_24_update,
+             agency_name_short,
+             agency_name_original,
+             major_type,
+             minor_type,
+             agency_change_24)
 
 # Write both data sets to S3
 arrow::write_parquet(
