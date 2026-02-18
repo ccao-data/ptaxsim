@@ -378,31 +378,16 @@ agency_df <- read_parquet(file.path(remote_bucket, "agency", "part-0.parquet"))
 max_year <- max(as.integer(agency_df$year))
 
 # Grab parcel shapes from S3. These files are originally from the data portal
-# and Cook Central. We have to load each parquet file individually instead of
-# loading them all as a Dataset because some issue with the file metadata causes
-# an esoteric error when geoarrow tries to collect the files as a Dataset
-pin_geometry_df_full <- aws.s3::get_bucket_df(
-  bucket = "ccao-data-warehouse-us-east-1",
-  prefix = "spatial/parcel/year=",
-  max = Inf
-) %>%
-  filter(str_detect(Key, "\\.parquet$")) %>%
-  mutate(year_from_path = as.integer(str_extract(Key, "(?<=year=)\\d{4}"))) %>%
-  filter(year_from_path >= 2006 & year_from_path <= max_year) %>%
-  mutate(full_path = paste0("s3://ccao-data-warehouse-us-east-1/", Key)) %>%
-  select(full_path, year_from_path) %>%
-  pmap_dfr(\(full_path, year_from_path) {
-    message("Reading: ", full_path)
-    geoarrow::read_geoparquet_sf(full_path) %>%
-      # Year is a partition so it is not included in the file by default, and
-      # we need to add it back in
-      mutate(year = year_from_path)
-  })
+# and Cook Central
+remote_bucket_geometry <- "s3://ccao-data-warehouse-us-east-1/spatial/parcel"
+pin_geometry_df_full <- arrow::open_dataset(remote_bucket_geometry) %>%
+  filter(year >= 2006 & year <= max_year) %>%
+  select(year, x = lon, y = lat, pin10, geometry) %>%
+  geoarrow_collect_sf()
 
 # For each PIN10, keep only records where the shape/area of the PIN have changed
 # and record the start and end year for each unique shape/area
 pin_geometry_df_raw <- pin_geometry_df_full %>%
-  rename(x = lon, y = lat) %>%
   mutate(area = st_area(geometry)) %>%
   group_by(pin10) %>%
   arrange(pin10, year) %>%
