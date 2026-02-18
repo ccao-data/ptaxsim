@@ -156,81 +156,43 @@ pin_athena <- dbGetQuery(
 pin_exe_vetdis_athena <- dbGetQuery(
   ccaoathena,
   glue_sql("
-  WITH long AS (
-    SELECT
-      det.parid AS pin,
-      det.taxyr AS year,
-      CASE
-        WHEN
-          det.excode IN ('DV1', 'C-DV1', 'DV0', 'C-DV0', 'DV-1')
-          THEN 'exe_vet_dis_lt50'
-        WHEN det.excode IN ('DV2', 'C-DV2', 'DV-2') THEN 'exe_vet_dis_50_69'
-        WHEN det.excode IN ('DV3', 'DV3-M', 'DV-3') THEN 'exe_vet_dis_ge70'
-        WHEN det.excode IN ('DV4', 'DV4-M', 'DV-4') THEN 'exe_vet_dis_100'
-      END AS exe_name,
-      COALESCE(cast(det.apother AS INT), 0) AS exe_amount
-    FROM iasworld.exdet AS det
-    INNER JOIN iasworld.exadmn AS admn
-      ON det.parid = admn.parid
-      AND det.caseno = admn.caseno
-      AND det.taxyr = admn.taxyr
-      AND det.excode = admn.excode
-      AND admn.cur = 'Y'
-      AND admn.deactivat IS NULL
-      AND admn.exstat = 'A'
-      AND (admn.user126 IS NULL OR admn.user126 = 'N')
-    INNER JOIN iasworld.excode AS code
-      ON det.excode = code.excode
-      AND det.taxyr = code.taxyr
-      AND code.cur = 'Y'
-      AND code.deactivat IS NULL
-    WHERE det.cur = 'Y'
-      AND det.deactivat IS NULL
-      AND det.excode IN (
-        'DV1', 'C-DV1', 'DV0', 'C-DV0', 'DV-1',
-        'DV2', 'C-DV2', 'DV-2',
-        'DV3', 'DV3-M', 'DV-3',
-        'DV4', 'DV4-M', 'DV-4'
-      )
-      AND det.taxyr >= '2024'
-      AND det.taxyr <= '{end_year}'
-  )
-  SELECT
-    pin,
-    year,
-    CAST(
-      SUM(
-        CASE WHEN exe_name = 'exe_vet_dis_lt50' THEN exe_amount ELSE 0 END
-      )
-    AS INT) AS exe_vet_dis_lt50,
-    CAST(
-      SUM(
-        CASE WHEN exe_name = 'exe_vet_dis_50_69' THEN exe_amount ELSE 0 END
-      )
-    AS INT) AS exe_vet_dis_50_69,
-    CAST(
-      SUM(
-        CASE WHEN exe_name = 'exe_vet_dis_ge70' THEN exe_amount ELSE 0 END
-      )
-    AS INT) AS exe_vet_dis_ge70,
-    CAST(
-      SUM(
-        CASE WHEN exe_name = 'exe_vet_dis_100' THEN exe_amount ELSE 0 END
-      )
-    AS INT) AS exe_vet_dis_100
-  FROM long
-  GROUP BY pin, year
-  ", .con = ccaoathena)
+  SELECT pin, year, exemption_type, exemption_amount
+  FROM default.vw_pin_exe_long
+  WHERE NOT COALESCE(is_cofe, FALSE)
+    AND exemption_type IN (
+      'exe_vet_dis_lt50',
+      'exe_vet_dis_50_69',
+      'exe_vet_dis_ge70',
+      'exe_vet_dis_100'
+    )
+    AND COALESCE(exemption_amount, 0) > 0
+    AND year >= '2024'
+    AND year <= '{end_year}'
+  ", .con = ccaoathena),
 ) %>%
+  # Pivot wider so we have one column per exemption type
   mutate(
     across(c(year, pin), as.character),
     across(starts_with("exe_"), as.integer)
+  ) %>%
+  pivot_wider(
+    names_from = exemption_type,
+    values_from = exemption_amount,
+    values_fill = 0L
   ) %>%
   mutate(
     exe_vet_dis_tot = exe_vet_dis_lt50 +
       exe_vet_dis_50_69 +
       exe_vet_dis_ge70 +
       exe_vet_dis_100
+  ) %>%
+  relocate(
+    pin,
+    year,
+    exe_vet_dis_lt50,
+    exe_vet_dis_50_69,
+    exe_vet_dis_ge70,
+    exe_vet_dis_100
   ) %>%
   rename_with(~ paste0(.x, "_athena"), starts_with("exe_"))
 
