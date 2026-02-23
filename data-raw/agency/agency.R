@@ -274,7 +274,7 @@ agency <- map_dfr(file_names, function(file) {
         "cty_dekalb_eav",
         "cty_kankakee_eav",
         "cty_grundy_eav",
-        "cty_la_salle_eav",
+        "cty_lasalle_eav",
         "cty_livingston_eav"
       )))),
       cty_overlap_eav
@@ -561,10 +561,10 @@ agency_legacy_cw <-
   ) %>%
   set_names(snakecase::to_snake_case(names(.))) %>%
   select(
-    agency_num_24_update = agency,
+    agency_num_24 = agency,
     agency_num = legacy_num,
     authority_num = authority,
-    agency_name_24_update = authority_name
+    agency_name_24 = authority_name
   ) %>%
   unique()
 
@@ -572,23 +572,23 @@ agency_legacy_cw <-
 agency_info <- agency_info %>%
   left_join(agency_legacy_cw, by = "agency_num") %>%
   mutate(
-    agency_change_24 = coalesce(agency_num != agency_num_24_update, FALSE)
-    agency_num_24_update =
+    agency_change_24 = coalesce(agency_num != agency_num_24, FALSE),
+    agency_num_24 =
       ifelse(agency_change_24,
-        agency_num_24_update,
+        agency_num_24,
         NA
       ),
-    agency_name_24_update =
+    agency_name_24 =
       ifelse(agency_change_24,
-        agency_name_24_update,
+        agency_name_24,
         NA
       )
   ) %>%
   select(
     agency_num,
-    agency_num_24_update,
+    agency_num_24,
     agency_name,
-    agency_name_24_update,
+    agency_name_24,
     agency_name_short,
     agency_name_original,
     major_type,
