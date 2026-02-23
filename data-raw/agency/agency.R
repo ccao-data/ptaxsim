@@ -281,7 +281,7 @@ agency <- map_dfr(file_names, function(file) {
     ),
     across(
       c(
-        starts_with("lim_"), "total_reduced_levy",
+        starts_with("lim_"),
         starts_with("reduction_")
       ),
       ~ ifelse(home_rule_ind, NA, .x)
@@ -327,7 +327,6 @@ agency_fund_2013 <- agency_fund %>%
     total_levy = sum(levy),
     total_max_levy = sum(max_levy),
     total_prelim_rate = ceiling(sum(prelim_rate) * 1000) / 1000,
-    total_reduced_levy = sum(ptell_reduced_levy),
     total_final_levy = sum(final_levy),
     total_final_rate = sum(final_rate)
   )
@@ -586,13 +585,13 @@ agency_info <- agency_info %>%
   ) %>%
   select(
     agency_num,
-    agency_num_24,
     agency_name,
-    agency_name_24,
     agency_name_short,
     agency_name_original,
     major_type,
     minor_type,
+    agency_num_24,
+    agency_name_24,
     agency_change_24
   )
 
