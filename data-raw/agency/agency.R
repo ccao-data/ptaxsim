@@ -572,12 +572,7 @@ agency_legacy_cw <-
 agency_info <- agency_info %>%
   left_join(agency_legacy_cw, by = "agency_num") %>%
   mutate(
-    agency_change_24 =
-      ifelse(
-        agency_num != agency_num_24_update,
-        TRUE,
-        FALSE
-      ),
+    agency_change_24 = coalesce(agency_num != agency_num_24_update, FALSE)
     agency_num_24_update =
       ifelse(agency_change_24,
         agency_num_24_update,
