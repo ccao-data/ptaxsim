@@ -333,6 +333,7 @@ agency_fund_2013 <- agency_fund %>%
 
 agency_2013 <- agency %>%
   filter(year == 2013) %>%
+  mutate(cty_total_eav = as.integer64(cty_overall_eav)) %>%
   select(-c(
     total_levy, total_max_levy, total_prelim_rate,
     total_final_levy, total_final_rate
@@ -342,6 +343,7 @@ agency_2013 <- agency %>%
 agency <- agency %>%
   filter(year != 2013) %>%
   bind_rows(agency_2013) %>%
+  select(-cty_overall_eav) %>%
   arrange(year, agency_num)
 
 
