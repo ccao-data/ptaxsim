@@ -142,7 +142,12 @@ agency_fund <- map_dfr(file_names, function(file) {
       as.double
     )
   ) %>%
-  arrange(year, agency_num, fund_num)
+  arrange(year, agency_num, fund_num) %>%
+  # Remove duplicate rows included in Clerk report in 2024 for certain
+  # bond funds where levy data is empty
+  filter(
+    !is.na(levy_plus_loss)
+  )
 
 
 # agency_fund_info -------------------------------------------------------------
@@ -555,7 +560,7 @@ agency_info <- agency_info %>%
     )
   )
 
-# Load 2024 tax cod agency rate file to import legacy-new agency_num crosswalk
+# Load 2024 tax code agency rate file to import legacy-new agency_num crosswalk
 agency_legacy_cw <-
   openxlsx::read.xlsx(
     "data-raw/tax_code/2024-tax-code-agency-rate-file.xlsx"
@@ -567,7 +572,15 @@ agency_legacy_cw <-
     authority_num = authority,
     agency_name_24 = authority_name
   ) %>%
-  unique()
+  unique() %>%
+  # Account for error in Clerk's report which lists Village of Skokie Library
+  # Fund twice
+  filter(!(agency_num == "031170001" & agency_num_24 == "031170000"))
+
+# Correct error in Clerk's report which lists incorrect agency number for
+# the TIF VIL OF OLYMPIA FIELDS-GOV HWY/VOLL
+agency_legacy_cw$agency_num[agency_legacy_cw$agency_name == "TIF VIL OF OLYMPIA FIELDS-GOV HWY/VOLL"] <- "030930502"
+agency_legacy_cw$agency_num_24[agency_legacy_cw$agency_name == "TIF VIL OF OLYMPIA FIELDS-GOV HWY/VOLL"] <- "030930502"
 
 
 agency_info <- agency_info %>%
