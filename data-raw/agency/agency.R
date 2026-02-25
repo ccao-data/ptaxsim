@@ -579,9 +579,8 @@ agency_legacy_cw <-
 
 # Correct error in Clerk's report which lists incorrect agency number for
 # the TIF VIL OF OLYMPIA FIELDS-GOV HWY/VOLL
-agency_legacy_cw$agency_num[agency_legacy_cw$agency_name == "TIF VIL OF OLYMPIA FIELDS-GOV HWY/VOLL"] <- "030930502"
-agency_legacy_cw$agency_num_24[agency_legacy_cw$agency_name == "TIF VIL OF OLYMPIA FIELDS-GOV HWY/VOLL"] <- "030930502"
-
+idx <- agency_legacy_cw$agency_name == "TIF VIL OF OLYMPIA FIELDS-GOV HWY/VOLL"
+agency_legacy_cw[idx, c("agency_num", "agency_num_24")] <- "030930502"
 
 agency_info <- agency_info %>%
   left_join(agency_legacy_cw, by = "agency_num") %>%
