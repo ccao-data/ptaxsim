@@ -162,36 +162,19 @@ pin_geometry_df_full <- arrow::open_dataset(remote_bucket_geometry) %>%
   # them below easier.
   mutate(town_code = replace_na(town_code, 99))
 
-# Write the full PIN geometry to the filesystem by town code, in case the
-# subsequent transformation fails
-if (!dir.exists("full")) dir.create("full", recursive = TRUE)
-walk(unique(pin_geometry_df_full$town_code), \(town) {
-  path <- glue("full/pin_geometry_{town}.parquet")
-  if (!file.exists(path)) {
-    print(glue("Writing raw PIN geometry for town {town}"))
-    geoarrow::write_geoparquet(
-      pin_geometry_df_full %>% filter(town_code == town),
-      sink = path,
-      compression = "zstd"
-    )
-  }
-})
-
-# Remove the full dataset to free up memory for processing
-rm(pin_geometry_df_full)
-
 # For each PIN10, keep only records where the shape/area of the PIN have changed
 # and record the start and end year for each unique shape/area
-pin_geometry_df_raw <- map(list.files("full", full.names = TRUE), \(x) {
-  print(glue("Processing {x}"))
-  geoarrow::read_geoparquet_sf(x) %>%
+pin_geometry_df_raw <- map(unique(pin_geometry_df_full$town_code), \(town) {
+  print(glue("Processing {town}"))
+  pin_geometry_df_full %>%
+    filter(town_code == town) %>%
     mutate(area = st_area(geometry)) %>%
     group_by(pin10) %>%
     arrange(pin10, year) %>%
-    mutate(across(c(area, x, y), lag, .names = "lag_{.col}")) %>%
+    mutate(across(c(area, town, y), lag, .names = "lag_{.col}")) %>%
     mutate(
       diff_area = !(abs(area - lag_area) < units::set_units(0.001, "m^2")),
-      diff_cent = !(abs(x - lag_x) < 0.00001 & abs(y - lag_y) < 0.00001),
+      diff_cent = !(abs(town - lag_town) < 0.00001 & abs(y - lag_y) < 0.00001),
       pin_group = cumsum(
         (diff_area & diff_cent) |
           (is.na(diff_area) & is.na(diff_cent))
@@ -200,13 +183,13 @@ pin_geometry_df_raw <- map(list.files("full", full.names = TRUE), \(x) {
     group_by(pin10, pin_group) %>%
     mutate(
       start_year = min(year),
-      end_year = max(year)
+      end_year = matown(year)
     ) %>%
     filter(row_number() == 1) %>%
     ungroup() %>%
     select(
       pin10, start_year, end_year,
-      longitude = x, latitude = y, geometry
+      longitude = town, latitude = y, geometry
     ) %>%
     arrange(pin10, start_year)
 }, .progress = TRUE) %>%
@@ -218,6 +201,3 @@ geoarrow::write_geoparquet(
   sink = remote_path_pin_geometry_raw,
   compression = "zstd"
 )
-
-# Remove temporary files
-unlink("full", recursive = TRUE)
