@@ -575,12 +575,19 @@ agency_legacy_cw <-
   unique() %>%
   # Account for error in Clerk's report which lists Village of Skokie Library
   # Fund twice
-  filter(!(agency_num == "031170001" & agency_num_24 == "031170000"))
-
-# Correct error in Clerk's report which lists incorrect agency number for
-# the TIF VIL OF OLYMPIA FIELDS-GOV HWY/VOLL
-idx <- agency_legacy_cw$agency_name == "TIF VIL OF OLYMPIA FIELDS-GOV HWY/VOLL"
-agency_legacy_cw[idx, c("agency_num", "agency_num_24")] <- "030930502"
+  filter(!(agency_num == "031170001" & agency_num_24 == "031170000")) %>%
+  # Correct error in Clerk's report which lists incorrect agency number for
+  # the TIF VIL OF OLYMPIA FIELDS-GOV HWY/VOLL
+  mutate(
+    across(
+      c(agency_num, agency_num_24),
+      ~ if_else(
+        agency_name_24 == "TIF VIL OF OLYMPIA FIELDS-GOV HWY/VOLL",
+        "030930502",
+        .x
+      )
+    )
+  )
 
 agency_info <- agency_info %>%
   left_join(agency_legacy_cw, by = "agency_num") %>%
