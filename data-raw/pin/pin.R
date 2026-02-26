@@ -171,10 +171,10 @@ pin_geometry_df_raw <- map(unique(pin_geometry_df_full$town_code), \(town) {
     mutate(area = st_area(geometry)) %>%
     group_by(pin10) %>%
     arrange(pin10, year) %>%
-    mutate(across(c(area, town, y), lag, .names = "lag_{.col}")) %>%
+    mutate(across(c(area, x, y), lag, .names = "lag_{.col}")) %>%
     mutate(
       diff_area = !(abs(area - lag_area) < units::set_units(0.001, "m^2")),
-      diff_cent = !(abs(town - lag_town) < 0.00001 & abs(y - lag_y) < 0.00001),
+      diff_cent = !(abs(x - lag_x) < 0.00001 & abs(y - lag_y) < 0.00001),
       pin_group = cumsum(
         (diff_area & diff_cent) |
           (is.na(diff_area) & is.na(diff_cent))
@@ -183,13 +183,13 @@ pin_geometry_df_raw <- map(unique(pin_geometry_df_full$town_code), \(town) {
     group_by(pin10, pin_group) %>%
     mutate(
       start_year = min(year),
-      end_year = matown(year)
+      end_year = max(year)
     ) %>%
     filter(row_number() == 1) %>%
     ungroup() %>%
     select(
       pin10, start_year, end_year,
-      longitude = town, latitude = y, geometry
+      longitude = x, latitude = y, geometry
     ) %>%
     arrange(pin10, start_year)
 }, .progress = TRUE) %>%
