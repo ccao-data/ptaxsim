@@ -170,15 +170,16 @@ pin_geometry_df_full <- arrow::open_dataset(remote_bucket_geometry) %>%
 # subsequent transformation fails
 if (!dir.exists("full")) dir.create("full", recursive = TRUE)
 walk(unique(pin_geometry_df_full$town_code), \(town) {
-  if (!file.exists(glue("full/pin_geometry_raw_{town}.parquet"))) {
-   print(glue("Writing raw PIN geometry for town {town}"))
-   geoarrow::write_geoparquet(
-     pin_geometry_df_full %>% filter(town_code == town),
-     sink = glue("full/pin_geometry_raw_{town}.parquet"),
-     compression = "zstd"
-   )
- }
-}, .progress = TRUE)
+  path <- glue("full/pin_geometry_{town}.parquet")
+  if (!file.exists(path)) {
+    print(glue("Writing raw PIN geometry for town {town}"))
+    geoarrow::write_geoparquet(
+      pin_geometry_df_full %>% filter(town_code == town),
+      sink = path,
+      compression = "zstd"
+    )
+  }
+})
 
 # Remove the full dataset to free up memory for processing
 rm(pin_geometry_df_full)
@@ -186,31 +187,32 @@ rm(pin_geometry_df_full)
 # For each PIN10, keep only records where the shape/area of the PIN have changed
 # and record the start and end year for each unique shape/area
 pin_geometry_df_raw <- map(list.files("full", full.names = TRUE), \(x) {
-    print(glue("Processing {x}"))
-    geoarrow::read_geoparquet_sf(x) %>%
-      mutate(area = st_area(geometry)) %>%
-      group_by(pin10) %>%
-      arrange(pin10, year) %>%
-      mutate(across(c(area, x, y), lag, .names = "lag_{.col}")) %>%
-      mutate(
-        diff_area = !(abs(area - lag_area) < units::set_units(0.001, "m^2")),
-        diff_cent = !(abs(x - lag_x) < 0.00001 & abs(y - lag_y) < 0.00001),
-        pin_group = cumsum(
-          (diff_area & diff_cent) |
-            (is.na(diff_area) & is.na(diff_cent))
-        )
-      ) %>%
-      group_by(pin10, pin_group) %>%
-      mutate(
-        start_year = min(year),
-        end_year = max(year)
-      ) %>%
-      filter(row_number() == 1) %>%
-      ungroup() %>%
-      select(
-        pin10, start_year, end_year, longitude = x, latitude = y, geometry
-      ) %>%
-      arrange(pin10, start_year)
+  print(glue("Processing {x}"))
+  geoarrow::read_geoparquet_sf(x) %>%
+    mutate(area = st_area(geometry)) %>%
+    group_by(pin10) %>%
+    arrange(pin10, year) %>%
+    mutate(across(c(area, x, y), lag, .names = "lag_{.col}")) %>%
+    mutate(
+      diff_area = !(abs(area - lag_area) < units::set_units(0.001, "m^2")),
+      diff_cent = !(abs(x - lag_x) < 0.00001 & abs(y - lag_y) < 0.00001),
+      pin_group = cumsum(
+        (diff_area & diff_cent) |
+          (is.na(diff_area) & is.na(diff_cent))
+      )
+    ) %>%
+    group_by(pin10, pin_group) %>%
+    mutate(
+      start_year = min(year),
+      end_year = max(year)
+    ) %>%
+    filter(row_number() == 1) %>%
+    ungroup() %>%
+    select(
+      pin10, start_year, end_year,
+      longitude = x, latitude = y, geometry
+    ) %>%
+    arrange(pin10, start_year)
 }, .progress = TRUE) %>%
   bind_rows()
 
