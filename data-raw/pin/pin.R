@@ -157,7 +157,7 @@ max_year <- max(as.integer(agency_df$year))
 remote_bucket_geometry <- "s3://ccao-data-warehouse-us-east-1/spatial/parcel"
 pin_geometry_df_full <- arrow::open_dataset(remote_bucket_geometry) %>%
   filter(year >= 2006 & year <= max_year) %>%
-  select(year, x = lon, y = lat, pin10, geometry) %>%
+  select(year, x = lon, y = lat, pin10, town_code, geometry) %>%
   geoarrow_collect_sf() %>%
   # Fill missing townships, prefering the newest available
   arrange(pin10, year) %>%
