@@ -45,15 +45,11 @@ db_version <- "2023.0.0"
 requires_pkg_version <- "0.6.0"
 
 
-
-
 # Create tables ----------------------------------------------------------------
 
 # Create the table definitions from file
 db_send_queries(conn, sql_from_file("data-raw/create_db.sql"))
 db_send_queries(conn, sql_from_file("data-raw/create_db_geometry.sql"))
-
-
 
 
 # Populate metadata ------------------------------------------------------------
@@ -111,8 +107,6 @@ metadata_df <- tibble(
 DBI::dbAppendTable(conn, "metadata", metadata_df)
 
 
-
-
 # Load data --------------------------------------------------------------------
 
 # Load tables contained in a single file
@@ -143,8 +137,6 @@ pin_geometry_raw <- geoarrow::read_geoparquet_sf(
   rename(geometry = wkt)
 
 DBI::dbAppendTable(conn, "pin_geometry_raw", pin_geometry_raw)
-
-
 
 
 # Clean up ---------------------------------------------------------------------
