@@ -37,7 +37,7 @@ db_send_queries <- function(conn, sql) {
 # changes. This is checked against Config/Requires_DB_Version in the DESCRIPTION
 # file via check_db_version(). Schema is:
 # "MAX_YEAR_OF_DATA.MAJOR_VERSION.MINOR_VERSION"
-db_version <- "2023.0.0"
+db_version <- "2024.0.0"
 
 # Set the package version required to use this database. This is checked against
 # Version in the DESCRIPTION file. Basically, we have a two-way check so that
@@ -72,7 +72,7 @@ desc_email <- desc %>%
 desc_url_package <- desc %>%
   str_extract("(?<=URL: ).*(?=,)")
 
-db_base_url <- "https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/"
+db_base_url <- "https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim-test/"
 db_full_url <- paste0(db_base_url, "ptaxsim-", db_version, ".db.bz2")
 
 # Load agency files to get min and max year
