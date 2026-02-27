@@ -4,14 +4,16 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE agency (
     year                    int                                        NOT NULL,
     agency_num              varchar(9)                                 NOT NULL,
+    authority_num           varchar(6)                                         ,
     home_rule_ind           boolean                                    NOT NULL,
     agg_ext_base_year       int      CHECK(agg_ext_base_year >= 2003)          ,
     lim_numerator           bigint   CHECK(lim_numerator >= 0)                 ,
-    lim_denominator         bigint   CHECK(lim_denominator >= 0)               ,
+    lim_denominator         bigint                                             ,
     lim_rate                double   CHECK(lim_rate >= 0)                      ,
-    prior_eav               bigint   CHECK(prior_eav >= 0)             NOT NULL,
-    curr_new_prop           bigint   CHECK(curr_new_prop >= 0)         NOT NULL,
+    prior_eav               bigint   CHECK(prior_eav >= 0)                     ,
+    curr_new_prop           bigint                                     NOT NULL,
     cty_cook_eav            bigint   CHECK(cty_cook_eav >= 0)          NOT NULL,
+    cty_overlap_eav         bigint   CHECK(cty_overlap_eav >= 0)       NOT NULL,
     cty_dupage_eav          bigint   CHECK(cty_dupage_eav >= 0)        NOT NULL,
     cty_lake_eav            bigint   CHECK(cty_lake_eav >= 0)          NOT NULL,
     cty_will_eav            bigint   CHECK(cty_will_eav >= 0)          NOT NULL,
@@ -25,7 +27,7 @@ CREATE TABLE agency (
     cty_livingston_eav      bigint   CHECK(cty_livingston_eav >= 0)    NOT NULL,
     cty_total_eav           bigint   CHECK(cty_total_eav >= 0)         NOT NULL,
     pct_burden              double   CHECK(pct_burden >= 0
-                                     AND   pct_burden <= 1)            NOT NULL,
+                                     AND   pct_burden <= 1)                    ,
     total_levy              bigint   CHECK(total_levy >= 0)            NOT NULL,
     total_max_levy          bigint   CHECK(total_max_levy >= 0)        NOT NULL,
     total_prelim_rate       double   CHECK(total_prelim_rate >= 0)     NOT NULL,
@@ -53,6 +55,8 @@ CREATE TABLE agency_info (
     agency_name_original    varchar                                    NOT NULL,
     major_type              varchar(21)                                NOT NULL,
     minor_type              varchar(10)                                NOT NULL,
+    agency_name_24          varchar                                            ,
+    agency_num_24           varchar(9)                                         ,
     PRIMARY KEY (agency_num)
 ) WITHOUT ROWID;
 
@@ -66,10 +70,10 @@ CREATE TABLE agency_fund (
     agency_num              varchar(9)                                 NOT NULL,
     fund_num                varchar(3)                                 NOT NULL,
     levy                    bigint   CHECK(levy >= 0)                  NOT NULL,
-    loss_pct                double   CHECK(loss_pct >= 0 
+    loss_pct                double   CHECK(loss_pct >= 0
                                      AND   loss_pct <= 1)              NOT NULL,
     levy_plus_loss          bigint   CHECK(levy_plus_loss >= 0)        NOT NULL,
-    rate_ceiling            double   CHECK(rate_ceiling >= 0)          NOT NULL, 
+    rate_ceiling            double   CHECK(rate_ceiling >= 0)          NOT NULL,
     max_levy                bigint   CHECK(max_levy >= 0)              NOT NULL,
     prelim_rate             double   CHECK(prelim_rate >= 0)           NOT NULL,
     ptell_reduced_levy      bigint   CHECK(ptell_reduced_levy >= 0)            ,
@@ -94,7 +98,7 @@ CREATE TABLE agency_fund_info (
 ) WITHOUT ROWID;
 
 CREATE INDEX ix_agency_fund_info_capped_ind ON agency_fund_info(capped_ind);
-    
+
 
 /** cpi **/
 CREATE TABLE cpi (
