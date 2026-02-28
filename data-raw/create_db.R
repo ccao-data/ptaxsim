@@ -77,6 +77,7 @@ db_full_url <- paste0(db_base_url, "ptaxsim-", db_version, ".db.bz2")
 
 # Load agency files to get min and max year
 agency_df <- read_parquet(file.path(remote_bucket, "agency", "part-0.parquet"))
+
 min_year <- min(as.integer(agency_df$year))
 max_year <- max(as.integer(agency_df$year))
 
@@ -112,7 +113,8 @@ DBI::dbAppendTable(conn, "metadata", metadata_df)
 # Load tables contained in a single file
 files <- c(
   "agency", "agency_info", "agency_fund", "agency_fund_info",
-  "cpi", "eq_factor", "tif", "tif_crosswalk", "tif_distribution"
+  "cpi", "eq_factor", "tif", "tif_crosswalk", "tif_distribution",
+  "pin_tif_distribution"
 )
 for (file in files) {
   message("Now loading: ", file)
