@@ -55,8 +55,9 @@ CREATE TABLE agency_info (
     agency_name_original    varchar                                    NOT NULL,
     major_type              varchar(21)                                NOT NULL,
     minor_type              varchar(10)                                NOT NULL,
-    agency_name_24          varchar                                            ,
     agency_num_24           varchar(9)                                         ,
+    agency_name_24          varchar                                            ,
+    agency_change_24        boolean                                    NOT NULL,
     PRIMARY KEY (agency_num)
 ) WITHOUT ROWID;
 
@@ -70,16 +71,15 @@ CREATE TABLE agency_fund (
     agency_num              varchar(9)                                 NOT NULL,
     fund_num                varchar(3)                                 NOT NULL,
     levy                    bigint   CHECK(levy >= 0)                  NOT NULL,
-    loss_pct                double   CHECK(loss_pct >= 0
-                                     AND   loss_pct <= 1)              NOT NULL,
+    loss_pct                double   CHECK(loss_pct >= 0)              NOT NULL,
     levy_plus_loss          bigint   CHECK(levy_plus_loss >= 0)        NOT NULL,
     rate_ceiling            double   CHECK(rate_ceiling >= 0)          NOT NULL,
     max_levy                bigint   CHECK(max_levy >= 0)              NOT NULL,
     prelim_rate             double   CHECK(prelim_rate >= 0)           NOT NULL,
-    ptell_reduced_levy      bigint   CHECK(ptell_reduced_levy >= 0)            ,
-    ptell_reduced_ind       boolean                                    NOT NULL,
-    final_levy              bigint   CHECK(final_levy >= 0)            NOT NULL,
-    final_rate              double   CHECK(final_rate >= 0)            NOT NULL,
+    ptell_reduced_levy      bigint                                             ,
+    ptell_reduced_ind       boolean                                            ,
+    final_levy              bigint                                     NOT NULL,
+    final_rate              double   CHECK(final_rate >= 0)                    ,
     PRIMARY KEY (year, agency_num, fund_num),
     FOREIGN KEY (year, agency_num) REFERENCES agency(year, agency_num)
 ) WITHOUT ROWID;
@@ -91,7 +91,8 @@ CREATE INDEX ix_agency_fund_fund_num ON agency_fund(fund_num);
 
 /** agency_fund_info **/
 CREATE TABLE agency_fund_info (
-    fund_num                varchar(3)                                 NOT NULL,
+    fund_type_num           varchar(3)                                 NOT NULL,
+    fund_num                varchar(6)                                 NOT NULL,
     fund_name               varchar                                    NOT NULL,
     capped_ind              boolean                                    NOT NULL,
     PRIMARY KEY (fund_num)
@@ -228,7 +229,7 @@ CREATE TABLE tif_distribution (
     tax_code_eav            bigint   CHECK(tax_code_eav >= 0)          NOT NULL,
     tax_code_frozen_eav     bigint   CHECK(tax_code_frozen_eav >= 0)   NOT NULL,
     tax_code_revenue        bigint   CHECK(tax_code_revenue >= 0)      NOT NULL,
-    tax_code_distribution_pct double CHECK(tax_code_distribution_pct >= 0) NOT NULL,
+    tax_code_distribution_pct double CHECK(tax_code_distribution_pct >= 0)     ,
     PRIMARY KEY (year, agency_num, tax_code_num)
     FOREIGN KEY (year, agency_num) REFERENCES tif_crosswalk(year, agency_num_dist)
 ) WITHOUT ROWID;
@@ -240,3 +241,32 @@ CREATE INDEX ix_tif_distribution_year_agency_num
     ON tif_distribution(year, agency_num);
 CREATE INDEX ix_tif_distribution_year_tax_code_num
     ON tif_distribution(year, tax_code_num);
+
+/** pin_tif_distribution **/
+CREATE TABLE pin_tif_distribution (
+    year                    int                                        NOT NULL,
+    pin                     varchar(14)                                NOT NULL,
+    agency_num              varchar(9)                                 NOT NULL,
+    tax_code_num            varchar(5)                                 NOT NULL,
+    tax_code_rate           double   CHECK(tax_code_rate >= 0)         NOT NULL,
+    pin_eav                 int      CHECK(pin_eav >= 0)               NOT NULL,
+    pin_frozen_eav          int      CHECK(pin_frozen_eav >= 0)        NOT NULL,
+    pin_revenue             double   CHECK(pin_revenue >= 0)           NOT NULL,
+    pin_increment_eav       int      CHECK(pin_increment_eav >= 0)     NOT NULL,
+    pin_distribution_pct    double   CHECK(pin_distribution_pct >= 0)  NOT NULL,
+    transit_tif_to_cps      double   CHECK(transit_tif_to_cps >= 0)            ,
+    transit_tif_to_tif      double   CHECK(transit_tif_to_tif >= 0)            ,
+    transit_tif_to_dist     double   CHECK(transit_tif_to_dist >= 0)           ,
+    is_transit_tif          boolean                                    NOT NULL,
+    PRIMARY KEY (year, pin, agency_num, tax_code_num)
+    FOREIGN KEY (year, agency_num) REFERENCES tif_crosswalk(year, agency_num_dist)
+) WITHOUT ROWID;
+
+CREATE INDEX ix_pin_tif_distribution_year ON pin_tif_distribution(year);
+CREATE INDEX ix_pin_tif_distribution_agency_num ON pin_tif_distribution(agency_num);
+CREATE INDEX ix_pin_tif_distribution_tax_code_num ON pin_tif_distribution(tax_code_num);
+CREATE INDEX ix_pin_tif_distribution_year_agency_num
+    ON pin_tif_distribution(year, agency_num);
+CREATE INDEX ix_pin_tif_distribution_year_tax_code_num
+    ON pin_tif_distribution(year, tax_code_num);
+
