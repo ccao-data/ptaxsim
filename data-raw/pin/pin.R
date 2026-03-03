@@ -2,8 +2,10 @@ library(arrow)
 library(DBI)
 library(dplyr)
 library(geoarrow)
+library(glue)
 library(noctua)
 library(odbc)
+library(purrr)
 library(sf)
 library(tidyr)
 
@@ -151,33 +153,47 @@ max_year <- max(as.integer(agency_df$year))
 remote_bucket_geometry <- "s3://ccao-data-warehouse-us-east-1/spatial/parcel"
 pin_geometry_df_full <- arrow::open_dataset(remote_bucket_geometry) %>%
   filter(year >= 2006 & year <= max_year) %>%
-  select(year, x = lon, y = lat, pin10, geometry) %>%
-  geoarrow_collect_sf()
+  select(year, x = lon, y = lat, pin10, town_code, geometry) %>%
+  geoarrow_collect_sf() %>%
+  # Fill missing townships, prefering the newest available
+  arrange(pin10, year) %>%
+  fill(town_code, .direction = "updown", .by = pin10) %>%
+  # For remaining missing town codes, replace with 99 to make looping through
+  # them below easier.
+  mutate(town_code = replace_na(town_code, 99))
 
 # For each PIN10, keep only records where the shape/area of the PIN have changed
 # and record the start and end year for each unique shape/area
-pin_geometry_df_raw <- pin_geometry_df_full %>%
-  mutate(area = st_area(geometry)) %>%
-  group_by(pin10) %>%
-  arrange(pin10, year) %>%
-  mutate(across(c(area, x, y), lag, .names = "lag_{.col}")) %>%
-  mutate(
-    diff_area = !(abs(area - lag_area) < units::set_units(0.001, "m^2")),
-    diff_cent = !(abs(x - lag_x) < 0.00001 & abs(y - lag_y) < 0.00001),
-    pin_group = cumsum(
-      (diff_area & diff_cent) |
-        (is.na(diff_area) & is.na(diff_cent))
-    )
-  ) %>%
-  group_by(pin10, pin_group) %>%
-  mutate(
-    start_year = min(year),
-    end_year = max(year)
-  ) %>%
-  filter(row_number() == 1) %>%
-  ungroup() %>%
-  select(pin10, start_year, end_year, longitude = x, latitude = y, geometry) %>%
-  arrange(pin10, start_year)
+pin_geometry_df_raw <- map(unique(pin_geometry_df_full$town_code), \(town) {
+  print(glue("Processing {town}"))
+  pin_geometry_df_full %>%
+    filter(town_code == town) %>%
+    mutate(area = st_area(geometry)) %>%
+    group_by(pin10) %>%
+    arrange(pin10, year) %>%
+    mutate(across(c(area, x, y), lag, .names = "lag_{.col}")) %>%
+    mutate(
+      diff_area = !(abs(area - lag_area) < units::set_units(0.001, "m^2")),
+      diff_cent = !(abs(x - lag_x) < 0.00001 & abs(y - lag_y) < 0.00001),
+      pin_group = cumsum(
+        (diff_area & diff_cent) |
+          (is.na(diff_area) & is.na(diff_cent))
+      )
+    ) %>%
+    group_by(pin10, pin_group) %>%
+    mutate(
+      start_year = min(year),
+      end_year = max(year)
+    ) %>%
+    filter(row_number() == 1) %>%
+    ungroup() %>%
+    select(
+      pin10, start_year, end_year,
+      longitude = x, latitude = y, geometry
+    ) %>%
+    arrange(pin10, start_year)
+}, .progress = TRUE) %>%
+  bind_rows()
 
 # Write the raw PIN geometry to S3
 geoarrow::write_geoparquet(
