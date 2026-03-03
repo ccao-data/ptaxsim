@@ -505,6 +505,15 @@ tif_crosswalk <- tif_main %>%
   ) %>%
   arrange(year, agency_num_dist)
 
+# For now, add the missing 2024 TIF crosswalk entry for the Clark/Montrose TIF
+df <- data.frame(
+  year = "2024",
+  agency_num_dist = "030210629",
+  agency_num_final = "030210539"
+)
+
+tif_crosswalk <- rbind(tif_crosswalk, df)
+
 # Write to S3
 arrow::write_parquet(
   x = tif_crosswalk,
