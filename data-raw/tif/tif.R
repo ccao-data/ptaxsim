@@ -541,18 +541,15 @@ pin_tif_distribution <- map_dfr(pin_dist_file_names_xls, function(file) {
   # Extract year from file name
   year_ext <- str_extract(file, "\\d{4}")
 
-  # Load file based on extension
-  if (tools::file_ext(file) == "xls") {
-    df <- bind_rows(
-      readxl::read_xls(file, sheet = 1),
-      readxl::read_xls(file, sheet = 2)
-    )
-  } else if (tools::file_ext(file) == "xlsx") {
-    df <- bind_rows(
-      readxl::read_xlsx(file, sheet = 1),
-      readxl::read_xlsx(file, sheet = 2)
-    )
-  }
+  all_tif_pins <- readxl::read_xlsx(file, sheet = 1)
+
+  transit_tif_pins <- readxl::read_xlsx(file, sheet = 2)
+
+  all_tif_pins <- all_tif_pins %>%
+    filter(!TIFPIN %in% transit_tif_pins$TIFPIN)
+
+  df <- bind_rows(all_tif_pins, transit_tif_pins)
+
 
   df %>%
     mutate(year = year_ext) %>%
