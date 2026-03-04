@@ -393,3 +393,53 @@ lookup_tif <- function(year, tax_code, conn = ptaxsim_db_conn) {
 
   return(dt)
 }
+
+#' @describeIn lookup_dt Lookup any PINs within a TIF
+#'   year. Returns a \code{data.table} with only 1 row per PIN and year,
+#'   or 0 rows if the PIN is not in a TIF.
+#'
+#' @export
+lookup_pin_tif <- function(year, pin, conn = ptaxsim_db_conn) {
+  stopifnot(
+    is.numeric(year),
+    is.character(tax_code),
+    all(year >= 2024),
+    all(nchar(pin) == 14 | is.na(pin)),
+    check_db_conn(conn),
+    check_db_sync(conn)
+  )
+
+  tif_share <- NULL
+  dt <- DBI::dbGetQuery(
+    conn,
+    statement = glue::glue_sql("
+      SELECT
+          pt.year,
+          pt.pin,
+          pt.tax_code_num AS tax_code,
+          pt.agency_num,
+          ai.agency_name,
+          ai.major_type AS agency_major_type,
+          ai.minor_type AS agency_minor_type,
+          pt.pin_distribution_pct / 100 AS tif_share
+      FROM pin_tif_distribution pt
+      LEFT JOIN tif_crosswalk tc
+          ON pt.year = tc.year
+          AND pt.agency_num = tc.agency_num_dist
+      LEFT JOIN agency_info ai
+          ON tc.agency_num_final = ai.agency_num
+      WHERE pt.year IN ({years*})
+      AND pt.pin IN ({pins*})
+      ORDER BY pt.year, pt.pin, pt.tax_code_num, pt.agency_num
+    ",
+                               years = unique(year),
+                               pins = unique(pin),
+                               .con = conn
+    )
+  )
+
+  dt <- data.table::setDT(dt, key = c("year", "pin", "agency_num"))
+  dt[, tif_share := as.numeric(tif_share)]
+
+  return(dt)
+}
