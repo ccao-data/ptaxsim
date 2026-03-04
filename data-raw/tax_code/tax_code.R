@@ -61,7 +61,6 @@ tax_code <- tax_code %>%
   filter(!grepl("TIF", agency_name)) %>%
   select(
     year,
-    agency_name,
     agency_num = agency, agency_rate,
     tax_code_num = tax_code, tax_code_rate
   ) %>%
