@@ -100,6 +100,7 @@ tax_bill <- function(year_vec,
                      agency_dt = lookup_agency(year_vec, tax_code_vec),
                      pin_dt = lookup_pin(year_vec, pin_vec),
                      tif_dt = lookup_tif(year_vec, tax_code_vec),
+                     pin_tif_dt = lookup_pin_tif(year_vec, pin_vec),
                      simplify = TRUE) {
   # Basic type/input checking for vector inputs
   stopifnot(
@@ -170,14 +171,39 @@ tax_bill <- function(year_vec,
   dt[class == "239", eav := av] # farmland is taxed on AV, not EAV
 
   # Fetch TIF for a given tax code. There should only be one TIF per tax code (
-  # with a few exceptions)
+  # with a few exceptions). For 2024+, TIF data comes from a PIN-level table.
   i.agency_num <- i.agency_name <- i.tif_share <- NULL
-  dt[
-    tif_dt[order(year, tax_code, agency_num), ],
-    on = .(year, tax_code),
-    c("tif_agency_num", "tif_agency_name", "tif_share") :=
-      .(i.agency_num, i.agency_name, i.tif_share)
-  ]
+
+  # Initialize columns to avoid missing column errors on recombine
+  dt[, c("tif_agency_num", "tif_agency_name", "tif_share") :=
+       .(NA_character_, NA_character_, NA_real_)]
+
+  # Split into pre-2024 and 2024+ rows
+  dt_pre_2024 <- dt[year < 2024]
+  dt_2024_plus <- dt[year >= 2024]
+
+  # Pre-2024: join tif_dt by year and tax_code (original behavior)
+  if (nrow(dt_pre_2024) > 0) {
+    dt_pre_2024[
+      tif_dt[order(year, tax_code, agency_num), ],
+      on = .(year, tax_code),
+      c("tif_agency_num", "tif_agency_name", "tif_share") :=
+        .(i.agency_num, i.agency_name, i.tif_share)
+    ]
+  }
+
+  # 2024 and after: join pin_tif_dt by year and pin
+  if (nrow(dt_2024_plus) > 0) {
+    dt_2024_plus[
+      pin_tif_dt[order(year, pin, agency_num), ],
+      on = .(year, pin),
+      c("tif_agency_num", "tif_agency_name", "tif_share") :=
+        .(i.agency_num, i.agency_name, i.tif_share)
+    ]
+  }
+
+  # Recombine
+  dt <- data.table::rbindlist(list(dt_pre_2024, dt_2024_plus))
 
   # Add an indicator for when the PIN is in a special transit
   # TIF, which has different rules than other TIFs
