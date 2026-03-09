@@ -195,7 +195,7 @@ tax_bill <- function(year_vec,
   # 2024 and after: join pin_tif_dt by year and pin
   if (nrow(dt_2024_plus) > 0) {
     dt_2024_plus[
-      pin_tif_dt[order(year, pin, agency_num), ],
+      pin_tif_dt[order(year, tax_code, agency_num), ],
       on = .(year, pin),
       c("tif_agency_num", "tif_agency_name", "tif_share") :=
         .(i.agency_num, i.agency_name, i.tif_share)
