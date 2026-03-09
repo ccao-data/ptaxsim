@@ -402,7 +402,6 @@ lookup_tif <- function(year, tax_code, conn = ptaxsim_db_conn) {
 lookup_pin_tif <- function(year, pin, conn = ptaxsim_db_conn) {
   stopifnot(
     is.numeric(year),
-    is.character(tax_code),
     all(year >= 2024),
     all(nchar(pin) == 14 | is.na(pin)),
     check_db_conn(conn),
