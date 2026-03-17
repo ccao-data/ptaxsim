@@ -160,6 +160,7 @@ CREATE TABLE pin (
     exe_vet_dis_lt50        int   CHECK(exe_vet_dis_lt50 >= 0)         NOT NULL,
     exe_vet_dis_50_69       int   CHECK(exe_vet_dis_50_69 >= 0)        NOT NULL,
     exe_vet_dis_ge70        int   CHECK(exe_vet_dis_ge70 >= 0)         NOT NULL,
+    exe_vet_dis_100         int   CHECK(exe_vet_dis_100 >= 0)                  ,
     exe_abate               int   CHECK(exe_abate >= 0)                NOT NULL,
     PRIMARY KEY (year, pin)
 ) WITHOUT ROWID;
