@@ -128,7 +128,8 @@ for (file in files) {
 datasets <- c("pin", "tax_code")
 for (dataset in datasets) {
   message("Now loading: ", dataset)
-  df <- collect(arrow::open_dataset(file.path(remote_bucket, dataset)))
+  df <- collect(arrow::open_dataset(file.path(remote_bucket, dataset),
+                                    unify_schemas = TRUE))
   DBI::dbAppendTable(conn, dataset, df)
 }
 
