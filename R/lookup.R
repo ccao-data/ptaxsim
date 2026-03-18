@@ -220,6 +220,7 @@ lookup_pin <- function(year,
           p.exe_vet_dis_lt50,
           p.exe_vet_dis_50_69,
           p.exe_vet_dis_ge70,
+          p.exe_vet_dis_100,
           p.exe_abate
       FROM lookup_pin lp
       INNER JOIN pin p
