@@ -432,9 +432,9 @@ lookup_pin_tif <- function(year, pin, conn = ptaxsim_db_conn) {
       AND pt.pin IN ({pins*})
       ORDER BY pt.year, pt.pin, pt.tax_code_num, pt.agency_num
     ",
-                               years = unique(year),
-                               pins = unique(pin),
-                               .con = conn
+      years = unique(year),
+      pins = unique(pin),
+      .con = conn
     )
   )
 

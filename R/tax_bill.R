@@ -176,7 +176,7 @@ tax_bill <- function(year_vec,
 
   # Initialize columns to avoid missing column errors on recombine
   dt[, c("tif_agency_num", "tif_agency_name", "tif_share") :=
-       .(NA_character_, NA_character_, NA_real_)]
+    .(NA_character_, NA_character_, NA_real_)]
 
   # Split into pre-2024 and 2024+ rows
   dt_pre_2024 <- dt[year < 2024]
