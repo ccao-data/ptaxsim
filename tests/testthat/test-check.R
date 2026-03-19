@@ -152,7 +152,16 @@ test_that("README links are synchronized with tested DB version", {
 
   readme_db_version <- stringr::str_extract(
     readme_file,
-    pattern = "(?<=DB version: )[0-9]{4}\\.[0-9]*\\.[0-9]*(?=;)"
+    # Match a semantic version string with an optional pre-release suffix
+    # formatted like `-alpha.1`. Make sure it's the version string that
+    # is preceded by the string `DB version: ` and followed by a semicolon,
+    # since that's the specific instance of the version that we want to check
+    pattern = paste0(
+      "(?<=DB version: )",
+      "[0-9]{4}\\.[0-9]*\\.[0-9]*",
+      "(?:-(alpha|beta)\\.[0-9]+)?",
+      "(?=;)"
+    )
   )
   desc_db_version <-
     utils::packageDescription("ptaxsim")[["Config/Requires_DB_Version"]]
