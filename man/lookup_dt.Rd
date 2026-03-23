@@ -5,6 +5,7 @@
 \alias{lookup_agency}
 \alias{lookup_pin}
 \alias{lookup_tif}
+\alias{lookup_pin_tif}
 \title{Lookup data sets required to calculate property tax bills}
 \usage{
 lookup_agency(year, tax_code, conn = ptaxsim_db_conn)
@@ -18,6 +19,8 @@ lookup_pin(
 )
 
 lookup_tif(year, tax_code, conn = ptaxsim_db_conn)
+
+lookup_pin_tif(year, pin, conn = ptaxsim_db_conn)
 }
 \arguments{
 \item{year}{A numeric vector of tax years.}
@@ -81,6 +84,10 @@ a column specifying the EAV value of each received exemption.
 \item \code{lookup_tif()}: Lookup any TIFs that apply to a given tax code and
 year. Returns a \code{data.table} with only 1 row per tax code and year,
 or 0 rows if the tax code is not part of a TIF.
+
+\item \code{lookup_pin_tif()}: Lookup any PINs within a TIF
+year. Returns a \code{data.table} with only 1 row per PIN and year,
+or 0 rows if the PIN is not in a TIF.
 
 }}
 \examples{
