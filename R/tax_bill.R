@@ -53,11 +53,17 @@
 #'   is used to retrieve each PIN's information based on \code{year_vec}
 #'   and \code{pin_vec}.
 #' @param tif_dt \code{data.table} containing any TIF applicable to the
-#'   specified tax code. Is an empty \code{data.table} if no TIF exists for
-#'   the property. Data *must* be identical to the format returned by
-#'   \code{\link{lookup_tif}}. If missing, \code{\link{lookup_tif}} is
-#'   used to retrieve the tax code's TIF share based on \code{year_vec}
-#'   and \code{tax_code_vec}.
+#'   specified tax code for tax years prior to 2024. Is an empty
+#'   \code{data.table} if no TIF exists for the property. Data *must* be
+#'   identical to the format returned by \code{\link{lookup_tif}}. If missing,
+#'   \code{\link{lookup_tif}} is used to retrieve the tax code's TIF share
+#'   based on \code{year_vec} and \code{tax_code_vec}.
+#' @param pin_tif_dt \code{data.table} containing any TIF applicable to the
+#'   specified PIN for tax year 2024 and after. Is an empty \code{data.table}
+#'   if no TIF exists for the property. Data *must* be identical to the format
+#'   returned by \code{\link{lookup_pin_tif}}. If missing,
+#'   \code{\link{lookup_pin_tif}} is used to retrieve the PIN's TIF share based
+#'   on \code{year_vec} and \code{pin_vec}.
 #' @param simplify Default \code{TRUE}. Boolean to keep only the columns
 #'   that appear on a real tax bill.
 #'   If the parcel is in a TIF, simplified output will collapse the TIF output
