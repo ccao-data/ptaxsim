@@ -183,7 +183,7 @@ test_that("function returns expect data type/structure", {
       "year", "pin", "class", "av", "eav", "exe_homeowner", "exe_senior",
       "exe_freeze", "exe_longtime_homeowner", "exe_disabled",
       "exe_vet_returning", "exe_vet_dis_lt50", "exe_vet_dis_50_69",
-      "exe_vet_dis_ge70", "exe_abate"
+      "exe_vet_dis_ge70", "exe_vet_dis_100", "exe_abate"
     )
   )
   expect_equal(
