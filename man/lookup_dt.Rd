@@ -5,6 +5,7 @@
 \alias{lookup_agency}
 \alias{lookup_pin}
 \alias{lookup_tif}
+\alias{lookup_pin_tif}
 \title{Lookup data sets required to calculate property tax bills}
 \usage{
 lookup_agency(year, tax_code, conn = ptaxsim_db_conn)
@@ -18,6 +19,8 @@ lookup_pin(
 )
 
 lookup_tif(year, tax_code, conn = ptaxsim_db_conn)
+
+lookup_pin_tif(year, pin, conn = ptaxsim_db_conn)
 }
 \arguments{
 \item{year}{A numeric vector of tax years.}
@@ -80,7 +83,15 @@ a column specifying the EAV value of each received exemption.
 
 \item \code{lookup_tif()}: Lookup any TIFs that apply to a given tax code and
 year. Returns a \code{data.table} with only 1 row per tax code and year,
-or 0 rows if the tax code is not part of a TIF.
+or 0 rows if the tax code is not part of a TIF. Returns 0 rows for any
+input year after 2023. For tax years 2024 and later, use
+\code{\link{lookup_pin_tif}} to lookup a PIN's TIF share.
+
+\item \code{lookup_pin_tif()}: Lookup any PINs within a TIF
+year. Returns a \code{data.table} with only 1 row per PIN and year,
+or 0 rows if the PIN is not in a TIF. Returns 0 rows for any input year
+prior to 2024. For tax years 2023 and earlier, use
+\code{\link{lookup_tif}} to lookup a tax code's TIF share.
 
 }}
 \examples{
@@ -88,6 +99,7 @@ or 0 rows if the tax code is not part of a TIF.
 lookup_agency(2019, "73105")
 lookup_pin(2018:2019, "20304190020000")
 lookup_tif(2019, "73105")
+lookup_pin_tif(2024, "02153010581083")
 }
 }
 \seealso{
