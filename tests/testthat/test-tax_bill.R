@@ -18,31 +18,32 @@ det_dt <- sample_tax_bills_detail
 pins <- c(
   "14081020190000", "09274240240000", "07101010391078"
 )
-years <- c(2019, 2019, 2018)
+years <- 2024:2022
 
 test_that("bad/incorrect vector inputs throw errors", {
-  expect_error(tax_bill("2019", pins[1]))
+  expect_error(tax_bill("2024", pins[1]))
   expect_error(tax_bill(numeric(0), pins[1]))
-  expect_error(tax_bill(2019, 14081020190000))
-  expect_error(tax_bill(c(2000, 2019), pins[1]))
-  expect_error(tax_bill(2019, c("1408102019000", pins[2])))
-  expect_error(tax_bill(2019, pins[1], tax_code_vec = 73105))
-  expect_error(tax_bill(2019, pins[1], tax_code_vec = "5454"))
-  expect_error(tax_bill(2019, pins[2], simplify = "yes"))
-  expect_error(tax_bill(2018:2019, pins[2:3], simplify = c(TRUE, FALSE)))
+  expect_error(tax_bill(years[1], 14081020190000))
+  expect_error(tax_bill(c(2000, years[1]), pins[1]))
+  expect_error(tax_bill(years[1], c("1408102019000", pins[2])))
+  expect_error(tax_bill(years[1], pins[1], tax_code_vec = 73105))
+  expect_error(tax_bill(years[1], pins[1], tax_code_vec = "5454"))
+  expect_error(tax_bill(years[1], pins[2], simplify = "yes"))
+  expect_error(tax_bill(years[2:1], pins[2:3], simplify = c(TRUE, FALSE)))
 })
 
 test_that("bad/incorrect data frame inputs throw errors", {
-  expect_error(tax_bill(2019, pins[1], pin_dt = c(23000, 959051)))
-  expect_error(tax_bill(2019, pins[1], agency_dt = c("3232", "TIF")))
-  expect_error(tax_bill(2019, pins[1], tif_dt = c(23000, 959051)))
+  expect_error(tax_bill(years[1], pins[1], pin_dt = c(23000, 959051)))
+  expect_error(tax_bill(years[1], pins[1], agency_dt = c("3232", "TIF")))
+  expect_error(tax_bill(years[1], pins[1], tif_dt = c(23000, 959051)))
+  expect_error(tax_bill(years[1], pins[1], pin_tif_dt = c(23000, 959051)))
 })
 
 test_that("non-unique values to main args throws error", {
-  expect_error(tax_bill(2019, pins[c(1, 1)]))
-  expect_error(tax_bill(c(2010, 2010), pins[1]))
+  expect_error(tax_bill(years[1], pins[c(1, 1)]))
+  expect_error(tax_bill(c(years[c(1, 1)]), pins[1]))
   expect_error(
-    tax_bill(c(2010, 2010), pins[c(1, 2)], tax_code_vec = c("73105"))
+    tax_bill(years[c(1, 1)], pins[c(1, 2)], tax_code_vec = c("73105"))
   )
 })
 
@@ -52,16 +53,17 @@ test_that("incorrect size inputs throw errors", {
 })
 
 test_that("data frame inputs throw errors when required cols missing", {
-  expect_error(tax_bill(2019, pins[1], pin_dt = data.table()))
-  expect_error(tax_bill(2019, pins[1], agency_dt = data.table()))
-  expect_error(tax_bill(2019, pins[1], tif_dt = data.table()))
+  expect_error(tax_bill(years[1], pins[1], pin_dt = data.table()))
+  expect_error(tax_bill(years[1], pins[1], agency_dt = data.table()))
+  expect_error(tax_bill(years[1], pins[1], tif_dt = data.table()))
+  expect_error(tax_bill(years[1], pins[1], pin_tif_dt = data.table()))
 })
 
 test_that("function returns expected data type/structure", {
-  expect_s3_class(tax_bill(2018, pins[1]), "data.frame")
-  expect_s3_class(tax_bill(2018, pins[1]), "data.table")
+  expect_s3_class(tax_bill(years[1], pins[1]), "data.frame")
+  expect_s3_class(tax_bill(years[1], pins[1]), "data.table")
   expect_equal(
-    key(tax_bill(2018, pins[1])),
+    key(tax_bill(years[1], pins[1])),
     c("year", "pin", "agency_num")
   )
   expect_named(

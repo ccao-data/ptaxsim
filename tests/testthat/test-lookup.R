@@ -94,6 +94,11 @@ test_that("lookup values/data are correct", {
   )
 })
 
+test_that("lookup_tif returns 0 rows for years >= 2024", {
+  expect_equal(nrow(lookup_tif(2024:max_year, "73105")), 0)
+  expect_equal(nrow(lookup_tif(2022:2023, "73105")), 2)
+})
+
 test_that("function returns expect data type/structure", {
   expect_s3_class(
     lookup_tif(2018, "73105"),
@@ -201,6 +206,58 @@ test_that("bad/incorrect inputs throw errors", {
   expect_error(lookup_pin(2019, as.numeric(pins[1])))
   expect_error(lookup_pin(2019, pins[1], eq_version = "BOARD"))
   expect_error(lookup_pin(2019, pins[1], eq_version = 1))
+})
+
+
+context("test lookup_pin_tif()")
+
+##### TEST lookup_pin_tif() #####
+
+# Use PINs known to be in TIFs in 2024
+pin_in_24_tif <- "01301000160000"
+pin_in_24_tif_2 <- "01303000090000"
+# A random PIN that is not in a TIF in 2024
+pin_not_in_24_tif <- "01011000020000"
+
+test_that("lookup_pin_tif returns 0 rows for pre-2024 years", {
+  expect_equal(nrow(lookup_pin_tif(2023, pin_in_24_tif)), 0)
+})
+
+test_that("lookup_pin_tif returns rows for 2024+", {
+  expect_equal(nrow(lookup_pin_tif(2024, pin_in_24_tif)), 1)
+})
+
+test_that("lookup_pin_tif returns expected data type/structure", {
+  pin_tif <- lookup_pin_tif(2024, pin_in_24_tif)
+  expect_s3_class(pin_tif, c("data.frame", "data.table"))
+  expect_named(pin_tif, c(
+    "year", "pin", "tax_code", "agency_num",
+    "agency_name", "agency_major_type", "agency_minor_type", "tif_share"
+  ))
+})
+
+test_that("lookup_pin_tif returns correct values/data", {
+  expect_equal(
+    lookup_pin_tif(2024, pin_in_24_tif)$tif_share,
+    0.777,
+    tolerance = 0.001
+  )
+})
+
+test_that("lookup_pin_tif returns 0 rows for PIN not in any TIF", {
+  expect_equal(nrow(lookup_pin_tif(2024, pin_not_in_24_tif)), 0)
+})
+
+test_that("lookup_pin_tif bad/incorrect inputs throw errors", {
+  expect_error(lookup_pin_tif("2024", pin_in_24_tif)) # year not numeric
+  expect_error(lookup_pin_tif(2024, 2153010581083)) # PIN not character
+  expect_error(lookup_pin_tif(2024, "021530105810")) # PIN wrong length
+})
+
+test_that("lookup_pin_tif handles multiple PINs", {
+  # A second PIN that is in a TIF district in 2024
+  result <- lookup_pin_tif(2024, c(pin_in_24_tif, pin_in_24_tif_2))
+  expect_equal(nrow(result), 2)
 })
 
 
