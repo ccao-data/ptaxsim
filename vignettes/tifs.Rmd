@@ -263,18 +263,22 @@ tif_pins_summ <- tif_pins_dt %>%
   left_join(tif_dists_pre_24, by = c("tax_code" = "tax_code_num", "year")) %>%
   mutate(tax_code_increment_eav = total_eav - tax_code_frozen_eav) %>%
   group_by(year) %>%
-  summarize(total_eav = sum(total_eav),
-            total_frozen_eav = sum(tax_code_frozen_eav),
-            total_increment_eav = sum(tax_code_increment_eav))
+  summarize(
+    total_eav = sum(total_eav),
+    total_frozen_eav = sum(tax_code_frozen_eav),
+    total_increment_eav = sum(tax_code_increment_eav)
+  )
 
 tif_dists_24 <- pin_tif_dists_24 %>%
   group_by(year) %>%
-  summarize(total_eav = sum(pin_eav),
-            total_frozen_eav = sum(pin_frozen_eav),
-            total_increment_eav = sum(pin_increment_eav)) 
+  summarize(
+    total_eav = sum(pin_eav),
+    total_frozen_eav = sum(pin_frozen_eav),
+    total_increment_eav = sum(pin_increment_eav)
+  )
 
 tif_pins_summ <- rbind(tif_pins_summ, tif_dists_24) %>%
-  arrange(year) 
+  arrange(year)
 ```
 
 Finally, we can plot the total EAV of all PINs in the TIF over time, highlighting the TIF start date and increment captured.
@@ -478,7 +482,8 @@ tif_dt_cntr <- lookup_tif(
 
 
 pin_tif_dt_cntr <- lookup_pin_tif(
-  2024, wh_pins$pin) %>%
+  2024, wh_pins$pin
+) %>%
   # Set only the WTC2 TIF share to 0, leave all others untouched
   mutate(tif_share = ifelse(agency_num == "031310506", 0, tif_share))
 ```
