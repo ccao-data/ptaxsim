@@ -223,7 +223,8 @@ tif_dists_pre_24 <- DBI::dbGetQuery(
   "
 )
 
-# For 2024 onward, TIF distributions are calculated at the PIN level and are stored in a different table
+# For 2024 onward, TIF distributions are calculated at the PIN level and are 
+# stored in a different table
 pin_tif_dists_24 <- DBI::dbGetQuery(
   ptaxsim_db_conn, "
   SELECT *
@@ -513,7 +514,9 @@ tif_agency_amt_to_add <- tif_agency_cntr %>%
 tif_agency_cntr_updated <- tif_agency_cntr %>%
   left_join(tif_agency_amt_to_add, by = c("year", "agency_num")) %>%
   rowwise() %>%
-  mutate(agency_total_eav = sum(agency_total_eav, total_increment_eav, na.rm = TRUE)) %>%
+  mutate(agency_total_eav = sum(agency_total_eav, total_increment_eav,
+    na.rm = TRUE
+  )) %>%
   select(-total_increment_eav) %>%
   setDT(key = c("year", "tax_code", "agency_num"))
 ```
