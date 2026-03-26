@@ -419,7 +419,7 @@ tif_dist_plot <- ggplot(data = tif_bills_summ) +
     labels = scales::label_dollar(scale = 1e-6, suffix = "M"),
     expand = c(0, 0)
   ) +
-  scale_x_continuous(n.breaks = 13, expand = c(0, 0.4)) +
+  scale_x_continuous(n.breaks = 10, expand = c(0, 0.4)) +
   scale_fill_manual(
     name = "",
     values = c("#7d26cd", RColorBrewer::brewer.pal(7, "Set2"))
