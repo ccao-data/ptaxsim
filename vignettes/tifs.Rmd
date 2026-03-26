@@ -223,7 +223,7 @@ tif_dists_pre_24 <- DBI::dbGetQuery(
   "
 )
 
-# For 2024 onward, TIF distributions are calculated at the PIN level and are 
+# For 2024 onward, TIF distributions are calculated at the PIN level and are
 # stored in a different table
 pin_tif_dists_24 <- DBI::dbGetQuery(
   ptaxsim_db_conn, "
