@@ -23,7 +23,7 @@ Enter PTAXSIM. With some careful data manipulation, PTAXSIM can measure the impa
 
 # The Wheeling Town Center II TIF
 
-Using PTAXSIM, we're going to examine the impact of a single TIF: the Wheeling Town Center II (WTC2) TIF in Wheeling, IL. This TIF was established in 2014 and covers about 200 properties in downtown Wheeling. Since being established, its total increment (property value) has grown substantially; as of tax year 2024, its annual revenue was about $9 million (back when this vignette was first written in 2020, the annual revenue was 5.5 million per year!). We can determine the impact of the WTC2 TIF by recalculating historical tax bills as if it was never created.
+Using PTAXSIM, we're going to examine the impact of a single TIF: the Wheeling Town Center II (WTC2) TIF in Wheeling, IL. This TIF was established in 2014 and covers about 200 properties in downtown Wheeling. Since being established, its total increment (property value) has grown substantially: in tax year 2020, the TIF raised about $5.5 million per year in tax revenue, while in tax year 2024 its annual revenue grew to $9 million. We can determine the impact of the WTC2 TIF by recalculating historical tax bills as if it was never created.
 
 First, load some useful libraries and instantiate a PTAXSIM database connection with the default name (`ptaxsim_db_conn`) expected by PTAXSIM functions.
 
