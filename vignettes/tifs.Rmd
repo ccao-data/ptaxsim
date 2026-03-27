@@ -289,7 +289,10 @@ Finally, we can plot the total EAV of all PINs in the TIF over time, highlightin
 <summary><strong>Click here</strong> to show plot code</summary>
 
 ```{r}
-# Create polygon to highlight the increment taxed by the TIF
+# Create polygon to highlight the increment taxed by the TIF.
+# Make sure the terminating point duplicates the final X-axis value (year)
+# while returning to the first Y-axis value (total EAV) in order to properly
+# close the polygon
 plot_pin_fill <- tibble(
   x = c(2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2024),
   y = c(
