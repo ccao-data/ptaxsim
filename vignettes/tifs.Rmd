@@ -294,7 +294,7 @@ Finally, we can plot the total EAV of all PINs in the TIF over time, highlightin
 # while returning to the first Y-axis value (total EAV) in order to properly
 # close the polygon
 plot_pin_fill <- tibble(
-  x = c(2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2024),
+  x = c(2014:2024, 2024),
   y = c(
     tif_pins_summ$total_eav[tif_pins_summ$year >= 2014],
     tif_pins_summ$total_eav[tif_pins_summ$year == 2014]
