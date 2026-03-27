@@ -67,7 +67,7 @@ test_that("function returns expected data type/structure", {
     c("year", "pin", "agency_num")
   )
   expect_named(
-    tax_bill(2018:2019, pins[1:2]),
+    tax_bill(years[1:2], pins[1:2]),
     c(
       "year", "pin", "class", "tax_code", "av", "eav", "agency_num",
       "agency_name", "agency_major_type", "agency_minor_type",
@@ -79,7 +79,7 @@ test_that("function returns expected data type/structure", {
     0
   )
   expect_named(
-    tax_bill(2018:2019, pins[1:2], simplify = FALSE),
+    tax_bill(years[1:2], pins[1:2], simplify = FALSE),
     c(
       "year", "pin", "class", "tax_code", "av", "eav", "exe_total",
       "agency_num", "agency_name", "agency_major_type", "agency_minor_type",
@@ -94,8 +94,8 @@ test_that("function returns expected data type/structure", {
     sum(is.na(tax_bill(years[1], pins[1], simplify = FALSE))),
     0
   )
-  expect_equal(dim(tax_bill(years[1], pins[1], simplify = TRUE)), c(12, 12))
-  expect_equal(dim(tax_bill(years[1], pins[1], simplify = FALSE)), c(10, 25))
+  expect_equal(dim(tax_bill(years[1], pins[1], simplify = TRUE)), c(11, 12))
+  expect_equal(dim(tax_bill(years[1], pins[1], simplify = FALSE)), c(9, 25))
 })
 
 test_that("returned amount/output correct for single PIN", {
