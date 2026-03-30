@@ -65,25 +65,25 @@ To determine the impact of appeals, we first need a way to gather all the proper
 First, we'll need to determine the Village of Schaumburg's *agency number*. This is the ID used by the Clerk to track different taxing bodies. To find Schaumburg's ID, we can directly query PTAXSIM's database and look in the `agency_info` table:
 
 ```{r}
-sb_agency_nums <- DBI::dbGetQuery(
+chi_agency_nums <- DBI::dbGetQuery(
   ptaxsim_db_conn,
   "SELECT agency_num, agency_name
   FROM agency_info
-  WHERE agency_name LIKE '%SCHAUMBURG%'"
+  WHERE agency_name LIKE '%CITY OF CHICAGO%'"
 )
 
-sb_agency_nums
+chi_agency_nums
 ```
 
 Here we can see the various taxing bodies around Schaumburg. The agency number we want is `031150000` for the `VILLAGE OF SCHAUMBURG`. With the agency number, we can find all of the *tax codes* that make up the municipality. To do so, we can again query PTAXSIM directly, this time looking in the `tax_code` table:
 
 ```{r}
-sb_tax_codes <- DBI::dbGetQuery(
+chi_tax_codes <- DBI::dbGetQuery(
   ptaxsim_db_conn, "
   SELECT tax_code_num
   FROM tax_code
-  WHERE agency_num = '031150000'
-  AND year = 2019
+  WHERE agency_num = '030210000'
+  AND year = 2024
   "
 )
 ```
@@ -91,13 +91,13 @@ sb_tax_codes <- DBI::dbGetQuery(
 Finally, we can find all of Schaumburg's PINs with one last direct query. This time we'll look in the `pin` table using the tax codes that make up Schaumburg. We'll use the `glue` library for string expansion to make things a bit easier:
 
 ```{r}
-sb_pins <- DBI::dbGetQuery(
+chi_pins <- DBI::dbGetQuery(
   ptaxsim_db_conn,
   glue_sql("
     SELECT pin, class
     FROM pin
-    WHERE tax_code_num IN ({sb_tax_codes$tax_code_num*})
-    AND year = 2019
+    WHERE tax_code_num IN ({chi_tax_codes$tax_code_num*})
+    AND year = 2024
     ",
     .con = ptaxsim_db_conn
   )
@@ -111,19 +111,19 @@ Now that we have Schaumburg's PINs, we can use them to get a quick look at the a
 ```{r}
 # PIN geometries only exist for 10-digit PINs, so we'll need to truncate our
 # existing Schaumburg PINs
-sb_pin10s <- unique(substr(sb_pins$pin, 1, 10))
+chi_pin10s <- unique(substr(chi_pins$pin, 1, 10))
 
 # The geometry is stored in the database as simple text, so we need to convert
 # it to the correct type using sf
-sb_pins_geo <- lookup_pin10_geometry(year = 2020, pin10 = sb_pin10s)
-sb_pins_geo <- sb_pins_geo %>%
+chi_pins_geo <- lookup_pin10_geometry(year = 2020, pin10 = chi_pin10s)
+chi_pins_geo <- chi_pins_geo %>%
   st_as_sf(wkt = "geometry", crs = 4326)
 
 # We'll also attach the first class code from each PIN14 to each PIN10 geometry
 # and group them into broad buckets. This is just to help our visualization
-sb_pins_geo <- sb_pins_geo %>%
+chi_pins_geo <- chi_pins_geo %>%
   left_join(
-    sb_pins %>%
+    chi_pins %>%
       mutate(pin10 = substr(pin, 1, 10)) %>%
       group_by(pin10) %>%
       summarize(class = first(class)),
@@ -139,6 +139,14 @@ sb_pins_geo <- sb_pins_geo %>%
       "0" = "Other", "1" = "Other", "4" = "Other", "6" = "Other", "7" = "Other"
     )
   )
+
+chi_pins_geo <- st_make_valid(chi_pins_geo)
+
+chi_pins_class_geo <- chi_pins_geo %>%
+  group_by(major_class_fct) %>%
+  summarize(geometry = st_union(geometry), .groups = "drop")
+
+
 ```
 
 For added flavor, we can get the municipality boundary for Schaumburg from [Cook Central](https://hub-cookcountyil.opendata.arcgis.com/search), the County GIS data portal.
@@ -151,7 +159,7 @@ muni <- st_read(paste0(
 ))
 
 muni <- muni %>%
-  filter(MUNICIPALITY == "Schaumburg")
+  filter(MUNICIPALITY == "Chicago")
 ```
 
 Finally, we can plot our PINs of interest on a map, along with Schaumburg's boundary and a basemap.
@@ -161,13 +169,13 @@ Finally, we can plot our PINs of interest on a map, along with Schaumburg's boun
 <summary><strong>Click here</strong> to show plot code</summary>
 
 ```{r}
-sb_pins_map <- ggplot() +
+chi_pins_map <- ggplot() +
   annotation_map_tile(type = "cartolight", zoomin = -1) +
   geom_sf(
-    data = sb_pins_geo,
+    data = chi_pins_geo,
     aes(fill = major_class_fct),
     alpha = 0.5,
-    linewidth = 0.1
+    linewidth = 0
   ) +
   geom_sf(data = muni, fill = "transparent", linewidth = 1) +
   annotation_scale(location = "br") +
@@ -187,7 +195,7 @@ sb_pins_map <- ggplot() +
 <br>
 
 ```{r, out.width="100%", echo=FALSE, results='hide'}
-sb_pins_map
+chi_pins_map
 ```
 
 The map clearly shows that most commercial buildings cluster on the north side of the village. This is the location of Woodfield Mall and many adjacent commercial buildings.
@@ -198,21 +206,21 @@ Now that we've gathered our PINs of interest, we can start to investigate how th
 
 ```{r}
 # Iterate through the difference stages, then combine into a single data.frame
-sb_pins_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
-  lookup_pin(2019, sb_pins$pin, stage = x) %>%
+chi_pins_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
+  lookup_pin(2024, chi_pins$pin, stage = x) %>%
     mutate(stage = x)
 })
 
-# Append 2018 final values to use as a starting point for an index
-sb_pins_all <- lookup_pin(2018, sb_pins$pin, stage = "board") %>%
+# Append 2023 final values to use as a starting point for an index
+chi_pins_all <- lookup_pin(2023, chi_pins$pin, stage = "board") %>%
   mutate(stage = "board") %>%
-  bind_rows(sb_pins_all)
+  bind_rows(chi_pins_all)
 ```
 
 Next, we get the median AV for each assessment stage and major class. We also create an index to make the relative changes in AV easier to see. The indexed stage is `2018 board`, meaning a change of 20 means a 20% increase in the median AV from the `2018 board` median AV.
 
 ```{r}
-sb_pins_summ <- sb_pins_all %>%
+chi_pins_summ <- chi_pins_all %>%
   mutate(major_class = substr(class, 1, 1)) %>%
   filter(major_class %in% c("2", "3", "5")) %>%
   mutate(
@@ -230,11 +238,11 @@ sb_pins_summ <- sb_pins_all %>%
     stage = factor(
       paste0(year, "\n", stage),
       levels = c(
-        "2018\nboard", "2019\nmailed",
-        "2019\ncertified", "2019\nboard"
+        "2023\nboard", "2024\nmailed",
+        "2024\ncertified", "2024\nboard"
       )
     ),
-    idx = (med_av / med_av[stage == "2018\nboard"]) * 100
+    idx = (med_av / med_av[stage == "2023\nboard"]) * 100
   )
 ```
 
@@ -248,20 +256,20 @@ Finally, we can plot the index over time to see how reassessment and the subsequ
 # Create conditional x-axis colors for reassessment stage
 stage_labs <- ifelse(
   as.factor(c(
-    "2018\nboard", "2019\nmailed",
-    "2019\ncertified", "2019\nboard"
-  )) == "2019\nmailed",
+    "2023\nboard", "2024\nmailed",
+    "2024\ncertified", "2024\nboard"
+  )) == "2024\nmailed",
   "red", "black"
 )
 
-sb_pins_av_plot <- ggplot() +
+chi_pins_av_plot <- ggplot() +
   geom_vline(
-    xintercept = "2019\nmailed",
+    xintercept = "2024\nmailed",
     linetype = "dotted",
     color = "red"
   ) +
   geom_line(
-    data = sb_pins_summ,
+    data = chi_pins_summ,
     aes(x = stage, y = idx, color = major_class, group = major_class),
     linewidth = 1.1
   ) +
@@ -269,7 +277,7 @@ sb_pins_av_plot <- ggplot() +
   lims(y = c(95, 170)) +
   labs(
     x = "Stage",
-    y = "Median AV, Indexed to 2018 Board",
+    y = "Median AV, Indexed to 2023 Board",
     caption = "Highlighted stage is a reassessment"
   ) +
   theme_minimal() +
@@ -293,7 +301,7 @@ sb_pins_av_plot <- ggplot() +
 <br>
 
 ```{r, out.width="100%", echo=FALSE}
-sb_pins_av_plot
+chi_pins_av_plot
 ```
 
 There's a significant drop in the median commercial property AV due to appeals, particularly after the second level of review (at the Board of Review). However, commercial properties also received much larger AV increases during the 2019 reassessment compared to residential properties.
@@ -309,11 +317,11 @@ eq_dt <- DBI::dbGetQuery(ptaxsim_db_conn, "SELECT * FROM eq_factor")
 # Calculate tax bills from 2019 at each stage of appeal. Note that recalculating
 # bills with counterfactual AVs also requires recalculating the base of each
 # taxing district
-sb_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
-  sb_pin_dt_actual <- lookup_pin(2019, sb_pins$pin, stage = "clerk")
-  sb_pin_dt_stage <- lookup_pin(
-    2019,
-    sb_pins$pin,
+chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
+  chi_pin_dt_actual <- lookup_pin(2024, chi_pins$pin, stage = "clerk")
+  chi_pin_dt_stage <- lookup_pin(
+    2024,
+    chi_pins$pin,
     stage = x,
     eq_version = case_when(
       x %in% c("mailed", "certified") ~ "tentative",
@@ -329,15 +337,26 @@ sb_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
       x %in% c("board", "clerk") ~ eq_factor_final
     )) %>%
     select(year, stage_eq_factor, eq_factor_final)
+  
+
+  
+  # We need to calculate the new taxable EAV for each PIN at the various 
+  # stages. Changes to AV impacts the TIF share for PINs in TIFs, as well 
+  # as the senior freeze exemption amount for PINs with that exemption.
+  
+  chi_pin_dt_stage <- chi_pin_dt_stage %>%
+    left_join(eq_dt_stage, by = "year") %>%
+    mutate(
+      eav = av * stage_eq_factor
 
   # The base of each district in the included PTAXSIM data is based on 2019
   # board (post-appeal) values. It is therefore smaller than it would be if
   # appeals had not been granted. As such, we need to calculate the difference
   # for each PIN between the AV at each stage and the AV at the board stage,
   # then add the total difference to each district's base
-  sb_pin_diff <- sb_pin_dt_actual %>%
+  chi_pin_diff <- chi_pin_dt_actual %>%
     left_join(
-      sb_pin_dt_stage %>%
+      chi_pin_dt_stage %>%
         select(year, pin, stage_av = av),
       by = c("year", "pin")
     ) %>%
