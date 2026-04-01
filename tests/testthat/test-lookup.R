@@ -163,7 +163,10 @@ test_that("lookup values/data are correct", {
   expect_equivalent(
     lookup_pin(2018:max_year, sum_df$pin) %>%
       mutate(
-        exe_vet_dis = exe_vet_dis_lt50 + exe_vet_dis_50_69 + exe_vet_dis_ge70,
+        exe_vet_dis = (
+          exe_vet_dis_lt50 + exe_vet_dis_50_69 +
+            exe_vet_dis_ge70 + exe_vet_dis_100
+        ),
         across(starts_with("exe_"), ~ .x != 0)
       ) %>%
       select(year, pin, exe_homeowner:exe_disabled, exe_vet_dis) %>%
