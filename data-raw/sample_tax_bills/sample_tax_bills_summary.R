@@ -3,7 +3,12 @@ library(stringr)
 library(readr)
 library(data.table)
 
-# Load sample tax bills summary data from file
+# Load sample tax bills summary data from file.
+#
+# We maintain this file by hand, and we need to update it whenever
+# we add new tax bills to `data-raw/sample_tax_bills/` each year. In the
+# future, it might be nice to script a process for extracting these summaries
+# automatically
 sample_tax_bills_summary <- readr::read_csv(
   "data-raw/sample_tax_bills/sample_tax_bills_summary.csv",
   col_types = cols(pin = "c", tax_code = "c", class = "c")
