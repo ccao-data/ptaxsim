@@ -152,11 +152,19 @@ agency_fund <- map_dfr(file_names, function(file) {
 
 # agency_fund_info -------------------------------------------------------------
 
+# Create fund_type crosswalk
+fund_type_cw <- agency_fund %>%
+  filter(year < 2024) %>%
+  group_by(fund_type_num) %>%
+  summarise(fund_type_name = calc_mode(fund_name))
+
+
 # Breakout the fund names into their own table
 agency_fund_info <- agency_fund %>%
-  group_by(fund_type_num, fund_num) %>%
+  group_by(agency_num, fund_type_num, fund_num) %>%
   summarise(fund_name = calc_mode(fund_name)) %>%
   ungroup() %>%
+  left_join(fund_type_cw) %>%
   arrange(fund_num) %>%
   mutate(
     fund_name = str_trim(str_squish(fund_name)),
@@ -185,6 +193,22 @@ arrow::write_parquet(
 
 
 # agency -----------------------------------------------------------------------
+
+# Define collar county EAV fields
+collar_counties <-
+  c(
+  "cty_dupage_eav",
+  "cty_lake_eav",
+  "cty_will_eav",
+  "cty_kane_eav",
+  "cty_mchenry_eav",
+  "cty_dekalb_eav",
+  "cty_kankakee_eav",
+  "cty_kendall_eav",
+  "cty_grundy_eav",
+  "cty_lasalle_eav",
+  "cty_livingston_eav"
+)
 
 # Load the overview of each agency file. This includes the agency name, total
 # EAV, final extension, and much more
@@ -270,18 +294,7 @@ agency <- map_dfr(file_names, function(file) {
     home_rule_ind = home_rule_ind %in% c("Y", "HR", "No PTELL"),
     home_rule_ind = replace_na(home_rule_ind, FALSE),
     cty_overlap_eav = ifelse(year < "2024",
-      rowSums(across(starts_with(c(
-        "cty_dupage_eav",
-        "cty_lake_eav",
-        "cty_will_eav",
-        "cty_kane_eav",
-        "cty_mchenry_eav",
-        "cty_dekalb_eav",
-        "cty_kankakee_eav",
-        "cty_grundy_eav",
-        "cty_lasalle_eav",
-        "cty_livingston_eav"
-      )))),
+      rowSums(across(all_of(collar_counties))),
       cty_overlap_eav
     ),
     across(
@@ -320,7 +333,7 @@ agency <- map_dfr(file_names, function(file) {
       ~ as.double(.x)
     )
   ) %>%
-  select(-total_reduced_levy) %>%
+  select(-total_reduced_levy, -collar_counties) %>%
   relocate(total_ext, .after = everything())
 
 # Tax year 2013 is missing the total levy columns from its overview sheet, but
