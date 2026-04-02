@@ -147,7 +147,8 @@ tax_bill <- function(year_vec,
   stopifnot(
     check_agency_dt_str(agency_dt),
     check_pin_dt_str(pin_dt),
-    check_tif_dt_str(tif_dt)
+    check_tif_dt_str(tif_dt),
+    check_pin_tif_dt_str(pin_tif_dt)
   )
 
   # Create data.table from inputs. Use the Cartesian product if the inputs are

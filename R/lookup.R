@@ -364,6 +364,10 @@ lookup_tif <- function(year, tax_code, conn = ptaxsim_db_conn) {
     check_db_sync(conn)
   )
 
+  # Make sure to remove any years after 2023 from the year vector, since
+  # otherwise we risk silently returning null TIF shares for post-2024 TIFs
+  year <- year[year <= 2023]
+
   tif_share <- NULL
   dt <- DBI::dbGetQuery(
     conn,
