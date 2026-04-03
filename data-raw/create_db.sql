@@ -14,17 +14,6 @@ CREATE TABLE agency (
     curr_new_prop           bigint                                     NOT NULL,
     cty_cook_eav            bigint   CHECK(cty_cook_eav >= 0)          NOT NULL,
     cty_overlap_eav         bigint   CHECK(cty_overlap_eav >= 0)       NOT NULL,
-    cty_dupage_eav          bigint   CHECK(cty_dupage_eav >= 0)        NOT NULL,
-    cty_lake_eav            bigint   CHECK(cty_lake_eav >= 0)          NOT NULL,
-    cty_will_eav            bigint   CHECK(cty_will_eav >= 0)          NOT NULL,
-    cty_kane_eav            bigint   CHECK(cty_kane_eav >= 0)          NOT NULL,
-    cty_mchenry_eav         bigint   CHECK(cty_mchenry_eav >= 0)       NOT NULL,
-    cty_dekalb_eav          bigint   CHECK(cty_dekalb_eav >= 0)        NOT NULL,
-    cty_grundy_eav          bigint   CHECK(cty_grundy_eav >= 0)        NOT NULL,
-    cty_kankakee_eav        bigint   CHECK(cty_kankakee_eav >= 0)      NOT NULL,
-    cty_kendall_eav         bigint   CHECK(cty_kendall_eav >= 0)       NOT NULL,
-    cty_lasalle_eav         bigint   CHECK(cty_lasalle_eav >= 0)       NOT NULL,
-    cty_livingston_eav      bigint   CHECK(cty_livingston_eav >= 0)    NOT NULL,
     cty_total_eav           bigint   CHECK(cty_total_eav >= 0)         NOT NULL,
     pct_burden              double   CHECK(pct_burden >= 0
                                      AND   pct_burden <= 1)                    ,
@@ -91,11 +80,13 @@ CREATE INDEX ix_agency_fund_fund_num ON agency_fund(fund_num);
 
 /** agency_fund_info **/
 CREATE TABLE agency_fund_info (
+    agency_num              varchar(9)                                 NOT NULL,
     fund_type_num           varchar(3)                                 NOT NULL,
+    fund_type_name          varchar                                    NOT NULL,
     fund_num                varchar(6)                                 NOT NULL,
     fund_name               varchar                                    NOT NULL,
     capped_ind              boolean                                    NOT NULL,
-    PRIMARY KEY (fund_num)
+    PRIMARY KEY (agency_num, fund_type_num, fund_num)
 ) WITHOUT ROWID;
 
 CREATE INDEX ix_agency_fund_info_capped_ind ON agency_fund_info(capped_ind);
