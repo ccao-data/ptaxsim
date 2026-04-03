@@ -38,7 +38,7 @@ db_send_queries <- function(conn, sql) {
 # file via check_db_version(). Schema is:
 # "MAX_YEAR_OF_DATA.MAJOR_VERSION.MINOR_VERSION"
 db_version <- "2024.0.0"
-db_version_label <- "alpha.1" # informational only, not compared
+db_version_label <- "alpha.2" # informational only, not compared
 
 # Set the package version required to use this database. This is checked against
 # Version in the DESCRIPTION file. Basically, we have a two-way check so that
