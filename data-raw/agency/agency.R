@@ -197,18 +197,18 @@ arrow::write_parquet(
 # Define collar county EAV fields
 collar_counties <-
   c(
-  "cty_dupage_eav",
-  "cty_lake_eav",
-  "cty_will_eav",
-  "cty_kane_eav",
-  "cty_mchenry_eav",
-  "cty_dekalb_eav",
-  "cty_kankakee_eav",
-  "cty_kendall_eav",
-  "cty_grundy_eav",
-  "cty_lasalle_eav",
-  "cty_livingston_eav"
-)
+    "cty_dupage_eav",
+    "cty_lake_eav",
+    "cty_will_eav",
+    "cty_kane_eav",
+    "cty_mchenry_eav",
+    "cty_dekalb_eav",
+    "cty_kankakee_eav",
+    "cty_kendall_eav",
+    "cty_grundy_eav",
+    "cty_lasalle_eav",
+    "cty_livingston_eav"
+  )
 
 # Load the overview of each agency file. This includes the agency name, total
 # EAV, final extension, and much more
@@ -294,17 +294,19 @@ agency <- map_dfr(file_names, function(file) {
     home_rule_ind = home_rule_ind %in% c("Y", "HR", "No PTELL"),
     home_rule_ind = replace_na(home_rule_ind, FALSE),
     cty_overlap_eav = ifelse(year < "2024",
-      rowSums(across(all_of(c("cty_dupage_eav",
-                              "cty_lake_eav",
-                              "cty_will_eav",
-                              "cty_kane_eav",
-                              "cty_mchenry_eav",
-                              "cty_dekalb_eav",
-                              "cty_kankakee_eav",
-                              "cty_kendall_eav",
-                              "cty_grundy_eav",
-                              "cty_lasalle_eav",
-                              "cty_livingston_eav")))),
+      rowSums(across(all_of(c(
+        "cty_dupage_eav",
+        "cty_lake_eav",
+        "cty_will_eav",
+        "cty_kane_eav",
+        "cty_mchenry_eav",
+        "cty_dekalb_eav",
+        "cty_kankakee_eav",
+        "cty_kendall_eav",
+        "cty_grundy_eav",
+        "cty_lasalle_eav",
+        "cty_livingston_eav"
+      )))),
       cty_overlap_eav
     ),
     across(
