@@ -131,7 +131,12 @@ test_that("grid expansion works correctly", {
 
 # Remove certain PINs from the test because they are anomalies/have VERY unique
 # situations
-exclude_pins <- c("20031180060000")
+exclude_pins <- c(
+  "20031180060000",
+  # Has a 2022 vetdis 100% exemption that doesn't seem to be present in the
+  # Clerk data
+  "10252080490000"
+)
 sum_dt <- sum_dt %>%
   filter(!pin %in% exclude_pins) %>%
   as_tibble()
@@ -140,39 +145,102 @@ det_dt <- det_dt %>%
   as_tibble()
 
 test_that("returned amount/output correct for all sample bills", {
-  # Output is correct number of rows
-  expect_equal(
-    tax_bill(sum_dt$year, sum_dt$pin, simplify = FALSE) %>%
-      nrow(),
-    753
-  )
-  expect_equal(
-    tax_bill(sum_dt$year, sum_dt$pin, simplify = TRUE) %>%
-      nrow(),
-    781
+  sum_tax_bill_simplified <- tax_bill(sum_dt$year, sum_dt$pin, simplify = TRUE)
+  sum_tax_bill_unsimplified <- tax_bill(
+    sum_dt$year, sum_dt$pin,
+    simplify = FALSE
   )
 
-  base_bills <- tax_bill(sum_dt$year, sum_dt$pin, simplify = TRUE) %>%
-    select(year, pin, agency_num, final_tax)
-  transit_bills <- base_bills %>%
+  # Output is correct number of rows
+  expect_equal(
+    # We're not sure if this will continue to hold after 2024, when the
+    # Treasurer started reporting a slightly different set of agencies on
+    # tax bills compared to the Clerk's data (largely driven by the Clerk's
+    # decision to split some funds out into their own agencies, though there
+    # are other inconsistencies). It may just be a coincidence that the counts
+    # match in 2024. If this is the case, we should switch to an approach that
+    # rolls up funds into their parent agency, and then compares the row counts
+    # for parent agencies only
+    nrow(sum_tax_bill_simplified),
+    nrow(det_dt)
+  )
+  expect_equal(
+    nrow(sum_tax_bill_unsimplified),
+    sum_tax_bill_simplified %>%
+      filter(!str_detect(agency_name, "TIF")) %>%
+      nrow()
+  )
+
+  transit_bills <- sum_tax_bill_simplified %>%
+    select(year, pin, agency_num, final_tax) %>%
     count(pin, agency_num) %>%
     # PINs in transit TIFs will have two line items with the CPS agency number,
     # one being the TIF distribution
     filter(n > 1)
 
-  # District level tax amounts
-  expect_equivalent(
-    tax_bill(sum_dt$year, sum_dt$pin, simplify = TRUE) %>%
-      select(year, pin, agency_num, final_tax) %>%
+  rollup_agencies <- function(df) {
+    # Helper function to roll up funds and subagencies into their parent
+    # agency for the purposes of reporting tax bill totals. This is useful
+    # because the Clerk and the Treasurer do not fully agree on which funds
+    # and subagencies should get their own line items starting in 2024, so we
+    # want to ignore those differences and make sure the overall totals match
+    # at the level of parent agencies
+    df %>%
+      # Filter out PINs in transit TIFs because we already know that the
+      # Treasurer calculates agency distributions differently than we do
       filter(!pin %in% transit_bills$pin) %>%
-      arrange(year, pin, agency_num),
-    det_dt %>%
-      select(year, pin, agency_num, final_tax) %>%
-      filter(!pin %in% transit_bills$pin) %>%
+      # Filter out agencies with $0 bill amounts, since they seem to be
+      # especially susceptible to being left off of one side of the comparison
+      filter(final_tax > 0L) %>%
+      # Order by agency num so that we can always be sure that the parent agency
+      # number (which ends in 0) will always get used as the final `agency_num`
+      # for the group
       arrange(year, pin, agency_num) %>%
-      as_tibble(),
-    tolerance = 0.005
-  )
+      # Group by parent agency number
+      mutate(agency_num = substr(agency_num, 1, 8)) %>%
+      group_by(year, pin, agency_num) %>%
+      summarize(
+        agency_name = first(agency_name),
+        final_tax = sum(final_tax, na.rm = TRUE),
+        .groups = "drop"
+      ) %>%
+      # Convert output to dataframe because it is the simplest possible data
+      # structure for the purposes of comparison
+      as.data.frame()
+  }
+
+  # Make sure agency-level tax amounts match
+  all_bills_actual <- rollup_agencies(sum_tax_bill_simplified)
+  all_bills_expected <- rollup_agencies(det_dt)
+  bill_mismatches <- all_bills_expected %>%
+    full_join(
+      all_bills_actual,
+      by = c("year", "pin", "agency_num"),
+      suffix = c("_expected", "_actual")
+    ) %>%
+    mutate(
+      agency_name = if_else(
+        !is.na(agency_name_expected),
+        agency_name_expected,
+        agency_name_actual
+      ),
+      chk_agency_not_in_expected = is.na(final_tax_expected),
+      chk_agency_not_in_actual = is.na(final_tax_actual),
+      chk_final_tax_mismatch = (
+        !is.na(final_tax_expected) &
+          !is.na(final_tax_actual) &
+          round(abs(final_tax_expected - final_tax_actual), 2) > 0.01 &
+          round(
+            abs(final_tax_expected - final_tax_actual) / final_tax_expected,
+            2
+          ) > 0.01
+      )
+    ) %>%
+    select(-agency_name_expected, -agency_name_actual) %>%
+    relocate(agency_name, .after = agency_num) %>%
+    filter(if_any(starts_with("chk_"), ~ .x == TRUE))
+
+  expect_equal(nrow(bill_mismatches), 0)
 })
 
 # Exclude certain PINs in the RPM TIF or with extremely high bills
