@@ -103,7 +103,7 @@ agency_fund <- map_dfr(file_names, function(file) {
     agency_num = str_pad(agency_num, 9, "left", "0"),
     fund_num = str_pad(fund_num, 3, "left", "0"),
     loss_pct = ifelse(
-      year == 2011 & agency_num == "030380104" & fund_num == "001",
+      year == 2011 & agency_num == "030380104" & fund_num == "001000",
       0,
       loss_pct
     ),
@@ -126,7 +126,7 @@ agency_fund <- map_dfr(file_names, function(file) {
     rate_ceiling = ifelse(final_rate == 0 & final_levy == 0, 0, rate_ceiling),
     ptell_reduced_levy = na_if(ptell_reduced_levy, 0),
     final_rate = ifelse(
-      agency_num == "050200000" & fund_num == "202" & year == 2006,
+      agency_num == "050200000" & fund_num == "202000" & year == 2006,
       0,
       final_rate
     )
