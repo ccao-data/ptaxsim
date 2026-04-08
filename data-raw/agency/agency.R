@@ -297,8 +297,7 @@ agency <- map_dfr(file_names, function(file) {
     home_rule_ind = home_rule_ind %in% c("Y", "HR", "No PTELL"),
     home_rule_ind = replace_na(home_rule_ind, FALSE),
     cty_overlap_eav = ifelse(year < "2024",
-      rowSums(across(collar_counties
-      )),
+      rowSums(across(collar_counties)),
       cty_overlap_eav
     ),
     across(
