@@ -20,10 +20,8 @@ CREATE TABLE agency (
     total_levy              bigint   CHECK(total_levy >= 0)            NOT NULL,
     total_max_levy          bigint   CHECK(total_max_levy >= 0)        NOT NULL,
     total_prelim_rate       double   CHECK(total_prelim_rate >= 0)     NOT NULL,
-    total_reduced_levy      bigint   CHECK(total_reduced_levy >= 0)            ,
     total_final_levy        bigint   CHECK(total_final_levy >= 0)      NOT NULL,
     total_final_rate        double   CHECK(total_final_rate >= 0)      NOT NULL,
-    reduction_type          varchar                                            ,
     reduction_pct           double   CHECK(reduction_pct >= 0
                                      AND   reduction_pct <= 1)                 ,
     total_non_cap_ext       double   CHECK(total_non_cap_ext >= 0)             ,
