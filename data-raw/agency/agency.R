@@ -248,6 +248,9 @@ agency <- map_dfr(file_names, function(file) {
     rename_with(~"reduction_pct", any_of(c(
       "reduction_percent", "reduction_factor", "clerk_reduction_factor"
     ))) %>%
+    rename_with(~"total_non_cap_ext", any_of(c(
+      "total_non_cap_ext", "final_non_cap_ext", "total_non_cap_extension"
+    ))) %>%
     rename_with(~"total_ext", any_of(c(
       "total_ext", "final_ext",
       "grand_total_ext"
@@ -267,8 +270,8 @@ agency <- map_dfr(file_names, function(file) {
       agency_num = agency, agency_name, home_rule_ind,
       lim_numerator, lim_denominator, lim_rate, prior_eav, curr_new_prop,
       ends_with("_eav"), percent_burden,
-      reduction_pct,
       starts_with("grand_total_"),
+      reduction_pct, total_non_cap_ext,
       any_of("total_ext")
     ) %>%
     rename_with(~ paste0("cty_", .x), ends_with("_eav")) %>%
@@ -329,7 +332,7 @@ agency <- map_dfr(file_names, function(file) {
     across(
       c(
         lim_rate, pct_burden, total_prelim_rate, total_final_rate,
-        reduction_pct, total_ext
+        reduction_pct, total_non_cap_ext, total_ext
       ),
       ~ as.double(.x)
     )
