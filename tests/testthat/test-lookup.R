@@ -286,7 +286,9 @@ test_that("lookup values/data are correct", {
       3178945619, 286280738, 0, 638172798
     )
   )
+})
 
+test_that("agency lookup matches snapshots", {
   local_edition(3) # Enable snapshot testing
   expect_snapshot_value(
     # Dataframe is necessary for json serialization in expect_snapshot_value,
