@@ -36,13 +36,13 @@ Table of Contents
 > installation](#database-installation) for details.
 >
 > [**Link to PTAXSIM
-> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2023.0.0.db.bz2)
-> (DB version: 2023.0.0; Last updated: 2024-08-05 19:43:42)
+> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2024.0.0-alpha.1.db.bz2)
+> (DB version: 2024.0.0; Last updated: 2026-03-18 20:38:53)
 
 PTAXSIM is an R package/database to approximate Cook County property tax
 bills. It uses real assessment, exemption, TIF, and levy data to
 generate historic, line-item tax bills (broken out by taxing district)
-for any property from 2006 to 2023. Given some careful assumptions and
+for any property from 2006 to 2024. Given some careful assumptions and
 data manipulation, it can also provide hypothetical, but factually
 grounded, answers to questions such as:
 
@@ -172,9 +172,9 @@ database:
 
 1.  Download the compressed database file from the CCAO’s public S3
     bucket. [Link
-    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2023.0.0.db.bz2).
+    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2024.0.0-alpha.1.db.bz2).
 2.  (Optional) Rename the downloaded database file by removing the
-    version number, i.e. ptaxsim-2023.0.0.db.bz2 becomes
+    version number, i.e. ptaxsim-2024.0.0.db.bz2 becomes
     `ptaxsim.db.bz2`.
 3.  Decompress the downloaded database file. The file is compressed
     using [bzip2](https://sourceware.org/bzip2/).
@@ -640,7 +640,7 @@ multiple_years_plot <- ggplot(data = multiple_years_summ) +
 
 </details>
 
-<img src="man/figures/README-multi_year_4-1.png" width="85%" />
+<img src="man/figures/README-multi_year_4-1.png" alt="" width="85%" />
 
 For more advanced usage, such as counterfactual analysis, see the
 [vignettes
@@ -662,8 +662,8 @@ data was available in mid-2020.
 | agency_info | Clerk + imputed | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/agency/agency.R](data-raw/agency/agency.R) | Taxing district name, type, and subtype |
 | agency_fund | Clerk | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/agency/agency.R](data-raw/agency/agency.R) | Funds and line-items that contribute to each district’s extension |
 | agency_fund_info | Clerk | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/agency/agency.R](data-raw/agency/agency.R) | Fund name and whether the fund is statutorily capped |
-| cpi | IDOR | [History of CPI’s Used for the PTELL](https://www2.illinois.gov/rev/localgovernments/property/Documents/cpihistory.pdf) | [data-raw/cpi/cpi.R](data-raw/cpi/cpi.R) | CPI-U used to calculate PTELL limits |
-| eq_factor | Clerk | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/eq_factor/eq_factor.R](data-raw/eq_factor/eq_factor.R) | Equalization factor applied to AV to get EAV |
+| cpi | IDOR | [History of CPI’s Used for the PTELL](https://tax.illinois.gov/localgovernments/property/cpihistory.html) | [data-raw/cpi/cpi.R](data-raw/cpi/cpi.R) | CPI-U used to calculate PTELL limits |
+| eq_factor | IDOR | Manually created from [IDOR press releases](https://tax.illinois.gov/research/press-releases-archive.html) | [data-raw/eq_factor/eq_factor.R](data-raw/eq_factor/eq_factor.R) | Equalization factor applied to AV to get EAV |
 | pin | Clerk + Treasurer | CLERKVALUES and TAXBILLAMOUNTS internal SQL tables | [data-raw/pin/pin.R](data-raw/pin/pin.R) | PIN-level tax code, AV, and exemptions |
 | tax_code | Clerk | [Tax Extension - Tax Code Agency Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/tax_code/tax_code.R](data-raw/tax_code/tax_code.R) | Crosswalk of tax codes by district |
 | tif | Clerk | [TIF Reports - Cook County Summary Reports](https://www.cookcountyclerkil.gov/property-taxes/tifs-tax-increment-financing/tif-reports) | [data-raw/tif/tif.R](data-raw/tif/tif.R) | TIF revenue, start year, and cancellation year |

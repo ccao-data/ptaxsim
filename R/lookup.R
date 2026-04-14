@@ -24,6 +24,7 @@ globalVariables(c("ptaxsim_db_conn", "."))
 #' lookup_agency(2019, "73105")
 #' lookup_pin(2018:2019, "20304190020000")
 #' lookup_tif(2019, "73105")
+#' lookup_pin_tif(2024, "02153010581083")
 #' }
 #' @md
 #' @family lookups
@@ -220,6 +221,7 @@ lookup_pin <- function(year,
           p.exe_vet_dis_lt50,
           p.exe_vet_dis_50_69,
           p.exe_vet_dis_ge70,
+          p.exe_vet_dis_100,
           p.exe_abate
       FROM lookup_pin lp
       INNER JOIN pin p
@@ -347,7 +349,9 @@ lookup_tax_code <- function(year, pin, conn = ptaxsim_db_conn) {
 
 #' @describeIn lookup_dt Lookup any TIFs that apply to a given tax code and
 #'   year. Returns a \code{data.table} with only 1 row per tax code and year,
-#'   or 0 rows if the tax code is not part of a TIF.
+#'   or 0 rows if the tax code is not part of a TIF. Returns 0 rows for any
+#'   input year after 2023. For tax years 2024 and later, use
+#'   \code{\link{lookup_pin_tif}} to lookup a PIN's TIF share.
 #'
 #' @export
 lookup_tif <- function(year, tax_code, conn = ptaxsim_db_conn) {
@@ -359,6 +363,10 @@ lookup_tif <- function(year, tax_code, conn = ptaxsim_db_conn) {
     check_db_conn(conn),
     check_db_sync(conn)
   )
+
+  # Make sure to remove any years after 2023 from the year vector, since
+  # otherwise we risk silently returning null TIF shares for post-2024 TIFs
+  year <- year[year <= 2023]
 
   tif_share <- NULL
   dt <- DBI::dbGetQuery(
@@ -389,6 +397,56 @@ lookup_tif <- function(year, tax_code, conn = ptaxsim_db_conn) {
   )
 
   dt <- data.table::setDT(dt, key = c("year", "tax_code", "agency_num"))
+  dt[, tif_share := as.numeric(tif_share)]
+
+  return(dt)
+}
+
+#' @describeIn lookup_dt Lookup any PINs within a TIF
+#'   year. Returns a \code{data.table} with only 1 row per PIN and year,
+#'   or 0 rows if the PIN is not in a TIF. Returns 0 rows for any input year
+#'   prior to 2024. For tax years 2023 and earlier, use
+#'   \code{\link{lookup_tif}} to lookup a tax code's TIF share.
+#'
+#' @export
+lookup_pin_tif <- function(year, pin, conn = ptaxsim_db_conn) {
+  stopifnot(
+    is.numeric(year),
+    all(nchar(pin) == 14 | is.na(pin)),
+    check_db_conn(conn),
+    check_db_sync(conn)
+  )
+
+  tif_share <- NULL
+  dt <- DBI::dbGetQuery(
+    conn,
+    statement = glue::glue_sql("
+      SELECT
+          pt.year,
+          pt.pin,
+          pt.tax_code_num AS tax_code,
+          pt.agency_num,
+          ai.agency_name,
+          ai.major_type AS agency_major_type,
+          ai.minor_type AS agency_minor_type,
+          pt.pin_distribution_pct / 100 AS tif_share
+      FROM pin_tif_distribution pt
+      LEFT JOIN tif_crosswalk tc
+          ON pt.year = tc.year
+          AND pt.agency_num = tc.agency_num_dist
+      LEFT JOIN agency_info ai
+          ON tc.agency_num_final = ai.agency_num
+      WHERE pt.year IN ({years*})
+      AND pt.pin IN ({pins*})
+      ORDER BY pt.year, pt.pin, pt.tax_code_num, pt.agency_num
+    ",
+      years = unique(year),
+      pins = unique(pin),
+      .con = conn
+    )
+  )
+
+  dt <- data.table::setDT(dt, key = c("year", "pin", "agency_num"))
   dt[, tif_share := as.numeric(tif_share)]
 
   return(dt)

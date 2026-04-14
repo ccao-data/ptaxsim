@@ -175,7 +175,7 @@ check_pin_dt_str <- function(pin_dt) {
     "exe_longtime_homeowner" = "numeric", "exe_disabled" = "numeric",
     "exe_vet_returning" = "numeric", "exe_vet_dis_lt50" = "numeric",
     "exe_vet_dis_50_69" = "numeric", "exe_vet_dis_ge70" = "numeric",
-    "exe_abate" = "numeric"
+    "exe_vet_dis_100" = "numeric", "exe_abate" = "numeric"
   )
 
   if (!identical(pin_dt_str, sapply(pin_dt, mode))) {
@@ -226,6 +226,39 @@ check_tif_dt_str <- function(tif_dt) {
       "tif_dt must have the same data.table keys as the agency data ",
       "returned by lookup_tif(). Please ensure that the year, tax_code, ",
       "and agency_num columns are set as data.table keys"
+    )
+  }
+
+  return(TRUE)
+}
+
+
+check_pin_tif_dt_str <- function(pin_tif_dt) {
+  stopifnot(
+    is.data.frame(pin_tif_dt),
+    data.table::is.data.table(pin_tif_dt)
+  )
+
+  pin_tif_dt_str <- c(
+    "year" = "numeric", "pin" = "character", "tax_code" = "character",
+    "agency_num" = "character", "agency_name" = "character",
+    "agency_major_type" = "character", "agency_minor_type" = "character",
+    "tif_share" = "numeric"
+  )
+
+  if (!identical(pin_tif_dt_str, sapply(pin_tif_dt, mode))) {
+    stop(
+      "pin_tif_dt must be in the same format as the data returned by ",
+      "lookup_pin_tif(). Ensure all column names and types are the same"
+    )
+  }
+
+  keys <- c("year", "pin", "agency_num")
+  if (!all(keys %in% data.table::key(pin_tif_dt))) {
+    stop(
+      "pin_tif_dt must have the same data.table keys as the data returned by ",
+      "lookup_pin_tif(). Please ensure that the year, pin, and agency_num ",
+      "columns are set as data.table keys"
     )
   }
 

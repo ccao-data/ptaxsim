@@ -27,6 +27,13 @@ cpi <- pdftools::pdf_text(pdf = "data-raw/cpi/cpihistory.pdf") %>%
   unlist() %>%
   tibble(vals = `.`) %>%
   mutate(vals = str_squish(vals)) %>%
+  # Remove footer lines that do not contain any data
+  filter(
+    !str_detect(
+      vals,
+      regex("printed by the authority|ptax-115", ignore_case = TRUE)
+    )
+  ) %>%
   separate_wider_delim(
     col = vals,
     names = c("year", "cpi", "pct", "ptell_cook", "levy_year", "year_paid"),
