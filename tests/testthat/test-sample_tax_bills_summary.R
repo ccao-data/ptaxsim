@@ -4,12 +4,13 @@ context("Test sample_tax_bills_summary")
 
 library(data.table)
 library(dplyr)
+library(here)
 library(readr)
 library(stringr)
 
 test_that("sample_tax_bills_summary PIN-years match sample_tax_bill PDFs", {
   pdf_pin_years <- list.files(
-    "data-raw/sample_tax_bills",
+    here("data-raw", "sample_tax_bills"),
     pattern = "\\.pdf$",
     full.names = FALSE
   ) %>%
