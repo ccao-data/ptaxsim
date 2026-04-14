@@ -103,7 +103,7 @@ agency_fund <- map_dfr(file_names, function(file) {
     agency_num = str_pad(agency_num, 9, "left", "0"),
     fund_num = str_pad(fund_num, 3, "left", "0"),
     loss_pct = ifelse(
-      year == 2011 & agency_num == "030380104" & fund_num == "001",
+      year == 2011 & agency_num == "030380104" & fund_num == "001000",
       0,
       loss_pct
     ),
@@ -126,7 +126,7 @@ agency_fund <- map_dfr(file_names, function(file) {
     rate_ceiling = ifelse(final_rate == 0 & final_levy == 0, 0, rate_ceiling),
     ptell_reduced_levy = na_if(ptell_reduced_levy, 0),
     final_rate = ifelse(
-      agency_num == "050200000" & fund_num == "202" & year == 2006,
+      agency_num == "050200000" & fund_num == "202000" & year == 2006,
       0,
       final_rate
     )
@@ -152,11 +152,19 @@ agency_fund <- map_dfr(file_names, function(file) {
 
 # agency_fund_info -------------------------------------------------------------
 
+# Create fund_type crosswalk
+fund_type_cw <- agency_fund %>%
+  filter(year < 2024) %>%
+  group_by(fund_type_num) %>%
+  summarise(fund_type_name = calc_mode(fund_name))
+
+
 # Breakout the fund names into their own table
 agency_fund_info <- agency_fund %>%
-  group_by(fund_type_num, fund_num) %>%
+  group_by(agency_num, fund_type_num, fund_num) %>%
   summarise(fund_name = calc_mode(fund_name)) %>%
   ungroup() %>%
+  left_join(fund_type_cw) %>%
   arrange(fund_num) %>%
   mutate(
     fund_name = str_trim(str_squish(fund_name)),
@@ -185,6 +193,22 @@ arrow::write_parquet(
 
 
 # agency -----------------------------------------------------------------------
+
+# Define collar county EAV fields
+collar_counties <-
+  c(
+    "cty_dupage_eav",
+    "cty_lake_eav",
+    "cty_will_eav",
+    "cty_kane_eav",
+    "cty_mchenry_eav",
+    "cty_dekalb_eav",
+    "cty_kankakee_eav",
+    "cty_kendall_eav",
+    "cty_grundy_eav",
+    "cty_lasalle_eav",
+    "cty_livingston_eav"
+  )
 
 # Load the overview of each agency file. This includes the agency name, total
 # EAV, final extension, and much more
@@ -224,6 +248,9 @@ agency <- map_dfr(file_names, function(file) {
     rename_with(~"reduction_pct", any_of(c(
       "reduction_percent", "reduction_factor", "clerk_reduction_factor"
     ))) %>%
+    rename_with(~"total_non_cap_ext", any_of(c(
+      "total_non_cap_ext", "final_non_cap_ext", "total_non_cap_extension"
+    ))) %>%
     rename_with(~"total_ext", any_of(c(
       "total_ext", "final_ext",
       "grand_total_ext"
@@ -243,8 +270,8 @@ agency <- map_dfr(file_names, function(file) {
       agency_num = agency, agency_name, home_rule_ind,
       lim_numerator, lim_denominator, lim_rate, prior_eav, curr_new_prop,
       ends_with("_eav"), percent_burden,
-      reduction_pct,
       starts_with("grand_total_"),
+      reduction_pct, total_non_cap_ext,
       any_of("total_ext")
     ) %>%
     rename_with(~ paste0("cty_", .x), ends_with("_eav")) %>%
@@ -270,18 +297,7 @@ agency <- map_dfr(file_names, function(file) {
     home_rule_ind = home_rule_ind %in% c("Y", "HR", "No PTELL"),
     home_rule_ind = replace_na(home_rule_ind, FALSE),
     cty_overlap_eav = ifelse(year < "2024",
-      rowSums(across(starts_with(c(
-        "cty_dupage_eav",
-        "cty_lake_eav",
-        "cty_will_eav",
-        "cty_kane_eav",
-        "cty_mchenry_eav",
-        "cty_dekalb_eav",
-        "cty_kankakee_eav",
-        "cty_grundy_eav",
-        "cty_lasalle_eav",
-        "cty_livingston_eav"
-      )))),
+      rowSums(across(all_of(collar_counties))),
       cty_overlap_eav
     ),
     across(
@@ -315,12 +331,12 @@ agency <- map_dfr(file_names, function(file) {
     across(
       c(
         lim_rate, pct_burden, total_prelim_rate, total_final_rate,
-        reduction_pct, total_ext
+        reduction_pct, total_non_cap_ext, total_ext
       ),
       ~ as.double(.x)
     )
   ) %>%
-  select(-total_reduced_levy) %>%
+  select(-total_reduced_levy, -all_of(collar_counties)) %>%
   relocate(total_ext, .after = everything())
 
 # Tax year 2013 is missing the total levy columns from its overview sheet, but
@@ -575,19 +591,8 @@ agency_legacy_cw <-
   unique() %>%
   # Account for error in Clerk's report which lists Village of Skokie Library
   # Fund twice
-  filter(!(agency_num == "031170001" & agency_num_24 == "031170000")) %>%
-  # Correct error in Clerk's report which lists incorrect agency number for
-  # the TIF VIL OF OLYMPIA FIELDS-GOV HWY/VOLL
-  mutate(
-    across(
-      c(agency_num, agency_num_24),
-      ~ if_else(
-        agency_name_24 == "TIF VIL OF OLYMPIA FIELDS-GOV HWY/VOLL",
-        "030930502",
-        .x
-      )
-    )
-  )
+  filter(!(agency_num == "031170001" & agency_num_24 == "031170000"))
+
 
 agency_info <- agency_info %>%
   left_join(agency_legacy_cw, by = "agency_num") %>%
