@@ -300,6 +300,7 @@ test_that("agency lookup matches snapshots", {
     variant = "lookup_agency_over_time"
   )
   expect_snapshot_value(
+    # We expect this to change every year as we add new bills to the summary DF
     as.data.frame(lookup_agency(sum_df$year, sum_df$tax_code)),
     style = "json2",
     variant = "lookup_agency_summary"
