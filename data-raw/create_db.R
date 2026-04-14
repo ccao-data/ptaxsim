@@ -74,8 +74,10 @@ desc_url_package <- desc %>%
   str_extract("(?<=URL: ).*(?=,)")
 
 db_base_url <- "https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/"
-db_full_url <- paste0(db_base_url, "ptaxsim-", db_version,
-                      "-", db_version_label, ".db.bz2")
+db_full_url <- paste0(
+  db_base_url, "ptaxsim-", db_version,
+  "-", db_version_label, ".db.bz2"
+)
 
 # Load agency files to get min and max year
 agency_df <- read_parquet(file.path(remote_bucket, "agency", "part-0.parquet"))
@@ -129,7 +131,8 @@ datasets <- c("pin", "tax_code")
 for (dataset in datasets) {
   message("Now loading: ", dataset)
   df <- collect(arrow::open_dataset(file.path(remote_bucket, dataset),
-                                    unify_schemas = TRUE))
+    unify_schemas = TRUE
+  ))
   DBI::dbAppendTable(conn, dataset, df)
 }
 
