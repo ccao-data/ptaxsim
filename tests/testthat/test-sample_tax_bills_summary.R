@@ -9,8 +9,11 @@ library(readr)
 library(stringr)
 
 test_that("sample_tax_bills_summary PIN-years match sample_tax_bill PDFs", {
+  pdf_dir <- here("data-raw", "sample_tax_bills")
+  if (!dir.exists(pdf_dir)) stop("PDF directory not found: ", pdf_dir)
+
   pdf_pin_years <- list.files(
-    here("data-raw", "sample_tax_bills"),
+    pdf_dir,
     pattern = "\\.pdf$",
     full.names = FALSE
   ) %>%
