@@ -336,7 +336,7 @@ agency <- map_dfr(file_names, function(file) {
       ~ as.double(.x)
     )
   ) %>%
-  select(-total_reduced_levy, -collar_counties) %>%
+  select(-total_reduced_levy, -all_of(collar_counties)) %>%
   relocate(total_ext, .after = everything())
 
 # Tax year 2013 is missing the total levy columns from its overview sheet, but
