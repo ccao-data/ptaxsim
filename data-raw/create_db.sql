@@ -8,7 +8,7 @@ CREATE TABLE agency (
     home_rule_ind           boolean                                    NOT NULL,
     agg_ext_base_year       int      CHECK(agg_ext_base_year >= 2003)          ,
     lim_numerator           bigint   CHECK(lim_numerator >= 0)                 ,
-    lim_denominator         bigint   CHECK(lim_denominator > 0)                ,                      ,
+    lim_denominator         bigint   CHECK(lim_denominator > 0)                ,
     lim_rate                double   CHECK(lim_rate >= 0)                      ,
     prior_eav               bigint   CHECK(prior_eav >= 0)                     ,
     curr_new_prop           bigint                                     NOT NULL,
