@@ -3,7 +3,7 @@ Type: Package
 Title: Calculate Cook County Property Tax Bills and Simulate Scenarios
 Version: 1.1.0
 Authors@R: c(
-    person(given = "Kyra", family = "Sturgill", email = "kyra.sturgill@cookcountyil.gov, role = c("aut", "cre")),
+    person(given = "Kyra", family = "Sturgill", email = "kyra.sturgill@cookcountyil.gov", role = c("aut", "cre")),
     person(given = "Dan", family = "Snow", role = c("aut")),
     person(given = Jean, family = "Cochrane", role = c("aut")),
     person(given = "Rob", family = "Ross", role = c("aut")),
