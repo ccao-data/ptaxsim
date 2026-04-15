@@ -76,8 +76,11 @@ desc_url_package <- desc %>%
 db_base_url <- "https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/"
 db_full_url <- paste0(
   db_base_url, "ptaxsim-", db_version,
-  if (nzchar(db_pre_release_version)) paste0("-", db_pre_release_version)
-  else "",
+  if (nzchar(db_pre_release_version)) {
+    paste0("-", db_pre_release_version)
+  } else {
+    ""
+  },
   ".db.bz2"
 )
 
@@ -134,9 +137,9 @@ for (dataset in datasets) {
   message("Now loading: ", dataset)
   df <- collect(arrow::open_dataset(file.path(remote_bucket, dataset),
     # Starting in 2024, there are some major changes regarding the columns
-	# that are present in these data files. That means we need to unify the
-	# schemas across files, since otherwise arrow will take the schema from
-	# the first file it finds in the dataset
+    # that are present in these data files. That means we need to unify the
+    # schemas across files, since otherwise arrow will take the schema from
+    # the first file it finds in the dataset
     unify_schemas = TRUE
   ))
   DBI::dbAppendTable(conn, dataset, df)
