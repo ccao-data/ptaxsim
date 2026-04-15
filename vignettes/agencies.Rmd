@@ -35,7 +35,7 @@ library(ggplot2)
 library(tidyr)
 devtools::load_all()
 
-ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.2.db"))
+ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.2024.0.0-alpha.2.db"))
 ```
 
 ```{r, echo=FALSE}
@@ -125,6 +125,7 @@ Now that we have the correct agency numbers for all years, we can select and agg
 
 Many of the fields in the `agencies` table, which come from the Clerk's agency rate report, relate to PTELL calculations. Because the Chicago is a home rule municipality, it is not subject to PTELL (Property Tax Extension Law Limit) as imposed by the State of Illinois, so these fields will not contain relevant info. However, the City of Chicago imposes [its own limits](https://codelibrary.amlegal.com/codes/chicago/latest/chicago_il/0-0-0-2608573) which mirror PTELL's limits which prohibit a taxing agency from increasing its levy more than the rate of inflation or 5%, whichever is less. 
 
+Let's create an object called `chi_levy` that contains final total levy, taxable aggregate EAV (or the tax base), and the amount of EAV designated as "New Property". New Property is defined as EAV from expiring TIFs, new constriction, or expiring incentives.
 ```{r}
 chi_levy <- 
   chi_agencies %>%
@@ -138,7 +139,7 @@ chi_levy <-
     curr_new_prop = first(curr_new_prop)
   )
 ```
-PTELL, as well as Chicago's property tax limitation ordinance, contain loopholes that allow taxing agencies to [increase their levies beyond the rate of inflation](https://civicfed.org/press/new-report-finds-illinois-property-tax-cap-law-not-working-intended). Let's see how Chicago's levy has fared compared to the inflation rate since 2006.
+PTELL, as well as Chicago's property tax limitation ordinance, contain loopholes that allow taxing agencies to [increase their levies beyond the rate of inflation](https://civicfed.org/press/new-report-finds-illinois-property-tax-cap-law-not-working-intended). Let's see how Chicago's levy has fared compared to inflation  since 2006.
 
 To do this we can pull CPI data from the PTAXSIM database - we include the CPI tables published annually by the Illinois Department of Revenue (IDOR) for the purpose of setting the PTELL limit.
 
@@ -158,16 +159,23 @@ cpi <- DBI::dbGetQuery(
 
 First, let's convert each year's levy to be in terms of 2006 dollars using the consumer price index (CPI). This will help us understand the degree to which the levy has been adjusted on account of inflation vs. increasing revenue.
 
+The code below queries CPI data, then calculates its percent change since 2006. We will need to add the fields `agency_num` and `agency_name` in preparation of combining it with the `chi_levy` data. 
+
 ```{r}
-cpi <- cpi %>%
-  mutate(multiplier = cpi/cpi[year == 2006])
-
-chi_levy_adj <- chi_levy %>%
-  left_join(cpi, "year") %>%
+cpi <- DBI::dbGetQuery(
+  ptaxsim_db_conn,
+  "
+  SELECT *
+  FROM cpi
+  "
+) %>%
   mutate(
-    total_final_levy_adj = total_final_levy / multiplier
-  ) 
-
+    pct_inc = (cpi / cpi[year == 2006] - 1) * 100,
+    agency_num = "100",
+    agency_name = "CPI-U"
+  ) %>%
+  filter(year >= 2006) %>%
+  select(year, agency_num, agency_name, pct_inc)
 ```
 
 Plotting Chicago's total property tax levy from 2006 to 2024 in both 2006 dollars and nominal dollars, we can see that the levy remained steady from 2006 to 2014. The levy actually decreased slightly in real dollars given the levy was not increased to account for inflation during this time. Then in 2015, City begins increasing its levy significantly due to State legislation that dictates [funding requirements for Chicago's Fire and Police pension funds](https://www.civicfed.org/civic-federation/blog/chicago-police-and-fire-pension-funding-changes-become-law).
