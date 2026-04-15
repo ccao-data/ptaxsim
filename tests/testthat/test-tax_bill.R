@@ -244,11 +244,15 @@ test_that("amounts correct for non-transit-TIF sample bills", {
       chk_final_tax_mismatch = (
         !is.na(final_tax_expected) &
           !is.na(final_tax_actual) &
+          # Check for absolute differences greater than one cent (we expect
+          # occasional differences of one cent due to rounding)
           round(abs(final_tax_expected - final_tax_actual), 2) > 0.01 &
+          # Check for relative differences greater than 0.1% of the expected
+          # value
           round(
             abs(final_tax_expected - final_tax_actual) / final_tax_expected,
-            2
-          ) > 0.01
+            3
+          ) > 0.001
       )
     ) %>%
     select(-agency_name_expected, -agency_name_actual) %>%
