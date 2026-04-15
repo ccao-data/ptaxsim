@@ -4,7 +4,8 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE agency (
     year                    int                                        NOT NULL,
     agency_num              varchar(9)                                 NOT NULL,
-    authority_num           varchar(6)                                         ,
+    authority_num           varchar(6) CHECK(year < 2024
+                                       OR authority_num IS NOT NULL)           ,
     home_rule_ind           boolean                                    NOT NULL,
     agg_ext_base_year       int      CHECK(agg_ext_base_year >= 2003)          ,
     lim_numerator           bigint   CHECK(lim_numerator >= 0)                 ,
@@ -58,15 +59,15 @@ CREATE TABLE agency_fund (
     agency_num              varchar(9)                                 NOT NULL,
     fund_num                varchar(3)                                 NOT NULL,
     levy                    bigint   CHECK(levy >= 0)                  NOT NULL,
-    loss_pct                double   CHECK(loss_pct >= 0)              NOT NULL,
+    loss_pct                double   CHECK(loss_pct >= 0
+                                     AND   loss_pct <= 1)              NOT NULL,
     levy_plus_loss          bigint   CHECK(levy_plus_loss >= 0)        NOT NULL,
     rate_ceiling            double   CHECK(rate_ceiling >= 0)          NOT NULL,
     max_levy                bigint   CHECK(max_levy >= 0)              NOT NULL,
     prelim_rate             double   CHECK(prelim_rate >= 0)           NOT NULL,
-    ptell_reduced_levy      bigint                                             ,
-    ptell_reduced_ind       boolean                                            ,
-    final_levy              bigint                                     NOT NULL,
-    final_rate              double   CHECK(final_rate >= 0)                    ,
+    ptell_reduced_levy      bigint   CHECK(ptell_reduced_levy >= 0)            ,
+    final_levy              bigint   CHECK(final_levy >= 0)            NOT NULL,
+    final_rate              double   CHECK(final_rate >= 0)            NOT NULL,
     PRIMARY KEY (year, agency_num, fund_num),
     FOREIGN KEY (year, agency_num) REFERENCES agency(year, agency_num)
 ) WITHOUT ROWID;
@@ -248,7 +249,7 @@ CREATE TABLE pin_tif_distribution (
     transit_tif_to_tif      double   CHECK(transit_tif_to_tif >= 0)            ,
     transit_tif_to_dist     double   CHECK(transit_tif_to_dist >= 0)           ,
     is_transit_tif          boolean                                    NOT NULL,
-    PRIMARY KEY (year, pin, agency_num, tax_code_num)
+    PRIMARY KEY (year, pin, agency_num)
     FOREIGN KEY (year, agency_num) REFERENCES tif_crosswalk(year, agency_num_dist)
 ) WITHOUT ROWID;
 

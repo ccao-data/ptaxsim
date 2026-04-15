@@ -33,12 +33,12 @@ db_send_queries <- function(conn, sql) {
 }
 
 
-# Set the database version. This gets incremented manually whenever the database
-# changes. This is checked against Config/Requires_DB_Version in the DESCRIPTION
-# file via check_db_version(). Schema is:
-# "MAX_YEAR_OF_DATA.MAJOR_VERSION.MINOR_VERSION"
+# "MAX_YEAR_OF_DATA.MAJOR_VERSION.MINOR_VERSION-PRE_RELEASE_VERSION"
 db_version <- "2024.0.0"
-db_version_label <- "alpha.2" # informational only, not compared
+# Optional pre-release identifier. Informational only, not compared.
+# Set this to an empty string for a public release, or to a string like
+# "alpha.1" for a release candidate
+db_pre_release_version <- "alpha.2"
 
 # Set the package version required to use this database. This is checked against
 # Version in the DESCRIPTION file. Basically, we have a two-way check so that
@@ -76,7 +76,9 @@ desc_url_package <- desc %>%
 db_base_url <- "https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/"
 db_full_url <- paste0(
   db_base_url, "ptaxsim-", db_version,
-  "-", db_version_label, ".db.bz2"
+  if (nzchar(db_pre_release_version)) paste0("-", db_pre_release_version)
+  else "",
+  ".db.bz2"
 )
 
 # Load agency files to get min and max year
