@@ -66,5 +66,5 @@ Depends:
 Remotes:
     paleolimbot/geoarrow,
     ropensci/tabulapdf
-Config/Requires_DB_Version: 2024.0.0-alpha.2
-Config/Wants_DB_Version: 2024.0.0-alpha.2
+Config/Requires_DB_Version: 2024.0.0-alpha.1
+Config/Wants_DB_Version: 2024.0.0-alpha.1
