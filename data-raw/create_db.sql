@@ -27,6 +27,10 @@ CREATE TABLE agency (
                                      AND   reduction_pct <= 1)                 ,
     total_non_cap_ext       double   CHECK(total_non_cap_ext >= 0)             ,
     total_ext               double   CHECK(total_ext >= 0)             NOT NULL,
+
+    CHECK(year >= 2024 OR prior_eav IS NOT NULL),
+    CHECK(year >= 2024 OR pct_burden IS NOT NULL),
+
     PRIMARY KEY (year, agency_num)
 ) WITHOUT ROWID;
 
@@ -150,7 +154,7 @@ CREATE TABLE pin (
     exe_vet_dis_lt50        int   CHECK(exe_vet_dis_lt50 >= 0)         NOT NULL,
     exe_vet_dis_50_69       int   CHECK(exe_vet_dis_50_69 >= 0)        NOT NULL,
     exe_vet_dis_ge70        int   CHECK(exe_vet_dis_ge70 >= 0)         NOT NULL,
-    exe_vet_dis_100         int   CHECK(exe_vet_dis_100 >= 0)                  ,
+    exe_vet_dis_100         int   CHECK(exe_vet_dis_100 >= 0)          NOT NULL,
     exe_abate               int   CHECK(exe_abate >= 0)                NOT NULL,
     PRIMARY KEY (year, pin)
 ) WITHOUT ROWID;
@@ -221,6 +225,9 @@ CREATE TABLE tif_distribution (
     tax_code_frozen_eav     bigint   CHECK(tax_code_frozen_eav >= 0)   NOT NULL,
     tax_code_revenue        bigint   CHECK(tax_code_revenue >= 0)      NOT NULL,
     tax_code_distribution_pct double CHECK(tax_code_distribution_pct >= 0)     ,
+
+    CHECK(year >= 2024 OR tax_code_distribution_pct IS NOT NULL),
+
     PRIMARY KEY (year, agency_num, tax_code_num)
     FOREIGN KEY (year, agency_num) REFERENCES tif_crosswalk(year, agency_num_dist)
 ) WITHOUT ROWID;
