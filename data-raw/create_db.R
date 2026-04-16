@@ -33,6 +33,9 @@ db_send_queries <- function(conn, sql) {
 }
 
 
+# Set the database version. This gets incremented manually whenever the database
+# changes. This is checked against Config/Requires_DB_Version in the DESCRIPTION
+# file via check_db_version(). Schema is:
 # "MAX_YEAR_OF_DATA.MAJOR_VERSION.MINOR_VERSION-PRE_RELEASE_VERSION"
 db_version <- "2024.0.0"
 # Optional pre-release identifier. Informational only, not compared.
