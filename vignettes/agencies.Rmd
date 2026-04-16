@@ -31,19 +31,18 @@ library(dplyr)
 library(DT)
 library(here)
 library(ggplot2)
-#library(ptaxsim)
+library(ptaxsim)
 library(tidyr)
-devtools::load_all()
 
-ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.2024.0.0-alpha.2.db"))
+#ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.2024.0.0-alpha.2.db"))
 ```
 
 ```{r, echo=FALSE}
 # This is needed to build the vignette using GitHub Actions
-#ptaxsim_db_conn <- DBI::dbConnect(
- # RSQLite::SQLite(),
-  #Sys.getenv("PTAXSIM_DB_PATH")
-#)
+ptaxsim_db_conn <- DBI::dbConnect(
+  RSQLite::SQLite(),
+  Sys.getenv("PTAXSIM_DB_PATH")
+)
 ```
 
 We can query the database table `agency_info` to search for `agency_num` key assigned the the taxing agencies of interest. This is what shows up when we search of agencies with the `CHICAGO` in the `agenc_name`.
