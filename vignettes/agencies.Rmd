@@ -19,9 +19,9 @@ In this vignette, we'll demonstrate how to query data from the PTAXSIM SQLite da
 
 Additionally, we'll show how to account for the 2024 changes to the Cook County Clerk's agency fund report data structure which will be necessary for users to pay attention to when conducting a time series analysis of certain taxing agencies.
 
-# Chicago's levy over time
+# Chicago taxing agencies
 
-Using data from the PTAXSIM database, let's look at the levy history for the City of Chicago from 2006 to 2024.
+Using data from the PTAXSIM database, let's look at the levy history for the primary taxing agencies that appear on a Chicago property's tax bill: the `CITY OF CHICAGO`, `BOARD OF EDUCATION` (a.k.a. Chicago Public Schools), and `CHICAGO PARK DISTRICT`.
 
 First, load some useful libraries and instantiate a PTAXSIM DBI connection with the default name (`ptaxsim_db_conn`) expected by PTAXSIM functions.
 
@@ -46,7 +46,7 @@ ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.2024.0.0-al
 #)
 ```
 
-First, we'll query the database table `agency_info` to determine the City of Chicago's unique `agency_num`.
+We can query the database table `agency_info` to search for `agency_num` key assigned the the taxing agencies of interest. This is what shows up when we search of agencies with the `CHICAGO` in the `agenc_name`.
 
 ```{r}
 chi_agency_nums <- DBI::dbGetQuery(
@@ -54,15 +54,16 @@ chi_agency_nums <- DBI::dbGetQuery(
   "
   SELECT agency_num, agency_name
   FROM agency_info
-  WHERE agency_name LIKE '%CITY OF CHICAGO%'
+  WHERE agency_name LIKE '%CHICAGO%'
   "
 )
 
 head(chi_agency_nums)
 ```
-For purpose of our analysis, we'll just focus on `CITY OF CHICAGO` and `CITY OF CHICAGO LIBRARY FUND`, with agency fund numbers `030210000` and `030210002` respectively. While the `CITY OF CHICAGO LIBRARY FUND` has been treated as its own taxing agency in the Clerk's data, the City itself reports the amount levied for the purpose of funding the Chicago Public Library as a portion of its entire property tax levy.
 
-First, we'll query all fields from the `agencies` table.
+Note that there are several agencies that pop up when we search of agencies that contain `CHICAGO` in the name. Let's take a moment to examine the agencies `CITY OF CHICAGO` and `CITY OF CHICAGO LIBRARY FUND`, with agency fund numbers `030210000` and `030210002` respectively. While the `CITY OF CHICAGO LIBRARY FUND` has been treated as its own taxing agency in the Clerk's data, the City itself reports the amount levied for the purpose of funding the Chicago Public Library as a portion of its entire property tax levy.
+
+We're also interested in the `BOARD OF EDUCATION` and `CHICAGO PARK DISTRICT` agencies, which have agency numbers `050200000` and `044060000` respectively. We'll query all fields from the `agency` table and filter by their `agency_num`. 
 
 ```{r}
 chi_agencies <- DBI::dbGetQuery(
@@ -72,6 +73,8 @@ chi_agencies <- DBI::dbGetQuery(
   FROM agency
   WHERE agency_num = '030210000'
   OR agency_num = '030210001'
+  OR agency_num = '050200000'
+  OR agency_num = '044060000'
   "
 )
 ```
@@ -99,7 +102,6 @@ agency_cw_24 <- DBI::dbGetQuery(
   select(agency_num, agency_name, agency_num_24, agency_name_24)
 
 datatable(agency_cw_24)
-
 ```
 We can now use `agency_cw_24` as a crosswalk to convert these sub-agencies to their parent agency numbers. 
 
@@ -119,13 +121,12 @@ chi_agencies <- chi_agencies %>%
   )
 ```
 
-## Tracking City of Chicago's levy growth with inflation
+## Tracking Chicago levies
 
-Now that we have the correct agency numbers for all years, we can select and aggregate the fields of interest for `CITY OF CHICAGO`. 
-
-Many of the fields in the `agencies` table, which come from the Clerk's agency rate report, relate to PTELL calculations. Because the Chicago is a home rule municipality, it is not subject to PTELL (Property Tax Extension Law Limit) as imposed by the State of Illinois, so these fields will not contain relevant info. However, the City of Chicago imposes [its own limits](https://codelibrary.amlegal.com/codes/chicago/latest/chicago_il/0-0-0-2608573) which mirror PTELL's limits which prohibit a taxing agency from increasing its levy more than the rate of inflation or 5%, whichever is less. 
+Now that we have the correct agency numbers for all years, we can select and aggregate the fields of interest for the Chicago taxing agencies we want to look at.
 
 Let's create an object called `chi_levy` that contains final total levy, taxable aggregate EAV (or the tax base), and the amount of EAV designated as "New Property". New Property is defined as EAV from expiring TIFs, new constriction, or expiring incentives.
+
 ```{r}
 chi_levy <- 
   chi_agencies %>%
@@ -138,28 +139,25 @@ chi_levy <-
     prior_eav = first(prior_eav),
     curr_new_prop = first(curr_new_prop)
   )
+
+chi_levy_indx <- chi_levy %>%
+  group_by(agency_num) %>%
+  mutate(levy_2006 = total_final_levy[year == 2006][1],
+         levy_pct_inc = (total_final_levy - levy_2006) / levy_2006 * 100) %>%
+  ungroup() %>%
+  select(agency_num, year, levy_pct_inc) %>%
+  pivot_longer(
+    cols = levy_pct_inc,
+    names_to = "series",
+    values_to = "pct_inc"
+  )
 ```
+
+Many of the fields in the `agencies` table, which come from the Clerk's agency rate report, relate to the Clerk's PTELL (Property Tax Extension Law Limit) calculations. PTELL ensures certain taxing agencies do not increase their levies beyond the rate of inflation (with some exceptions). CPS and Chicago Park District are subject to PTELL rules, but the City of Chicago is not by virtue of being a non-home rule agency. However, the City of Chicago imposes [its own limits](https://codelibrary.amlegal.com/codes/chicago/latest/chicago_il/0-0-0-2608573) which mirror PTELL's limits which prohibit a taxing agency from increasing its levy more than the rate of inflation or 5%, whichever is less. 
+
 PTELL, as well as Chicago's property tax limitation ordinance, contain loopholes that allow taxing agencies to [increase their levies beyond the rate of inflation](https://civicfed.org/press/new-report-finds-illinois-property-tax-cap-law-not-working-intended). Let's see how Chicago's levy has fared compared to inflation  since 2006.
 
-To do this we can pull CPI data from the PTAXSIM database - we include the CPI tables published annually by the Illinois Department of Revenue (IDOR) for the purpose of setting the PTELL limit.
-
-```{r}
-cpi <- DBI::dbGetQuery(
-  ptaxsim_db_conn,
-  "
-  SELECT 
-  levy_year as year,
-  cpi,
-  ptell_cook
-  FROM cpi
-  "
-) %>%
-  filter(year >= 2006)
-```
-
-First, let's convert each year's levy to be in terms of 2006 dollars using the consumer price index (CPI). This will help us understand the degree to which the levy has been adjusted on account of inflation vs. increasing revenue.
-
-The code below queries CPI data, then calculates its percent change since 2006. We will need to add the fields `agency_num` and `agency_name` in preparation of combining it with the `chi_levy` data. 
+To do this we can pull CPI data from the PTAXSIM database - we include the CPI tables published annually by the Illinois Department of Revenue (IDOR) for the purpose of setting the PTELL limit. We will calculate the CPI percent change from 2006, and then combine that data with the levy percent change data from `chi_levy_indx`. 
 
 ```{r}
 cpi <- DBI::dbGetQuery(
@@ -172,114 +170,118 @@ cpi <- DBI::dbGetQuery(
   mutate(
     pct_inc = (cpi / cpi[year == 2006] - 1) * 100,
     agency_num = "100",
-    agency_name = "CPI-U"
+    series = "cpi"
   ) %>%
   filter(year >= 2006) %>%
-  select(year, agency_num, agency_name, pct_inc)
+  select(year, agency_num, series, pct_inc)
 ```
 
-Plotting Chicago's total property tax levy from 2006 to 2024 in both 2006 dollars and nominal dollars, we can see that the levy remained steady from 2006 to 2014. The levy actually decreased slightly in real dollars given the levy was not increased to account for inflation during this time. Then in 2015, City begins increasing its levy significantly due to State legislation that dictates [funding requirements for Chicago's Fire and Police pension funds](https://www.civicfed.org/civic-federation/blog/chicago-police-and-fire-pension-funding-changes-become-law).
-
-Rising inflation beginning in the wake of the Covid-19 pandemic is evident with the levy in "real" dollars decreasing slightly from 2020 to 2024 even as the levy in nominal dollars increased in that time period.
 
 <details>
 
 <summary><strong>Click here</strong> to show plot code</summary>
 ```{r}
-chi_levy_plot_1 <- chi_levy_adj %>%
+highlight_key <- tibble::tibble(
+  agency_num = c("100", "050200000", "030210000", "044060000"),
+  label      = c("CPI-U", "CPKD",      "City",        "CPS")
+)
+
+plot_1_df <- rbind(cpi, chi_levy_indx) %>%
+  left_join(highlight_key, by = "agency_num")
+  
+df_lab <- plot_1_df %>%
+  group_by(agency_num, label) %>%
+  filter(year == max(year, na.rm = TRUE)) %>%
+  slice_tail(n = 1) %>%       
+  ungroup() %>%
+  mutate(label_col = ifelse(label == "CPI-U", "#d62728", "black"))  # red for CPI-U
+
+chi_levy_plot_1 <- 
   ggplot() +
-  geom_line(aes(x = year, y = total_final_levy, color = "Levy in nominal dollars"),
-            linewidth = .8) +
-  geom_point(aes(x = year, y = total_final_levy, color = "Levy in nominal dollars")) +
-  geom_line(aes(x = year, y = total_final_levy_adj, color = "Levy in 2006 dollars"),
-            linewidth = .8, linetype = "dashed") +
-  geom_point(aes(x = year, y = total_final_levy_adj, color = "Levy in 2006 dollars")) +
-  scale_color_manual(
-    name = NULL,
-    values = c("Levy in nominal dollars" = "black",
-               "Levy in 2006 dollars"    = "blue")
+  geom_line(
+    data = plot_1_df,
+    aes(x = year, y = pct_inc/100, group = agency_num, color = label),
+    linewidth = .5
   ) +
-  scale_x_continuous(n.breaks = 10) +
-  scale_y_continuous(
-    labels = scales::label_dollar(scale = 1e-9, suffix = "B"),
-    limits = c(0, 2000000000)
+  # right-side labels in black (no color mapping)
+  geom_text(
+    data = df_lab,
+    aes(x = year, y = pct_inc/100, label = label),
+    color = df_lab$label_col,
+    hjust = -0.1,
+    size = 3.5
+  ) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_x_continuous(
+    breaks = seq(min(plot_1_df$year, na.rm = TRUE), max(plot_1_df$year, na.rm = TRUE), by = 2),
+    expand = expansion(mult = c(0.01, 0.08))  # add right padding so labels fit
+  ) +
+  scale_color_manual(
+    values = c(
+      "CPKD"   = "black",
+      "City"   = "black",
+      "CPS"    = "black",
+      "CPI-U"  = "#d62728"
+    ),
+    breaks = c("CPKD", "City", "CPS"),
+    guide = "none"  # hide legend since lines are labeled
   ) +
   labs(
-    x = NULL,
-    y = "Total Final Levy (Billions)"
+    x = "Year",
+    y = "Percent change from 2006",
   ) +
-  theme_minimal() +
-  theme(
-    axis.title = element_text(size = 13),
-    axis.title.x = element_text(margin = margin(t = 6)),
-    axis.title.y = element_text(margin = margin(r = 6)),
-    axis.text = element_text(size = 11),
-    strip.text = element_text(size = 16),
-    strip.background = element_rect(fill = "#c9c9c9"),
-    legend.title = element_text(size = 14),
-    legend.key.size = unit(24, "points"),
-    legend.text = element_text(size = 12),
-    legend.position = "bottom"
-  )
-
+  theme_minimal(base_size = 12)
 ```
-
 </details>
 
 <br>
 
+Next, we will plot the percent change in levy from 2006 for the City of Chicago, Chicago Public Schools, and Chicago Park District, and compare that to the percent change in CPI-U over the same period.
+
+We can see that the City of Chicago's levy has increased the most, having more than doubled from 2006 to 2024. Both Chicago and CPS's levies have increased far beyond the rate of inflation, while the Chicago Park District's levy has kept pace with it.
+
 ```{r, echo=FALSE, out.width="100%"}
 chi_levy_plot_1
 ```
-Next, we'll take a look at how the percent change in the levy compares to the percent change in CPI - or the rate of inflation. We add some data manipulation to calculate the percent change in both the levy and CPI by each year since 2006.
 
-```{r}
-chi_levy_adj <- chi_levy_adj %>%
-  ungroup() %>%
-  mutate(
-    pct_change_final_levy     = (total_ext - total_ext[year == 2006]) / total_ext[year == 2006] * 100,
-    pct_change_ptell          = (1 * c(1, cumprod(1 + tail(ptell_cook, -1))) - 1) * 100,
-  )
-```
-
-Plotting the percent change of the City's levy since 2006, we see it has outgrown the cumulative effects of the City's property tax limitation 
-
-<details>
+Even though the City's levy has increased the most in percentage terms since 2006, it does not have the largest levy. The taxing agencies that rely most on property taxes are school districts and this is true for Chicago as well. The plot below shows the final tax extensions (meaning the final amount to be received by taxing agencies after the levies are validated by PTELL), for each of the three agencies. CPS is slightly more than double the City's extension in 2024 at about $4 Billion. Chicago Park District's extension is substantially less at less than 1 Billion. 
 
 <summary><strong>Click here</strong> to show plot code</summary>
-```{r, echo=FALSE, out.width="100%"}
-chi_levy_plot_2 <- chi_levy_adj %>%
-  pivot_longer(
-    cols = c(pct_change_final_levy, pct_change_ptell),
-    names_to = "series",
-    values_to = "pct_change"
-  ) %>%
-  mutate(series = recode(series,
-    "pct_change_final_levy"     = "Levy % change (nominal $)",
-    "pct_change_ptell"            = "PTELL % change"
-  )) %>%
-  ggplot() +
-  geom_line(aes(x = year, y = pct_change, color = series), linewidth = .8) +
-  geom_point(aes(x = year, y = pct_change, color = series)) +
-  scale_x_continuous(n.breaks = 10) +
-  scale_y_continuous(labels = scales::label_percent(scale = 1, suffix = "%")) +
-  labs(
-    x = NULL,
-    y = "Percent Change Since Base Year",
-    color = NULL
+```{r}
+plot_2_df <- chi_levy %>%
+  left_join(highlight_key)
+
+df_lab <- plot_2_df %>%
+  group_by(agency_num, label) %>%
+  slice_max(year, n = 1, with_ties = FALSE) %>%
+  ungroup()
+
+df_2024 <- plot_2_df %>%
+  filter(year == 2024) %>%
+  group_by(agency_num, label) %>%
+  slice_tail(n = 1) %>%  # in case there are duplicates in 2024
+  ungroup() %>%
+  mutate(label_2024 = paste0(
+    label, ": ", scales::label_dollar(scale = 1e-9, suffix = "B", accuracy = 0.1)(total_ext)
+  ))
+
+chi_levy_plot_2 <- ggplot(plot_2_df, aes(year, total_ext, group = agency_num)) +
+  geom_line(linewidth = 0.5, color = "black") +
+  # 2024 value labels like "CPS: $1.1B"
+  geom_text(
+    data = df_2024,
+    aes(label = label_2024),
+    color = "black",
+    hjust = .6,
+    vjust = -.5
   ) +
-  theme_minimal() +
-  theme(
-    axis.title = element_text(size = 13),
-    axis.title.y = element_text(margin = margin(r = 6)),
-    axis.text = element_text(size = 11),
-    strip.text = element_text(size = 16),
-    strip.background = element_rect(fill = "#c9c9c9"),
-    legend.title = element_text(size = 14),
-    legend.key.size = unit(24, "points"),
-    legend.text = element_text(size = 12),
-    legend.position = "bottom"
-  )
+  scale_y_continuous(labels = scales::label_dollar(scale = 1e-9, suffix = "B")) +
+  scale_x_continuous(
+    breaks = seq(min(plot_2_df$year, na.rm = TRUE), max(plot_2_df$year, na.rm = TRUE), by = 2),
+    expand = expansion(mult = c(0.01, 0.08))
+  ) +
+  labs(x = "Year", y = "Final Agency Extension") +
+  theme_minimal(base_size = 12)
 ```
 </details>
 
@@ -288,7 +290,11 @@ chi_levy_plot_2 <- chi_levy_adj %>%
 ```{r, echo=FALSE, out.width="100%"}
 chi_levy_plot_2
 ```
+The PTAXSIM database also contains information related to taxing agency's property tax funds so we can understand exactly what they intend to spend their property tax revenue on. This information can be found in the `agency_fund` and `agency_fund_info` tables. This data is not utilized by any of PTAXSIM's functions, but it is available to be queried an analyzed. 
 
+We will query the fund information for the `CITY OF CHICAGO` and the `CITY OF CHICAGO LIBRARY FUND`. 
+
+To simplify the `agency_fund` data, we will add broader categories to define funds. For example, there is not a consistent identifier for which funds are contributions to the City's various pension funds. In this case, we'll tag any fund with "A & B" (Annuities and Benefits) in the name as a pension fund. We'll label funds related to bond and interest payments, as well as note redemption, as "Bond Payments".
 
 ```{r}
 chi_agency_fund <- DBI::dbGetQuery(
@@ -332,6 +338,8 @@ chi_agency_fund <- chi_agency_fund %>%
 
 ```
 
+The plot below 
+
 <details>
 
 <summary><strong>Click here</strong> to show plot code</summary>
@@ -339,7 +347,7 @@ chi_agency_fund <- chi_agency_fund %>%
 chi_levy_plot_3 <- chi_agency_fund %>%
   ggplot() +
   geom_line(aes(x = year, y = final_levy, color = fund_catg), 
-            linewidth = .8) +
+            linewidth = .5) +
   geom_point(aes(x = year, y = final_levy, color = fund_catg)) +
   scale_x_continuous(n.breaks = 10) +
   scale_y_continuous(
@@ -368,11 +376,14 @@ chi_levy_plot_3 <- chi_agency_fund %>%
 
 <br>
 
+The plot below illustrates how the City's levy increase in 2016 was by soley driven by a massive increase in the City's pension contributions. Pension contributions grew again in 2021, but in tandem with a decrease in bond financing.
+
 ```{r, echo=FALSE, out.width="100%"}
 chi_levy_plot_3
 ```
+With so much of the City's property tax revenue going to funding pensions, it's difficult to see if or how there was any change to the amount going to the Library Fund. The below tables show the final levy for each fund type in 2020-2024, as well as the share of the total levy for each fund type by year. 
 
-```{r}
+```{r, echo = FALSE}
 fund_type_table <- chi_agency_fund %>%
   select(-final_rate) %>%
   filter(year > 2019) %>%
@@ -402,7 +413,7 @@ fund_type_table %>%
     digits = 0
   )
 ```
-```{r}
+```{r, echo = FALSE}
 fund_type_table %>%
   mutate(across(c("2020", "2021", "2022", "2023", "2024"), 
                 ~ round(. / sum(.) * 100))) %>%
@@ -427,34 +438,5 @@ fund_type_table %>%
     columns = c("2020", "2021", "2022", "2023", "2024"),
     suffix = "%"
   )
-```
-```{r}
-chi_levy_plot_4 <- chi_levy %>%
-  ggplot() +
-  geom_line(aes(x = year, y = total_final_rate), linewidth = .8) +
-  geom_point(aes(x = year, y = total_final_rate)) +
-  scale_x_continuous(n.breaks = 10) +
-  scale_y_continuous(labels = scales::label_percent(scale = 1, suffix = "%"),
-                     limits = c(0, 2)) +
-  labs(
-    x = NULL,
-    y = "Tax Rate"
-  ) +
-  theme_minimal() +
-  theme(
-    axis.title = element_text(size = 13),
-    axis.title.y = element_text(margin = margin(r = 6)),
-    axis.text = element_text(size = 11),
-    strip.text = element_text(size = 16),
-    strip.background = element_rect(fill = "#c9c9c9"),
-    legend.title = element_text(size = 14),
-    legend.key.size = unit(24, "points"),
-    legend.text = element_text(size = 12),
-    legend.position = "bottom"
-  )
-```
-
-```{r}
-chi_levy_plot_4
 ```
 
