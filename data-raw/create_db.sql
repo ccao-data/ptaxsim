@@ -11,13 +11,15 @@ CREATE TABLE agency (
     lim_numerator           bigint   CHECK(lim_numerator >= 0)                 ,
     lim_denominator         bigint   CHECK(lim_denominator >= 0)               ,
     lim_rate                double   CHECK(lim_rate >= 0)                      ,
-    prior_eav               bigint   CHECK(prior_eav >= 0)                     ,
+    prior_eav               bigint   CHECK((prior_eav >= 0)
+                                   AND (year >= 2024 OR prior_eav IS NOT NULL)),
     curr_new_prop           bigint                                     NOT NULL,
     cty_cook_eav            bigint   CHECK(cty_cook_eav >= 0)          NOT NULL,
     cty_overlap_eav         bigint   CHECK(cty_overlap_eav >= 0)       NOT NULL,
     cty_total_eav           bigint   CHECK(cty_total_eav >= 0)         NOT NULL,
-    pct_burden              double   CHECK(pct_burden >= 0
-                                     AND   pct_burden <= 1)                    ,
+    pct_burden              double   CHECK((pct_burden >= 0
+                                     AND   pct_burden <= 1)
+                                  AND (year >= 2024 OR pct_burden IS NOT NULL)),
     total_levy              bigint   CHECK(total_levy >= 0)            NOT NULL,
     total_max_levy          bigint   CHECK(total_max_levy >= 0)        NOT NULL,
     total_prelim_rate       double   CHECK(total_prelim_rate >= 0)     NOT NULL,
@@ -27,9 +29,6 @@ CREATE TABLE agency (
                                      AND   reduction_pct <= 1)                 ,
     total_non_cap_ext       double   CHECK(total_non_cap_ext >= 0)             ,
     total_ext               double   CHECK(total_ext >= 0)             NOT NULL,
-
-    CHECK(year >= 2024 OR prior_eav IS NOT NULL),
-    CHECK(year >= 2024 OR pct_burden IS NOT NULL),
 
     PRIMARY KEY (year, agency_num)
 ) WITHOUT ROWID;
@@ -224,9 +223,9 @@ CREATE TABLE tif_distribution (
     tax_code_eav            bigint   CHECK(tax_code_eav >= 0)          NOT NULL,
     tax_code_frozen_eav     bigint   CHECK(tax_code_frozen_eav >= 0)   NOT NULL,
     tax_code_revenue        bigint   CHECK(tax_code_revenue >= 0)      NOT NULL,
-    tax_code_distribution_pct double CHECK(tax_code_distribution_pct >= 0)     ,
-
-    CHECK(year >= 2024 OR tax_code_distribution_pct IS NOT NULL),
+    tax_code_distribution_pct double CHECK((tax_code_distribution_pct >= 0)
+                                     AND (year >= 2024
+                                     OR tax_code_distribution_pct IS NOT NULL)),
 
     PRIMARY KEY (year, agency_num, tax_code_num)
     FOREIGN KEY (year, agency_num) REFERENCES tif_crosswalk(year, agency_num_dist)
