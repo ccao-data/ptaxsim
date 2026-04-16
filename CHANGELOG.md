@@ -4,7 +4,10 @@
 
 ### Background
 
-This release features a significant number of changes to the database schema
+This release adds support for tax year 2024. It is intended for use with the
+`2024.0.x` database version.
+
+The release also features a significant number of changes to the database schema
 and to package functions to accommodate changes that the Clerk and the
 Treasurer made to the data they report in 2024. Source data from the Clerk and
 the Treasurer forms the core of the PTAXSIM database, so any changes they make
@@ -13,6 +16,18 @@ need to be reflected in this package, too.
 The Clerk and the Treasurer changed their data reporting this past year because
 they both completed a migration from a legacy AS/400 mainframe system to a
 new integrated property tax system of record.
+
+The main changes that the Clerk and the Treasurer made in 2024 include:
+
+- **Changed agency numbers to enable reporting some funds as agencies**.
+- **Switched from three-digit to six-digit fund numbers to support new types
+  of funds**. The new types of funds are primarily bond series.
+- **Changed the TIF revenue share calculation so that it is performed at the
+  PIN-level rather than the tax-code-level**. This means that TIF increment is
+  now calculated based on the difference between the frozen and current taxable
+  EAV for each individual PIN in a TIF, rather than the frozen and current
+  taxable EAV of the tax code as a whole.
+- **Removed a number of minor columns from reports**.
 
 Read on for a detailed description of the changes we made to the PTAXSIM
 database and functions to handle these changes in the source data.
