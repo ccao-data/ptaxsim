@@ -36,8 +36,12 @@ db_send_queries <- function(conn, sql) {
 # Set the database version. This gets incremented manually whenever the database
 # changes. This is checked against Config/Requires_DB_Version in the DESCRIPTION
 # file via check_db_version(). Schema is:
-# "MAX_YEAR_OF_DATA.MAJOR_VERSION.MINOR_VERSION"
-db_version <- "2023.0.0"
+# "MAX_YEAR_OF_DATA.MAJOR_VERSION.MINOR_VERSION-PRE_RELEASE_VERSION"
+db_version <- "2024.0.0"
+# Optional pre-release identifier. Informational only, not compared.
+# Set this to an empty string for a public release, or to a string like
+# "alpha.1" for a release candidate
+db_pre_release_version <- "alpha.2"
 
 # Set the package version required to use this database. This is checked against
 # Version in the DESCRIPTION file. Basically, we have a two-way check so that
@@ -73,10 +77,19 @@ desc_url_package <- desc %>%
   str_extract("(?<=URL: ).*(?=,)")
 
 db_base_url <- "https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/"
-db_full_url <- paste0(db_base_url, "ptaxsim-", db_version, ".db.bz2")
+db_full_url <- paste0(
+  db_base_url, "ptaxsim-", db_version,
+  if (nzchar(db_pre_release_version)) {
+    paste0("-", db_pre_release_version)
+  } else {
+    ""
+  },
+  ".db.bz2"
+)
 
 # Load agency files to get min and max year
 agency_df <- read_parquet(file.path(remote_bucket, "agency", "part-0.parquet"))
+
 min_year <- min(as.integer(agency_df$year))
 max_year <- max(as.integer(agency_df$year))
 
@@ -112,7 +125,8 @@ DBI::dbAppendTable(conn, "metadata", metadata_df)
 # Load tables contained in a single file
 files <- c(
   "agency", "agency_info", "agency_fund", "agency_fund_info",
-  "cpi", "eq_factor", "tif", "tif_crosswalk", "tif_distribution"
+  "cpi", "eq_factor", "tif", "tif_crosswalk", "tif_distribution",
+  "pin_tif_distribution"
 )
 for (file in files) {
   message("Now loading: ", file)
@@ -124,7 +138,13 @@ for (file in files) {
 datasets <- c("pin", "tax_code")
 for (dataset in datasets) {
   message("Now loading: ", dataset)
-  df <- collect(arrow::open_dataset(file.path(remote_bucket, dataset)))
+  df <- collect(arrow::open_dataset(file.path(remote_bucket, dataset),
+    # Starting in 2024, there are some major changes regarding the columns
+    # that are present in these data files. That means we need to unify the
+    # schemas across files, since otherwise arrow will take the schema from
+    # the first file it finds in the dataset
+    unify_schemas = TRUE
+  ))
   DBI::dbAppendTable(conn, dataset, df)
 }
 
