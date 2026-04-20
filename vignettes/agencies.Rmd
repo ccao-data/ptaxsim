@@ -15,15 +15,15 @@ knitr::opts_chunk$set(
 
 One of the unique features of PTAXSIM is the database that accompanies the package - this DB contains the only publicly accessible, machine-readable data collected from the various Cook County property tax agencies going back to 2006. While the primary use of PTAXSIM is its functionality to calculate tax bills, its database holds a plethora of data that can be used to investigate Cook County's property tax system, including the behavior of the over 900 taxing agencies and 400 TIFs that collect revenue through property taxes.
 
-In this vignette, we'll demonstrate how to query data from the PTAXSIM SQLite database that can help us analyze taxing agencies' property tax revenue over time, as well as revenue collected by TIFs.
+In this vignette, we'll demonstrate how to query data from the PTAXSIM SQLite database that can help us analyze taxing agencies' property tax revenue over time.
 
-Additionally, we'll show how to account for the 2024 changes to the Cook County Clerk's agency fund report data structure which will be necessary for users to pay attention to when conducting a time series analysis of certain taxing agencies.
+Additionally, we'll show how to account for the 2024 changes to the Cook County Clerk's agency data structure which will be necessary for users to account for when conducting a time series analysis of certain taxing agencies.
 
 # Chicago taxing agencies
 
-Using data from the PTAXSIM database, let's look at the levy history for the primary taxing agencies that appear on a Chicago property's tax bill: the `CITY OF CHICAGO`, `BOARD OF EDUCATION` (a.k.a. Chicago Public Schools), and `CHICAGO PARK DISTRICT`.
+Using data from the PTAXSIM database, let's look at the levy history for three of the primary taxing agencies that appear on a Chicago property's tax bill: the `CITY OF CHICAGO`, `BOARD OF EDUCATION` (a.k.a. Chicago Public Schools), and `CHICAGO PARK DISTRICT`.
 
-First, load some useful libraries and instantiate a PTAXSIM DBI connection with the default name (`ptaxsim_db_conn`) expected by PTAXSIM functions.
+First, load some useful libraries and instantiate a PTAXSIM DBI connection with the default name (`ptaxsim_db_conn`).
 
 ```{r}
 library(data.table)
@@ -34,18 +34,45 @@ library(ggplot2)
 library(ptaxsim)
 library(tidyr)
 
-#ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.2024.0.0-alpha.2.db"))
+ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.2024.0.0-alpha.2.db"))
 ```
 
 ```{r, echo=FALSE}
 # This is needed to build the vignette using GitHub Actions
-ptaxsim_db_conn <- DBI::dbConnect(
-  RSQLite::SQLite(),
-  Sys.getenv("PTAXSIM_DB_PATH")
-)
+#ptaxsim_db_conn <- DBI::dbConnect(
+#  RSQLite::SQLite(),
+#  Sys.getenv("PTAXSIM_DB_PATH")
+#)
 ```
 
-We can query the database table `agency_info` to search for `agency_num` key assigned the the taxing agencies of interest. This is what shows up when we search of agencies with the `CHICAGO` in the `agenc_name`.
+## Accounting for 2024 changes to agency fund reporting
+
+Before we query the relevant agency data, we first will need to check if any of the agencies of interest were impacted by the Clerk's 2024 updates to the data structure. We added new fields to the `agency_info` table to document these changes - we'll query this table and select only they agencies where the field `agency_change_24 = TRUE`. 
+
+```{r}
+# Query agency_info table for all agencies with the 2024 update
+agency_cw_24 <- DBI::dbGetQuery(
+  ptaxsim_db_conn,
+  "
+  SELECT *
+  FROM agency_info
+  WHERE agency_change_24 = TRUE
+  "
+) %>%
+  select(agency_num, agency_name, agency_num_24, agency_name_24)
+
+datatable(agency_cw_24)
+```
+
+From this table it appears that the updated agencies are specific funds for various municipalities - the Clerk had previously reported certain municipal fund levies as separate taxing agencies. This updated data structure begins in 2024 while years prior to 2024 remain the same, meaning users will need to account for this discrepancy if ever analyzing these taxing agencies data over time.
+
+To make this process easier, we have added new fields to the `agency_info` table in the PTAXSIM database which identify the agencies that have been folded into their parent agencies. `agency_num_24` and `agency_name_24` contain the agency info that the old "sub-agency" has been merged into. With this table we can create a crosswalk, as we did above, and call it `agency_cw_24`. Note that the user can still see details about these former agencies, now funds, by querying the `agency_fund` table.
+
+A quick search of the crosswalk shows that the `CITY OF CHICAGO LIBRARY FUND` was previously defined as its own agency and has now been folded into the `CITY OF CHICAGO`. This is in fact aligned with how the City of Chicago reports its property tax levy in its own budget [documentation](https://chicityclerk.s3.us-west-2.amazonaws.com/s3fs-public/O2023-0005291_Tax_Levy.pdf).
+
+
+
+We can query the database table `agency_info` to search for `agency_num` key assigned the the taxing agencies of interest. The table below displays all taxing agencies and TIFs with `CHICAGO` presenet in the `agency_name`.
 
 ```{r}
 chi_agency_nums <- DBI::dbGetQuery(
@@ -57,10 +84,10 @@ chi_agency_nums <- DBI::dbGetQuery(
   "
 )
 
-head(chi_agency_nums)
+datatable(chi_agency_nums)
 ```
 
-Note that there are several agencies that pop up when we search of agencies that contain `CHICAGO` in the name. Let's take a moment to examine the agencies `CITY OF CHICAGO` and `CITY OF CHICAGO LIBRARY FUND`, with agency fund numbers `030210000` and `030210002` respectively. While the `CITY OF CHICAGO LIBRARY FUND` has been treated as its own taxing agency in the Clerk's data, the City itself reports the amount levied for the purpose of funding the Chicago Public Library as a portion of its entire property tax levy.
+Let's take a moment to examine the agencies `CITY OF CHICAGO` and `CITY OF CHICAGO LIBRARY FUND`, with agency fund numbers `030210000` and `030210002` respectively. While the `CITY OF CHICAGO LIBRARY FUND` has been treated as its own taxing agency in the Clerk's data, the City itself reports the amount levied for the purpose of funding the Chicago Public Library as a portion of its entire property tax levy.
 
 We're also interested in the `BOARD OF EDUCATION` and `CHICAGO PARK DISTRICT` agencies, which have agency numbers `050200000` and `044060000` respectively. We'll query all fields from the `agency` table and filter by their `agency_num`. 
 
@@ -78,30 +105,9 @@ chi_agencies <- DBI::dbGetQuery(
 )
 ```
 
-## Accounting for 2024 changes to agency fund reporting
 
-When examining `chi_agencies`, we see that in 2024 the `CITY OF CHICAGO LIBRARY FUND` has a \$0 levy and therefore a tax rate of 0. This is because, starting in 2024, the Cook County Clerk began reporting the requested levy for the City of Chicago libraries as a fund under the `CITY OF CHICAGO` taxing agency. As mentioned above, this is in fact aligned with how the City of Chicago reports its property tax levy in its own budget [documentation](https://chicityclerk.s3.us-west-2.amazonaws.com/s3fs-public/O2023-0005291_Tax_Levy.pdf).
 
-This reporting change occurred for many municipal taxing agencies, where the Clerk had previously reported municipal fund levies as separate taxing agencies. This updated data structure begins in 2024 while years prior to 2024 remain the same, meaning users will need to account for this discrepancy if ever analyzing these taxing agencies data over time.
 
-To make this process easier, we have added new fields to the `agency_info` table in the PTAXSIM database which identify the agencies that have been folded into their parent agencies. `agency_num_24` and `agency_name_24` contain the agency info that the old "sub-agency" has been merged into. Note that the user can still see details about these former agencies, now funds, by querying the `agency_fund` table.
-
-The table below shows all of the taxing agencies that have been been folded into their parent agencies beginning with tax year 2024. In all, we have 78 former taxing agencies that are no longer reported as individual agencies beginning in 2024.
-
-```{r}
-# Query agency_info table for all agencies with the 2024 update
-agency_cw_24 <- DBI::dbGetQuery(
-  ptaxsim_db_conn,
-  "
-  SELECT *
-  FROM agency_info
-  WHERE agency_change_24 = 1
-  "
-) %>%
-  select(agency_num, agency_name, agency_num_24, agency_name_24)
-
-datatable(agency_cw_24)
-```
 We can now use `agency_cw_24` as a crosswalk to convert these sub-agencies to their parent agency numbers. 
 
 Knowing this caveat about 2024 agency data, we'll query the both `CITY OF CHICAGO` and `CITY OF CHICAGO LIBRARY FUND` for all years, and then update the `agency_num` field for `CITY OF CHICAGO LIBRARY FUND` using `agency_cw_24`. This will ensure consistent reporting across all years.
