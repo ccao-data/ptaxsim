@@ -21,13 +21,23 @@ The main changes that the Clerk and the Treasurer made in 2024 include:
 
 - **Changed agency numbers to enable reporting some funds as agencies**.
 - **Switched from three-digit to six-digit fund numbers to support new types
-  of funds**. The new types of funds are primarily bond series.
+  of funds**. Prior to 2024, fund numbers (`agency_fund.fund_num`)
+  consisted of three digits, and funds with the same `fund_num` in different
+  agencies always referred to the same type of fund. In 2024, the Clerk changed
+  their fund numbers so that they consist of six digits, and they are no longer
+  guaranteed to refer to the same type of fund across agencies. The new types
+  of funds that this change supports are primarily bond series.
 - **Changed the TIF revenue share calculation so that it is performed at the
   PIN-level rather than the tax-code-level**. This means that TIF increment is
   now calculated based on the difference between the frozen and current taxable
   EAV for each individual PIN in a TIF, rather than the frozen and current
   taxable EAV of the tax code as a whole.
-- **Removed a number of minor columns from reports**.
+- **Removed a number of minor columns from agency reports**. None of these
+  columns were used in any core PTAXSIM functions, so we expect that their
+  absence will not affect most users.
+- **Added a new "authority number" for each agency in agency reports**. So far,
+  authority numbers appear to have a 1:1 relationship to agency numbers, though
+  we expect this may change in future years.
 
 Read on for a detailed description of the changes we made to the PTAXSIM
 database and functions to handle these changes in the source data.
@@ -35,7 +45,8 @@ database and functions to handle these changes in the source data.
 ### Breaking changes
 
 - **Added new `agency.agency_*_24` columns to handle changing agency numbers
-  in 2024**.
+  in 2024**. You can use these columns to construct a crosswalk to analyze
+  agencies over time, even if their agency number changed in 2024.
     - The new columns include:
       - `agency.agency_change_24` (boolean, required): Whether the agency's
         number changed in 2024.
@@ -46,43 +57,55 @@ database and functions to handle these changes in the source data.
       - **How this change affects you**: If you maintain code that analyzes
         agencies over time, and you want to update your code to include 2024
         data, you will need to use these new columns to handle changes to
-        agency numbers. (_TK: Link to vignette_)
+        agency numbers. See this vignette for a demonstration of how to
+        use the new columns to construct a crosswalk for agency numbers
+        across years: _TK: Link to vignette_
 - **Added a new column `agency_fund.fund_type_num` to handle changing fund
-  numbers in 2024**. Prior to 2024, fund numbers (`agency_fund.fund_num`)
-  consisted of three digits, and funds with the same `fund_num` in different
-  agencies always referred to the same type of fund. In 2024, the Clerk changed
-  their fund numbers so that they consist of six digits, and are no longer
+  numbers in 2024**. In 2024, the Clerk changed their fund numbers so that
+  they consist of six digits instead of three, and they are no longer
   guaranteed to refer to the same type of fund across agencies. However, the
   first three digits of a fund number are still guaranteed to refer to a
   consistent fund "type", so we introduced a new column
-  `agency_fund.fund_type_num` to represent this new notion of a "fund type".
+  `agency_fund.fund_type_num` to represent the notion of a "fund type" that
+  is consistent across agencies.
     - **How this change affects you**: If you use `agency_fund.fund_num` to
-      track certain types of funds across agencies, you will need to switch to
-      `agency_fund.fund_type_num`.
+      track specific types of funds across agencies, you will need to switch to
+      using `agency_fund.fund_type_num` for that purpose.
 - **Changed the `agency_fund_info` table so that it is now unique by
-  `(agency_num, fund_num)` instead of `(fund_num)`**. As mentioned above,
-  fund identifiers are no longer consistent across agencies. As a result, we
-  have changed the `agency_fund_info` table so that it includes `agency_num`
+  `(agency_num, fund_num)` instead of `(fund_num)`**. Since fund numbers are
+  no longer consistent across agencies, we can't use them as the exclusive basis
+  for the `agency_fund_info` table anymore. To handle this change, we have
+  altered the `agency_fund_info` table so that it includes `agency_num`
   in its primary key.
     - **How this change affects you**: If you use the `agency_fund_info` table
       and treat it as unique by `fund_num`, you will need to update your
       code to add `agency_num` when joining to this table.
 - **Added a new table `pin_tif_distribution` and associated lookup function
-  `lookup_pin_tif()` to handle a methodological change to the TIF
-  revenue share calculation.**
-    - `lookup_pin_tif()` will never return rows with `year < 2024`.
-    - `lookup_tif()` will never return rows with `year > 2024`.
-    - **How this change affects you**:
-      - Update `tax_bill()` function calls in TIF counterfactuals to pass in
-        `pin_tif_dt` for years starting in 2024
+  `lookup_pin_tif()` to handle the methodological change to the TIF
+  revenue share calculation.** The `tax_bill()` function also accepts an
+  optional `pin_tif_dt` argument that you can use for post-2024 TIF
+  counterfactuals.
+    - Note that there are now two different TIF lookup functions, each of
+      which applies to a different set of years:
+      - `lookup_pin_tif()` will only return rows where `year >= 2024`.
+      - `lookup_tif()` will only return rows where `year < 2024`.
+    - **How this change affects you**: If you maintain any TIF counterfactuals,
+      you will need to update your use of the `tax_bill()` function to pass in
+      an altered `pin_tif_dt` for any tax years that you analyze beyond 2023.
+      For an example of this type of change, see the [Tinkering with TIFs
+      vignette](https://ccao-data.github.io/ptaxsim/articles/tifs.html), which
+      we have updated to include a TIF counterfactual with data for tax year
+      2024.
 - **Dropped a few columns that the Clerk has removed from its agency reports**.
-    - These columns are:
+    - The dropped columns are:
       - `agency_fund.ptell_reduced_ind` (PTELL-reduced levy indicator)
       - `agency.reduction_type` (PTELL-reduced levy type)
-      <!-- TODO: Is this true? -->
       - `agency.total_non_cap_ext` (Total non-capped extension for an agency)
-      - **How this change affects you**: If you use any of the columns listed
-        above, you will need to remove them from your code.
+    - **How this change affects you**: If you use any of the columns listed
+      above, you will need to remove them from your code. Feel free to [open an
+      issue](https://github.com/ccao-data/ptaxsim/issues/new) to ask for help
+      replacing these columns; we're interested to know if and how PTAXSIM users
+      are using them.
 - **Consolidated non-Cook County EAV columns into a new column
   `agency.cty_overlap_eav`**.
     - These columns have been removed and their values are now included in the
@@ -98,6 +121,11 @@ database and functions to handle these changes in the source data.
       - `agency.cty_kendall_eav`
       - `agency.cty_lasalle_eav`
       - `agency.cty_livingston_eav`
+    - **How this change affects you**: If you use any of the columns listed
+      above, you will need to remove them from your code. If `cty_overlap_eav`
+      does not work for your purposes, [open an
+      issue](https://github.com/ccao-data/ptaxsim/issues/new) and we'll do our
+      best to help you update your analysis.
 
 ### Improvements
 
@@ -106,7 +134,7 @@ database and functions to handle these changes in the source data.
   Disabilities Exemption](https://www.cookcountyassessoril.gov/veterans-disabilities-exemption).
   The lookup function `lookup_pin()` now returns this column.
     - **How this change affects you**: You may use this column if you would
-      like to analyze this exemption.
+      like to analyze this new exemption.
 - **Added a new column `agency.authority_num`**. We expect this column to be
   more useful in future years when the Clerk continues migrating from the
   core "Agency" entity to the "Authority" entity.
@@ -116,19 +144,27 @@ database and functions to handle these changes in the source data.
       column in the future. However, it remains available if you are interested
       in investigating it.
 - **Added support for pre-release database versions**. The code now supports
-  database versions with pre-release suffixes like `2024.0.0-alpha.1` to
-  indicate database versions that are unreleased but available for testing.
-    - **How this change affects you**: This change will not affect you as a
-      PTAXSIM user. It is only useful for PTAXSIM maintainers and beta testers.
-- **Updated the TIF vignette to demonstrate the correct way to handle the new
-  TIF revenue share calcluation** ([#77](https://github.com/ccao-data/ptaxsim/pull/77))
+  database versions with pre-release suffixes like `2024.0.0-alpha.1`.
+  Databases tagged with pre-release versions are unreleased but available for
+  testing.
+    - **How this change affects you**: This change will not affect most PTAXSIM
+      users. It is only useful for PTAXSIM maintainers and pre-release testers.
+- **Updated the [Tinkering with TIFs
+  vignette](https://ccao-data.github.io/ptaxsim/articles/tifs.html) to
+  demonstrate the correct way to handle the new TIF revenue share calcluation**
+  ([#77](https://github.com/ccao-data/ptaxsim/pull/77)).
     - **How this change affects you**: You should read the latest version of the
-      vignette if you use PTAXSIM for TIF analysis.
+      vignette if you use PTAXSIM for TIF counterfactuals.
+- **Added a new vignette to demonstrate the correct way to handle agency
+  numbers that changed in 2024 (_TK: Link to vignette_)**
+  ([#84](https://github.com/ccao-data/ptaxsim/pull/84)).
+    - **How this change affects you**: You should read the latest version of the
+      vignette if you use PTAXSIM to analyze specific agencies over time.
 
 ### Bug fixes
 
 - **Lowered the memory usage of the `pin_geometry` extraction script**
   ([#67](https://github.com/ccao-data/ptaxsim/pull/67)). This script previously
-  struggled to complete on our 160gb server. It now runs correctly.
+  struggled to complete on our 160gb server. It now executes without any issues.
     - **How this change affects you**: This change will not affect you as a
       PTAXSIM user. It is only useful for PTAXSIM maintainers.
