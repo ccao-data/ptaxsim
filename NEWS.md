@@ -1,8 +1,6 @@
-# Changelog
+# ptasxim 1.1.0
 
-## 1.1.0
-
-### Background
+## Background
 
 This release adds support for tax year 2024. It is intended for use with the
 `2024.0.x` database version.
@@ -42,7 +40,7 @@ The main changes that the Clerk and the Treasurer made in 2024 include:
 Read on for a detailed description of the changes we made to the PTAXSIM
 database and functions to handle these changes in the source data.
 
-### Breaking changes
+## Breaking changes
 
 - **Added new `agency.agency_*_24` columns to handle changing agency numbers
   in 2024**. You can use these columns to construct a crosswalk to analyze
@@ -127,7 +125,7 @@ database and functions to handle these changes in the source data.
       issue](https://github.com/ccao-data/ptaxsim/issues/new) and we'll do our
       best to help you update your analysis.
 
-### Improvements
+## Improvements
 
 - **Added a new exemption column `pin.exe_vet_dis_100`**. This column
   corresponds to the new 100% disability level for the [Veterans with
@@ -161,7 +159,7 @@ database and functions to handle these changes in the source data.
     - **How this change affects you**: You should read the latest version of the
       vignette if you use PTAXSIM to analyze specific agencies over time.
 
-### Bug fixes
+## Bug fixes
 
 - **Lowered the memory usage of the `pin_geometry` extraction script**
   ([#67](https://github.com/ccao-data/ptaxsim/pull/67)). This script previously
