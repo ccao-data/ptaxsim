@@ -1,4 +1,4 @@
-# ptasxim 1.1.0
+# ptaxsim 1.1.0
 
 ## Background
 
@@ -52,12 +52,12 @@ database and functions to handle these changes in the source data.
         starting in 2024. Null if the agency number did not change in 2024.
       - `agency.agency_name_24` (string, optional): The agency's name starting in
         2024. Null if the agency number did not change in 2024.
-      - **How this change affects you**: If you maintain code that analyzes
-        agencies over time, and you want to update your code to include 2024
-        data, you will need to use these new columns to handle changes to
-        agency numbers. See this vignette for a demonstration of how to
-        use the new columns to construct a crosswalk for agency numbers
-        across years: _TK: Link to vignette_
+    - **How this change affects you**: If you maintain code that analyzes
+      agencies over time, and you want to update your code to include 2024
+      data, you will need to use these new columns to handle changes to
+      agency numbers. See this vignette for a demonstration of how to
+      use the new columns to construct a crosswalk for agency numbers
+      across years: _TK: Link to vignette_
 - **Added a new column `agency_fund.fund_type_num` to handle changing fund
   numbers in 2024**. In 2024, the Clerk changed their fund numbers so that
   they consist of six digits instead of three, and they are no longer
