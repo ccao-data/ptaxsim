@@ -33,16 +33,14 @@ library(here)
 library(ggplot2)
 library(ptaxsim)
 library(tidyr)
-
-ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.2024.0.0-alpha.2.db"))
 ```
 
 ```{r, echo=FALSE}
 # This is needed to build the vignette using GitHub Actions
-#ptaxsim_db_conn <- DBI::dbConnect(
-#  RSQLite::SQLite(),
-#  Sys.getenv("PTAXSIM_DB_PATH")
-#)
+ptaxsim_db_conn <- DBI::dbConnect(
+  RSQLite::SQLite(),
+  Sys.getenv("PTAXSIM_DB_PATH")
+)
 ```
 
 ## Accounting for 2024 changes to agency fund reporting
