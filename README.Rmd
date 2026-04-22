@@ -252,7 +252,7 @@ The PTAXSIM backend database contains cleaned data from the Cook County Clerk, T
 | tif              | Clerk             | [TIF Reports - Cook County Summary Reports](https://www.cookcountyclerkil.gov/property-taxes/tifs-tax-increment-financing/tif-reports)               | [data-raw/tif/tif.R](data-raw/tif/tif.R)                         | TIF revenue, start year, and cancellation year                    |
 | tif_crosswalk    | Clerk             | Manually created from TIF summary and distribution reports               | [data-raw/tif/tif.R](data-raw/tif/tif.R)                         | Fix for data issue identified in #39                |
 | tif_distribution | Clerk             | [TIF Reports - Tax Increment Agency Distribution Reports](https://www.cookcountyclerkil.gov/property-taxes/tifs-tax-increment-financing/tif-reports) | [data-raw/tif/tif.R](data-raw/tif/tif.R)                         | TIF EAV, frozen EAV, and distribution percentage by tax code      |
-| pin_tif_distribution | Clerk | [TIF Reports - Tax Increment Agency Distribution Reports](https://www.cookcountyclerkil.gov/property-taxes/tifs-tax-increment-financing/tif-reports) | [data-raw/tif/tif.R](data-raw/tif/tif.R) | TIF EAV, frozen EAV, and distribution percentage by tax code |
+| pin_tif_distribution | Clerk | [TIF Reports - Tax Increment Agency Distribution Reports](https://www.cookcountyclerkil.gov/property-taxes/tifs-tax-increment-financing/tif-reports) | [data-raw/tif/tif.R](data-raw/tif/tif.R) | TIF EAV, frozen EAV, and distribution percentage by PIN |
 
 
 ### Database diagram
