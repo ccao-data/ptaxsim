@@ -61,7 +61,7 @@ agency_cw_24 <- DBI::dbGetQuery(
   select(agency_num, agency_name, agency_num_24, agency_name_24)
 
 datatable(agency_cw_24 %>%
-            filter(!is.na(agency_num_24)))
+  filter(!is.na(agency_num_24)))
 ```
 
 From this table it appears that the updated agencies are specific funds for various municipalities - the Clerk had previously reported certain municipal fund levies as separate taxing agencies. This updated data structure begins in 2024 while years prior to 2024 remain the same, meaning users will need to account for this discrepancy if ever analyzing these taxing agency data over time.
@@ -272,8 +272,10 @@ chi_levy_plot_2 <- ggplot(plot_2_df, aes(year, total_ext, group = agency_num)) +
     hjust = .6,
     vjust = -.5
   ) +
-  scale_y_continuous(labels = scales::label_dollar(scale = 1e-9, suffix = "B")
-  ) +
+  scale_y_continuous(labels = scales::label_dollar(
+    scale = 1e-9,
+    suffix = "B"
+  )) +
   scale_x_continuous(
     breaks = seq(min(plot_2_df$year, na.rm = TRUE),
       max(plot_2_df$year, na.rm = TRUE),
