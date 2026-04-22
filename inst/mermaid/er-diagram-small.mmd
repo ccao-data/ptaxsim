@@ -90,6 +90,17 @@ erDiagram
     double  tax_code_distribution_pct
   }
 
+  pin_tif_distribution {
+    int     year               PK
+    varchar pin                PK
+    varchar agency_num         PK
+    varchar tax_code_num
+    double  pin_distribution_pct
+    double  transit_tif_to_cps
+    double  transit_tif_to_tif
+    double  transit_tif_to_dist
+  }
+
   eq_factor ||--|{ pin : "applies to"
   pin ||--|{ tax_code : "within"
   cpi ||--|{ agency : "applies to"
@@ -100,6 +111,7 @@ erDiagram
   agency_fund_info ||--|{ agency_fund : "describes"
   tif ||--|| tif_crosswalk : "in"
   tif_distribution }|--|| tif_crosswalk : "in"
+  pin_tif_distribution }|--|| tif_crosswalk : "in"
   agency_info ||--o{ tif: "describes"
   tax_code }|--o| tif : "may have"
   pin_geometry ||--o| pin : "has"
