@@ -217,9 +217,10 @@ multiple_years_plot <- ggplot(data = multiple_years_summ) +
   scale_y_continuous(
     name = "Total Tax Amount",
     labels = scales::dollar,
+    expand = expansion(mult = c(0, .05)),
     n.breaks = 8
   ) +
-  scale_x_continuous(name = "Year", n.breaks = 7) +
+  scale_x_continuous(name = "Year", n.breaks = 8) +
   scale_fill_manual(values = scales::hue_pal()(10)) +
   theme_minimal() +
   guides(fill = guide_legend(title = "District Type"))
