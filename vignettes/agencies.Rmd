@@ -91,15 +91,14 @@ chi_agencies <- DBI::dbGetQuery(
   "
   SELECT DISTINCT *
   FROM agency
-  WHERE agency_num = '030210000'
-  OR agency_num = '030210001'
-  OR agency_num = '050200000'
-  OR agency_num = '044060000'
+  WHERE agency_num IN ('030210000', '030210001', '050200000', '044060000')
   "
 )
 ```
 
-Before we do anything, we need to fold the `CITY OF CHICAGO LIBRARY FUND` into the `CITY OF CHICAGO` levy total for all years prior to 2024. We can do this by joining `agency_cw_24` by `agency_num` to `chi_agencies` and replacing the old `agency_num` with `agency_num_24`, then grouping by agency and year and then summing the fields `total_final_levy` and `total_ext`. *Terminology note*: The **levy** is the amount of money a local government budgets for and requests to receive from property taxes. Many taxing agencies are subject to limits imposed by State law. The **extension** (called `final_ext` in the database) is the total, final amount a taxing body is allowed to receive which is calculated and confirmed by the Cook County Clerk. 
+Before we do anything, we need to fold the `CITY OF CHICAGO LIBRARY FUND` into the `CITY OF CHICAGO` levy total for all years prior to 2024. We can do this by joining `agency_cw_24` by `agency_num` to `chi_agencies` and replacing the old `agency_num` with `agency_num_24`, then grouping by agency and year and then summing the fields `total_final_levy` and `total_ext`.[^1]
+
+[^1]: *Terminology note*: The **levy** is the amount of money a local government budgets for and requests to receive from property taxes. Many taxing agencies are subject to limits imposed by State law. The **extension** (called `final_ext` in the database) is the total, final amount a taxing body is allowed to receive which is calculated and confirmed by the Cook County Clerk. 
 
 ```{r}
 chi_agencies <- chi_agencies %>%
@@ -123,9 +122,9 @@ chi_agencies <- chi_agencies %>%
 
 Now that we have the correct total levies for the City of Chicago, Chicago Public Schools and Chicago Park District across all years, we can look at how those levies have changed from 2006 to 2024.
 
-CPS and CPKD are both subject to PTELL (Property Tax Extension Law Limit), which ensures certain taxing agencies do not increase their levies beyond the rate of inflation (with some exceptions\*). The City of Chicago is not by virtue of being a non-home rule agency. However, the City of Chicago imposes [its own limits](https://codelibrary.amlegal.com/codes/chicago/latest/chicago_il/0-0-0-2608573) which mirror PTELL's and prohibit a taxing agency from increasing its levy more than the rate of inflation or 5%, whichever is less.
+CPS and CPKD are both subject to PTELL (Property Tax Extension Law Limit), which ensures certain taxing agencies do not increase their levies beyond the rate of inflation (with some exceptions[^2]). The City of Chicago is not by virtue of being a non-home rule agency. However, the City of Chicago imposes [its own limits](https://codelibrary.amlegal.com/codes/chicago/latest/chicago_il/0-0-0-2608573) which mirror PTELL's and prohibit a taxing agency from increasing its levy more than the rate of inflation or 5%, whichever is less.
 
-\*PTELL, as well as Chicago's property tax limitation ordinance, contain loopholes that allow taxing agencies to [increase their levies beyond the rate of inflation](https://civicfed.org/press/new-report-finds-illinois-property-tax-cap-law-not-working-intended). Let's see how Chicago's levy has fared compared to inflation since 2006.
+[^2]: PTELL, as well as Chicago's property tax limitation ordinance, contain loopholes that allow taxing agencies to [increase their levies beyond the rate of inflation](https://civicfed.org/press/new-report-finds-illinois-property-tax-cap-law-not-working-intended). Let's see how Chicago's levy has fared compared to inflation since 2006.
 
 To do so, we'll calculate the rate at which the levies have grown compared to the [CPI-U](https://www.bls.gov/cpi/). Fortunately CPI data, as reported by the Illinois Department of Revenue (IDOR) for purpose of PTELL calculatios, is available in the PTAXSIM data base in the `cpi` table.
 
@@ -284,11 +283,11 @@ chi_levy_plot_2
 
 The PTAXSIM database also contains information related to taxing agency's property tax funds so we can understand in greater detail what they intend to spend their property tax revenue on. This information can be found in the `agency_fund` and `agency_fund_info` tables. This data is not utilized by any of PTAXSIM's functions, but it is available to be queried an analyzed.
 
-In 2024, the Cook County Clerk's agency fund identifier keys were updated, now showing a greater level of detail than in prior years. You can learn more about this change and how we account for it in the PTAXSIM database by reading out 2024 update [changelog](https://ccao-data.github.io/ptaxsim/changelog). 
+In 2024, the Cook County Clerk's agency fund identifier keys were updated, now showing a greater level of detail than in prior years. You can learn more about this change and how we account for it in the PTAXSIM database by reading out 2024 update [changelog](https://ccao-data.github.io/ptaxsim/news/). 
 
 To demonstrate working with the agency fund data, we will query the fund information for the `CITY OF CHICAGO` and the `CITY OF CHICAGO LIBRARY FUND`.
 
-The level of detail provided in`fund_name` varies across years and agencies which can make analysis or plotting the data tricky. To simplify `agency_fund` data further, we opted below to add broader categories to define funds.  In this case, we'll tag any fund with "A & B" (Annuities and Benefits) in the name as a pension fund. We'll label funds related to bond and interest payments, as well as note redemption, as "Bond Payments".
+The level of detail provided in `fund_name` varies across years and agencies which can make analysis or plotting the data tricky. To simplify `agency_fund` data further, we opted below to add broader categories to define funds. In this case, we'll tag any fund with "A & B" (Annuities and Benefits) in the name as a pension fund. We'll label funds related to bond and interest payments, as well as note redemption, as "Bond Payments".
 
 ```{r}
 chi_agency_fund <- DBI::dbGetQuery(
