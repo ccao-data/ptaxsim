@@ -126,11 +126,13 @@ bills_df <- bills_df %>%
 #
 #   3. name_priority: Integer priority for this name, in descending priority
 #      order (e.g. 1 is higher priority than 2). We only use this value when
-#      rolling up funds and transit TIF distributions into their parent agency.
-#      In these cases, it's important that the parent agency have priority 1.
-#      All other agencies should have priorities other than 1, but it doesn't
+#      either A) rolling up a fund into its parent agency, or B) rolling up
+#      a transit TIF distribution into the TIF agency. In these cases, it's
+#      important that the parent agency (or the TIF agency) have priority 1.
+#      All other agencies should have priorities greater than 1, but it doesn't
 #      matter what those priorities are relative to each other, since we only
-#      use the `name_priority` field to determine which agency is the parent.
+#      use the `name_priority` field to determine which agency is the parent
+#      (i.e. the agency in an `agency_num` group whose `name_priority` is 1).
 agency_match <- readr::read_csv(
   "data-raw/sample_tax_bills/agency_name_match.csv"
 )
