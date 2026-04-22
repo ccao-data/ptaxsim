@@ -272,7 +272,8 @@ chi_levy_plot_2 <- ggplot(plot_2_df, aes(year, total_ext, group = agency_num)) +
     hjust = .6,
     vjust = -.5
   ) +
-  scale_y_continuous(labels = scales::label_dollar(scale = 1e-9, suffix = "B")) +
+  scale_y_continuous(labels = scales::label_dollar(scale = 1e-9, suffix = "B")
+  ) +
   scale_x_continuous(
     breaks = seq(min(plot_2_df$year, na.rm = TRUE),
       max(plot_2_df$year, na.rm = TRUE),
