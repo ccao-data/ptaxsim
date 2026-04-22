@@ -100,7 +100,7 @@ bills_df <- bills_df %>%
 # Load agency name lookup from file. This lookup maps agency names to numbers.
 #
 # We maintain this file by hand. When adding a new year of sample bills, you
-# will likely encounter agencies that are not yet present in this list. To
+# may encounter agencies that are not yet present in this list. To
 # add those agencies, perform the join to `bills_df` in the code block below
 # and then filter the resulting `bills_df` dataframe for agencies with nulls
 # for `agency_num`. Then, use the Clerk's agency rate report and TIF report
