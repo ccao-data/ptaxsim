@@ -111,13 +111,15 @@ chi_agencies <- chi_agencies %>%
   mutate(
     agency_num =
       ifelse(!is.na(agency_num_24),
-             agency_num_24,
-             agency_num)) %>%
+        agency_num_24,
+        agency_num
+      )
+  ) %>%
   group_by(year, agency_num) %>%
   summarize(
     total_final_levy = sum(total_final_levy),
     total_ext = sum(total_ext)
-)
+  )
 ```
 
 ## Tracking Chicago, CPS, and CPKD levies
@@ -134,8 +136,10 @@ To do so, we'll calculate the rate at which the levies have grown compared to th
 # Calculate the levy percent change for each agency indexed to 2006
 chi_levy_indx <- chi_agencies %>%
   group_by(agency_num) %>%
-  mutate(levy_2006 = total_final_levy[year == 2006][1],
-         levy_pct_inc = (total_final_levy - levy_2006) / levy_2006 * 100) %>%
+  mutate(
+    levy_2006 = total_final_levy[year == 2006][1],
+    levy_pct_inc = (total_final_levy - levy_2006) / levy_2006 * 100
+  ) %>%
   ungroup() %>%
   select(agency_num, year, levy_pct_inc) %>%
   pivot_longer(
@@ -170,38 +174,41 @@ We'll then plot the rate of change for each levy compared to inflation.
 ```{r}
 highlight_key <- tibble::tibble(
   agency_num = c("100", "050200000", "030210000", "044060000"),
-  label      = c("CPI-U", "CPKD",      "City",        "CPS")
+  label      = c("CPI-U", "CPKD", "City", "CPS")
 )
 
 plot_1_df <- rbind(cpi, chi_levy_indx) %>%
   left_join(highlight_key, by = "agency_num")
-  
+
 df_lab <- plot_1_df %>%
   group_by(agency_num, label) %>%
   filter(year == max(year, na.rm = TRUE)) %>%
-  slice_tail(n = 1) %>%       
+  slice_tail(n = 1) %>%
   ungroup() %>%
-  mutate(label_col = ifelse(label == "CPI-U", "#d62728", "black"))  # red for CPI-U
+  mutate(label_col = ifelse(label == "CPI-U", "#d62728", "black"))
 
-chi_levy_plot_1 <- 
+chi_levy_plot_1 <-
   ggplot() +
   geom_line(
     data = plot_1_df,
-    aes(x = year, y = pct_inc/100, group = agency_num, color = label),
+    aes(x = year, y = pct_inc / 100, group = agency_num, color = label),
     linewidth = .5
   ) +
   # right-side labels in black (no color mapping)
   geom_text(
     data = df_lab,
-    aes(x = year, y = pct_inc/100, label = label),
+    aes(x = year, y = pct_inc / 100, label = label),
     color = df_lab$label_col,
     hjust = -0.1,
     size = 3.5
   ) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   scale_x_continuous(
-    breaks = seq(min(plot_1_df$year, na.rm = TRUE), max(plot_1_df$year, na.rm = TRUE), by = 2),
-    expand = expansion(mult = c(0.01, 0.08))  # add right padding so labels fit
+    breaks = seq(min(plot_1_df$year, na.rm = TRUE),
+      max(plot_1_df$year, na.rm = TRUE),
+      by = 2
+    ),
+    expand = expansion(mult = c(0.01, 0.08)) # add right padding so labels fit
   ) +
   scale_color_manual(
     values = c(
@@ -211,7 +218,7 @@ chi_levy_plot_1 <-
       "CPI-U"  = "#d62728"
     ),
     breaks = c("CPKD", "City", "CPS"),
-    guide = "none"  # hide legend since lines are labeled
+    guide = "none" # hide legend since lines are labeled
   ) +
   labs(
     x = "Year",
@@ -248,10 +255,11 @@ df_lab <- plot_2_df %>%
 df_2024 <- plot_2_df %>%
   filter(year == 2024) %>%
   group_by(agency_num, label) %>%
-  slice_tail(n = 1) %>%  # in case there are duplicates in 2024
+  slice_tail(n = 1) %>% # in case there are duplicates in 2024
   ungroup() %>%
   mutate(label_2024 = paste0(
-    label, ": ", scales::label_dollar(scale = 1e-9, suffix = "B", accuracy = 0.1)(total_ext)
+    label, ": ",
+    scales::label_dollar(scale = 1e-9, suffix = "B", accuracy = 0.1)(total_ext)
   ))
 
 chi_levy_plot_2 <- ggplot(plot_2_df, aes(year, total_ext, group = agency_num)) +
@@ -266,7 +274,10 @@ chi_levy_plot_2 <- ggplot(plot_2_df, aes(year, total_ext, group = agency_num)) +
   ) +
   scale_y_continuous(labels = scales::label_dollar(scale = 1e-9, suffix = "B")) +
   scale_x_continuous(
-    breaks = seq(min(plot_2_df$year, na.rm = TRUE), max(plot_2_df$year, na.rm = TRUE), by = 2),
+    breaks = seq(min(plot_2_df$year, na.rm = TRUE),
+      max(plot_2_df$year, na.rm = TRUE),
+      by = 2
+    ),
     expand = expansion(mult = c(0.01, 0.08))
   ) +
   labs(x = "Year", y = "Final Agency Extension") +
@@ -315,24 +326,29 @@ chi_agency_fund_info <- DBI::dbGetQuery(
 chi_agency_fund <- chi_agency_fund %>%
   left_join(chi_agency_fund_info) %>%
   # Remove funds that levy equal to 0
-  filter(final_levy > 0,
-         # Remove fund that only existed in 2006
-         fund_type_num != "319") %>%
+  filter(
+    final_levy > 0,
+    # Remove fund that only existed in 2006
+    fund_type_num != "319"
+  ) %>%
   mutate(
     fund_catg =
-      case_when(grepl("A & B", fund_name) ~ "Pension",
-                grepl("NOTE REDEMPTION & INTEREST FUND", fund_name) ~ 
-                  "Bond Payments",
-                grepl("BONDS & INTEREST", fund_name) ~ "Bond Payments",
-                grepl("LIBRARY NOTE REDEMPTION", fund_name) ~ "Library Fund",
-                grepl("BONDS & INTEREST", fund_type_name) ~ "Bond Payments",
-                grepl("LIBRARY NOTE REDEMPTION", fund_type_name) ~ "Library Fund",
-                TRUE ~ fund_type_name)
+      case_when(
+        grepl("A & B", fund_name) ~ "Pension",
+        grepl("NOTE REDEMPTION & INTEREST FUND", fund_name) ~
+          "Bond Payments",
+        grepl("BONDS & INTEREST", fund_name) ~ "Bond Payments",
+        grepl("LIBRARY NOTE REDEMPTION", fund_name) ~ "Library Fund",
+        grepl("BONDS & INTEREST", fund_type_name) ~ "Bond Payments",
+        grepl("LIBRARY NOTE REDEMPTION", fund_type_name) ~ "Library Fund",
+        TRUE ~ fund_type_name
+      )
   ) %>%
   group_by(year, fund_catg) %>%
-  summarise(final_levy = sum(final_levy),
-             final_rate = sum(final_rate))
-
+  summarise(
+    final_levy = sum(final_levy),
+    final_rate = sum(final_rate)
+  )
 ```
 The plot below illustrates how the City's levy increase in 2016 was driven by a massive increase in the City's pension contributions. Pension contributions grew again in 2021, but in tandem with a decrease in bond financing.
 
@@ -343,8 +359,9 @@ The plot below illustrates how the City's levy increase in 2016 was driven by a 
 ```{r}
 chi_levy_plot_3 <- chi_agency_fund %>%
   ggplot() +
-  geom_line(aes(x = year, y = final_levy, color = fund_catg), 
-            linewidth = .5) +
+  geom_line(aes(x = year, y = final_levy, color = fund_catg),
+    linewidth = .5
+  ) +
   geom_point(aes(x = year, y = final_levy, color = fund_catg)) +
   scale_x_continuous(n.breaks = 10) +
   scale_y_continuous(
@@ -389,9 +406,12 @@ fund_type_table <- chi_agency_fund %>%
 fund_type_table %>%
   arrange(desc(`2024`)) %>%
   bind_rows(
-    summarise(., fund_catg = "Total Levy", across(c("2020", "2021", "2022", "2023", "2024"), sum))
+    summarise(.,
+      fund_catg = "Total Levy",
+      across(c("2020", "2021", "2022", "2023", "2024"), sum)
+    )
   ) %>%
-    rename(`Fund Type` = fund_catg) %>%
+  rename(`Fund Type` = fund_catg) %>%
   datatable(
     caption = "Chicago Property Tax Levies by Fund Type",
     rownames = FALSE,
@@ -413,8 +433,10 @@ fund_type_table %>%
 We can also break down the total levy by share allocated to each fund. While the City's property tax levy has grown each year, the portion allocated to the Library Fund has remained steady.
 ```{r, echo = FALSE}
 fund_type_table %>%
-  mutate(across(c("2020", "2021", "2022", "2023", "2024"), 
-                ~ round(. / sum(.) * 100))) %>%
+  mutate(across(
+    c("2020", "2021", "2022", "2023", "2024"),
+    ~ round(. / sum(.) * 100)
+  )) %>%
   arrange(desc(`2024`)) %>%
   datatable(
     caption = "Chicago Property Tax Levies by Fund Type — Share by Year",
