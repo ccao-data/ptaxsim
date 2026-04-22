@@ -17,7 +17,7 @@ One of the unique features of PTAXSIM is the database that accompanies the packa
 
 In this vignette, we'll demonstrate how to query data from the PTAXSIM SQLite database that can help us analyze taxing agencies' property tax revenue over time.
 
-Additionally, we'll show how to account for the 2024 changes to the Cook County Clerk's agency data structure which will be necessary for users to account for when conducting a time series analysis of certain taxing agencies.
+Additionally, we'll show how to account for the 2024 changes to the Cook County Clerk's agency data structure, which is necessary when conducting a time series analysis of taxing agencies before and after 2024.
 
 # Chicago taxing agencies
 
