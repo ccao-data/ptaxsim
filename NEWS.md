@@ -51,9 +51,9 @@ SELECT * FROM agency_info WHERE agency_change_24
 - **Switched from three-digit to six-digit fund numbers to add a greater level
   of detail to funds**. Prior to 2024, fund numbers (`agency_fund.fund_num`)
   consisted of three digits, and funds with the same `fund_num` in different
-  agencies always referred to the same type of fund. In 2024, the Clerk changed
-  their fund numbers so that they consist of six digits, and they are no longer
-  guaranteed to refer to the same type of fund across agencies.
+  agencies always had the same `fund_name`. In 2024, the Clerk changed their
+  fund numbers so that they consist of six digits, and they are no longer
+  guaranteed to share the same name across agencies.
     - To see the full list of funds that are new in 2024, run the following
       query against the 2024 PTAXSIM database:
 
@@ -108,7 +108,7 @@ database and functions to handle these changes in the source data.
 - **Added a new column `agency_fund.fund_type_num` to handle changing fund
   numbers in 2024**. In 2024, the Clerk changed their fund numbers so that
   they consist of six digits instead of three, and they are no longer
-  guaranteed to refer to the same type of fund across agencies. However, the
+  guaranteed to refer to the same `fund_name` across agencies. However, the
   first three digits of a fund number are still guaranteed to refer to a
   consistent fund "type", so we introduced a new column
   `agency_fund.fund_type_num` to represent the notion of a "fund type" that
