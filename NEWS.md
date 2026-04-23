@@ -98,7 +98,7 @@ database and functions to handle these changes in the source data.
   `agency_fund.fund_type_num` to represent the notion of a "fund type" that
   is consistent across agencies.
     - **How this change affects you**: If you use `agency_fund.fund_num` to
-      track specific types of funds across agencies, you will need to switch to
+      track specific funds across agencies, you will need to switch to
       using `agency_fund.fund_type_num` for that purpose.
 - **Changed the `agency_fund_info` table so that it is now unique by
   `(agency_num, fund_num)` instead of `(fund_num)`**. Since fund numbers are
@@ -129,7 +129,7 @@ database and functions to handle these changes in the source data.
     - The dropped columns are:
       - `agency_fund.ptell_reduced_ind` (PTELL-reduced levy indicator)
       - `agency.reduction_type` (PTELL-reduced levy type)
-      - `agency.total_non_cap_ext` (Total non-capped extension for an agency)
+      - `agency.total_reduced_levy` (PTELL reduced levy total)
     - **How this change affects you**: If you use any of the columns listed
       above, you will need to remove them from your code. Feel free to [open an
       issue](https://github.com/ccao-data/ptaxsim/issues/new) to ask for help
