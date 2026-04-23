@@ -268,6 +268,7 @@ The PTAXSIM backend database contains cleaned data from the Cook County Clerk, T
 
 
 - PTAXSIM's tax year 2024 update required significant changes to the database and package. Please see the PTAXSIM [changelog](https://ccao-data.github.io/ptaxsim/news) for more details. 
+- The per-district tax calculation using `tax_bill(simplify = TRUE)` for properties in transit TIFs do not match the amounts that the Treasurer reports on their tax bills. We believe the amounts we report are correct, however. See issues [#4](https://github.com/ccao-data/ptaxsim/issues/4) and [#56](https://github.com/ccao-data/ptaxsim/issues/56) for more information, as well as PR [#58](https://github.com/ccao-data/ptaxsim/pull/58).
 - Special Service Area (SSA) rates must be calculated manually when creating counterfactual bills. See issue [#3](https://github.com/ccao-data/ptaxsim/issues/3) for more information.
 - In rare instances, a TIF can have multiple `agency_num` identifiers (usually there's only one per TIF). The `tif_crosswalk` table determines what the "main" `agency_num` is for each TIF and pulls the name and TIF information using that identifier. See issue [GitLab #39](https://gitlab.com/ccao-data-science---modeling/packages/ptaxsim/-/issues/39) for more information.
 - PTAXSIM is relatively memory-efficient and can calculate every district line-item for every tax bill for the last 15 years (roughly 350 million rows). However, the memory required for this calculation is substantial (around 100 GB).
