@@ -83,12 +83,12 @@ CREATE INDEX ix_agency_fund_fund_num ON agency_fund(fund_num);
 /** agency_fund_info **/
 CREATE TABLE agency_fund_info (
     agency_num              varchar(9)                                 NOT NULL,
-    fund_type_num           varchar(3)                                 NOT NULL,
+    fund_type_num           varchar(6)                                 NOT NULL,
     fund_type_name          varchar                                    NOT NULL,
     fund_num                varchar(6)                                 NOT NULL,
     fund_name               varchar                                    NOT NULL,
     capped_ind              boolean                                    NOT NULL,
-    PRIMARY KEY (agency_num, fund_type_num, fund_num)
+    PRIMARY KEY (agency_num, fund_num)
 ) WITHOUT ROWID;
 
 CREATE INDEX ix_agency_fund_info_capped_ind ON agency_fund_info(capped_ind);
