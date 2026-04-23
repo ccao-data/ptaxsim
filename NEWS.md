@@ -73,6 +73,22 @@ database and functions to handle these changes in the source data.
 
 ## Breaking changes
 
+- **Added a new table `pin_tif_distribution` and associated lookup function
+  `lookup_pin_tif()` to handle the methodological change to the TIF
+  revenue share calculation.** The `tax_bill()` function now also accepts an
+  optional `pin_tif_dt` argument that you can use for post-2024 TIF
+  counterfactuals.
+    - Note that there are now two different TIF lookup functions, each of
+      which applies to a different set of years:
+      - `lookup_pin_tif()` will only return rows where `year >= 2024`.
+      - `lookup_tif()` will only return rows where `year < 2024`.
+    - **How this change affects you**: If you maintain any TIF counterfactuals,
+      you will need to update your use of the `tax_bill()` function to pass in
+      an altered `pin_tif_dt` for any tax years that you analyze beyond 2023.
+      For an example of this type of change, see the [Tinkering with TIFs
+      vignette](https://ccao-data.github.io/ptaxsim/articles/tifs.html), which
+      we have updated to include a TIF counterfactual with data for tax year
+      2024.
 - **Added new `agency_info.agency_*_24` columns to handle agencies that have
   changed to funds in 2024**. You can use these columns to construct a crosswalk
   to analyze agencies over time, even if they changed to a fund in 2024.
@@ -109,22 +125,6 @@ database and functions to handle these changes in the source data.
     - **How this change affects you**: If you use the `agency_fund_info` table
       and treat it as unique by `fund_num`, you will need to update your
       code to add `agency_num` when joining to this table.
-- **Added a new table `pin_tif_distribution` and associated lookup function
-  `lookup_pin_tif()` to handle the methodological change to the TIF
-  revenue share calculation.** The `tax_bill()` function also accepts an
-  optional `pin_tif_dt` argument that you can use for post-2024 TIF
-  counterfactuals.
-    - Note that there are now two different TIF lookup functions, each of
-      which applies to a different set of years:
-      - `lookup_pin_tif()` will only return rows where `year >= 2024`.
-      - `lookup_tif()` will only return rows where `year < 2024`.
-    - **How this change affects you**: If you maintain any TIF counterfactuals,
-      you will need to update your use of the `tax_bill()` function to pass in
-      an altered `pin_tif_dt` for any tax years that you analyze beyond 2023.
-      For an example of this type of change, see the [Tinkering with TIFs
-      vignette](https://ccao-data.github.io/ptaxsim/articles/tifs.html), which
-      we have updated to include a TIF counterfactual with data for tax year
-      2024.
 - **Dropped a few columns that the Clerk has removed from its agency reports**.
     - The dropped columns are:
       - `agency_fund.ptell_reduced_ind` (PTELL-reduced levy indicator)
