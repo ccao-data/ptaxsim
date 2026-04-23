@@ -40,13 +40,19 @@ The main changes that the Clerk and the Treasurer made in 2024 include:
 SELECT * FROM agency_info WHERE agency_change_24
 ```
 
-- **Switched from three-digit to six-digit fund numbers to support new types
-  of funds**. Prior to 2024, fund numbers (`agency_fund.fund_num`)
+- **Switched from three-digit to six-digit fund numbers to add a greater level
+  of detail to funds**. Prior to 2024, fund numbers (`agency_fund.fund_num`)
   consisted of three digits, and funds with the same `fund_num` in different
   agencies always referred to the same type of fund. In 2024, the Clerk changed
   their fund numbers so that they consist of six digits, and they are no longer
-  guaranteed to refer to the same type of fund across agencies. The new types
-  of funds that this change supports are primarily bond series.
+  guaranteed to refer to the same type of fund across agencies.
+    - To see the full list of funds that are new in 2024, run the following
+      query against the 2024 PTAXSIM database:
+
+```sql
+SELECT * FROM agency_fund_info WHERE fund_num NOT LIKE '%000'
+```
+
 - **Changed the TIF revenue share calculation so that it is performed at the
   PIN-level rather than the tax-code-level**. This means that TIF increment is
   now calculated based on the difference between the frozen and current taxable
