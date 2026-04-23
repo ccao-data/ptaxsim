@@ -23,6 +23,7 @@ erDiagram
   }
 
   agency_fund_info {
+    varchar agency_num         PK
     varchar fund_num           PK
     varchar fund_name
     boolean capped_ind
@@ -96,13 +97,11 @@ erDiagram
     varchar agency_num         PK
     varchar tax_code_num
     double  pin_distribution_pct
-    double  transit_tif_to_cps
-    double  transit_tif_to_tif
-    double  transit_tif_to_dist
   }
 
   eq_factor ||--|{ pin : "applies to"
   pin ||--|{ tax_code : "within"
+  pin ||--o| pin_tif_distribution : "may have"
   cpi ||--|{ agency : "applies to"
   tax_code }|--|| agency : "has"
   tax_code ||--o| tif_distribution : "may have"
