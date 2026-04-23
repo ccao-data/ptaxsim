@@ -181,6 +181,7 @@ erDiagram
 
   eq_factor ||--|{ pin : "applies to"
   pin ||--|{ tax_code : "within"
+  pin ||--o| pin_tif_distribution : "may have"
   cpi ||--|{ agency : "applies to"
   tax_code }|--|| agency : "has"
   tax_code ||--o| tif_distribution : "may have"
