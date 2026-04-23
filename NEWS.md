@@ -17,7 +17,29 @@ new integrated property tax system of record.
 
 The main changes that the Clerk and the Treasurer made in 2024 include:
 
-- **Changed agency numbers to enable reporting some funds as agencies**.
+- **Changed a small number of agencies to funds**. An example is the City of
+  Chicago library fund, whose agency number (`030210001`) had a non-zero levy
+  in the `agency` table in 2023, but has a $0 levy in 2024. Instead, the library
+  fund's levy is listed in the `agency_fund` table for 2024 using the agency
+  number for the City of Chicago (`030210000`). By reporting this kind of levy
+  as a fund underneath a parent agency rather than an independent agency, the
+  format of the Clerk's data is now more similar to the format that
+  agencies like the City of Chicago use for their own internal accounting.
+    - In 2024, only 78 agencies were affected by this change, representing
+      roughly 4% of all agencies. All of the changed agencies fit into one
+      of the following categories:
+        - Mental health districts
+        - Public health funds
+        - General assistance funds
+        - Road and bridge funds
+        - Library funds
+    - To see the full list of agencies that changed in this manner in 2024,
+      run the following SQL query against the 2024 PTAXSIM database:
+
+```sql
+SELECT * FROM agency_info WHERE agency_change_24
+```
+
 - **Switched from three-digit to six-digit fund numbers to support new types
   of funds**. Prior to 2024, fund numbers (`agency_fund.fund_num`)
   consisted of three digits, and funds with the same `fund_num` in different
