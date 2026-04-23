@@ -73,9 +73,9 @@ database and functions to handle these changes in the source data.
 
 ## Breaking changes
 
-- **Added new `agency.agency_*_24` columns to handle changing agency numbers
-  in 2024**. You can use these columns to construct a crosswalk to analyze
-  agencies over time, even if their agency number changed in 2024.
+- **Added new `agency_info.agency_*_24` columns to handle changing agency
+  numbers in 2024**. You can use these columns to construct a crosswalk to
+  analyze agencies over time, even if their agency number changed in 2024.
     - The new columns include:
       - `agency.agency_change_24` (boolean, required): Whether the agency's
         number changed in 2024.
