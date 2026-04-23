@@ -67,7 +67,7 @@ PTAXSIM has a single primary function - `tax_bill()` - with two *required* argum
 The output is a `data.table` containing the tax amount directed to each taxing district, by PIN and year. Let's look at an example using just one property and year:
 
 ```{r}
-bill <- tax_bill(year_vec = 2021, pin_vec = "13264290020000")
+bill <- tax_bill(year_vec = 2024, pin_vec = "13264290020000")
 print(bill)
 ```
 
@@ -93,14 +93,14 @@ print(bill)
 The `tax_bill()` function can take multiple years in the `year_vec` argument:
 
 ```{r}
-bills <- tax_bill(2010:2021, "13264290020000")
+bills <- tax_bill(2010:2024, "13264290020000")
 print(bills, topn = 3)
 ```
 
 And multiple PINs in the `pin_vec` argument:
 
 ```{r}
-bills <- tax_bill(2021, c("13264290020000", "07101010391078", "10153080520000"))
+bills <- tax_bill(2024, c("13264290020000", "07101010391078", "10153080520000"))
 print(bills, topn = 3)
 ```
 
@@ -108,7 +108,7 @@ Passing `year_vec` and `pin_vec` of different lengths will yield the Cartesian p
 
 ```{r}
 bills <- tax_bill(
-  year_vec = 2006:2021,
+  year_vec = 2006:2024,
   pin_vec = c("13264290020000", "07101010391078", "10153080520000")
 )
 print(bills, topn = 3)
@@ -118,7 +118,7 @@ Passing `year_vec` and `pin_vec` of the same length will match the vectors eleme
 
 ```{r}
 bills <- tax_bill(
-  year_vec = c(2012, 2006, 2021),
+  year_vec = c(2012, 2021, 2024),
   pin_vec = c("13264290020000", "07101010391078", "10153080520000")
 )
 print(bills, topn = 3)
@@ -131,7 +131,7 @@ These basic arguments can even be used to calculate line-item bills for all PINs
 pins <- DBI::dbGetQuery(ptaxsim_db_conn, "SELECT DISTINCT pin FROM pin")
 
 # Calculate all bills for all years (~350M rows, takes about 10 minutes)
-bills <- tax_bill(2006:2021, pins$pin)
+bills <- tax_bill(2006:2024, pins$pin)
 print(bills, topn = 3)
 #> NOT RUN, takes too long on GitHub CI and requires ~90 GB of RAM
 ```
@@ -152,7 +152,7 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
   * Takes PINs and years as inputs and outputs a character vector of tax codes. Here is an example:
 
     ```{r}
-tax_code <- lookup_tax_code(2018:2021, "13264290020000")
+tax_code <- lookup_tax_code(2018:2024, "13264290020000")
 print(tax_code)
     ```
 
@@ -160,13 +160,13 @@ print(tax_code)
 
     ```{r}
 tax_code <- lookup_tax_code(
-  year = 2018:2021,
+  year = 2018:2024,
   pin = c("13264290020000", "07101010391078", "10153080520000")
 )
 print(tax_code)
 
 tax_code <- lookup_tax_code(
-  year = 2006:2021,
+  year = 2006:2024,
   pin = c("13264290020000", "07101010391078", "10153080520000")
 )
 print(tax_code)
@@ -193,8 +193,8 @@ print(tax_code)
   * Takes years and tax codes as inputs and outputs a keyed `data.table` of taxing districts, including their identifying information, extension, and base. Here is an example:
 
     ```{r}
-tax_code <- lookup_tax_code(2021, "13264290020000")
-agency <- lookup_agency(2021, tax_code)
+tax_code <- lookup_tax_code(2024, "13264290020000")
+agency <- lookup_agency(2024, tax_code)
 print(agency, topn = 3)
     ```
 
@@ -202,10 +202,10 @@ print(agency, topn = 3)
 
     ```{r}
 tax_codes <- lookup_tax_code(
-  year = 2021,
+  year = 2024,
   pin = c("13264290020000", "13264290020000", "13264290020000")
 )
-agency <- lookup_agency(c(2021, 2021, 2021), tax_codes)
+agency <- lookup_agency(c(2024, 2024, 2024), tax_codes)
 print(agency, topn = 3)
     ```
 
@@ -227,6 +227,7 @@ print(agency, topn = 3)
 | **`exe_vet_dis_lt50`**       | int         |     | [Veterans with Disabilities Exemption](https://www.cookcountyassessor.com/veterans-disabilities-exemption). Level of disability < 50%                                                |
 | **`exe_vet_dis_50_69`**      | int         |     | [Veterans with Disabilities Exemption](https://www.cookcountyassessor.com/veterans-disabilities-exemption). Level of disability >= 51% and <= 69%                                    |
 | **`exe_vet_dis_ge70`**       | int         |     | [Veterans with Disabilities Exemption](https://www.cookcountyassessor.com/veterans-disabilities-exemption). Level of disability >= 70%                                               |
+| **`exe_vet_dis_100`**       | int         |     | [Veterans with Disabilities Exemption](https://www.cookcountyassessor.com/veterans-disabilities-exemption). New data point available as of 2024. Value for this field will be zero for all years < 2024. Level of disability = 100%                                               |
 | **`exe_abate`**              | int         |     | Other tax abatements, exemptions, etc.                                                                                                                                               |
 
 * Expects a `data.table` with the columns above:
@@ -237,14 +238,14 @@ print(agency, topn = 3)
   * Takes years and PINs as inputs and outputs a keyed `data.table` of PINs, including their class, assessed value, and individual exemptions. Here is an example:
 
     ```{r}
-pin <- lookup_pin(2021, "13264290020000")
+pin <- lookup_pin(2024, "13264290020000")
 print(pin)
     ```
 
   * Repeat inputs will yield distinct outputs:
 
     ```{r}
-pin <- lookup_pin(2021, c("13264290020000", "13264290020000"))
+pin <- lookup_pin(2024, c("13264290020000", "13264290020000"))
 print(pin)
     ```
 
@@ -255,8 +256,8 @@ print(pin)
     * `"clerk"` - Assessed values used by the Clerk to calculate the base and by the Treasurer to calculate bills. Identical to `"board"` in the huge majority of cases
 
     ```{r}
-pin_mailed <- lookup_pin(2021, "13264290020000", stage = "mailed")
-pin_board <- lookup_pin(2021, "13264290020000", stage = "board")
+pin_mailed <- lookup_pin(2024, "13264290020000", stage = "mailed")
+pin_board <- lookup_pin(2024, "13264290020000", stage = "board")
 print(rbind(pin_mailed, pin_board))
     ```
 
@@ -279,18 +280,31 @@ print(rbind(pin_mailed, pin_board))
   * Takes years and tax codes as inputs and outputs a keyed `data.table` of TIF districts, including their identifying information and distribution percentage/TIF share. Here is an example:
 
     ```{r}
-tax_code <- lookup_tax_code(2021, "14172270080000")
-tif <- lookup_tif(2021, tax_code)
+tax_code <- lookup_tax_code(2023, "14172270080000")
+tif <- lookup_tif(2023, tax_code)
 print(tif, topn = 3)
     ```
 
   * Returns a `data.table` with zero rows if the specified `tax_code` is not within a TIF district:
 
     ```{r}
-tax_code <- lookup_tax_code(2021, "13264290020000")
-tif <- lookup_tif(2021, tax_code)
+tax_code <- lookup_tax_code(2023, "13264290020000")
+tif <- lookup_tif(2023, tax_code)
 print(tif, topn = 3)
     ```
+
+### `pin_tif_dt` {#pin_tif_dt}
+
+| Column Name             | Type       | Key | Note                                                                                                                       |
+|-------------------------|------------|-----|----------------------------------------------------------------------------------------------------------------------------|
+| **`year`**              | int        | 1   | See [tax_bill() outputs](#table1)                                                                                          |
+| **`pin`**               | varchar(14) | 2   | See [tax_bill() outputs](#table1). Unique identifier for the *tax situation* created by the TIF                            |
+| **`agency_num`**        | varchar(9) | 3   | See [tax_bill() outputs](#table1). Unique identifier for the TIF                                                           |
+| **`agency_name`**       | varchar    |     | See [tax_bill() outputs](#table1)                                                                                          |
+| **`agency_major_type`** | varchar    |     | See [tax_bill() outputs](#table1)                                                                                          |
+| **`agency_minor_type`** | varchar    |     | See [tax_bill() outputs](#table1)                                                                                          |
+| **`tif_share`**         | double     |     | The percentage of this tax PIN's revenue dedicated to the TIF. Increases as the EAV above the frozen amount increases |
+
 
 # 2. Common scenarios {#common-scenarios}
 
