@@ -17,6 +17,14 @@ new integrated property tax system of record.
 
 The main changes that the Clerk and the Treasurer made in 2024 include:
 
+- **Changed the TIF revenue share calculation so that it is performed at the
+  PIN-level rather than the tax-code-level**. This means that TIF increment is
+  now calculated based on the difference between the frozen and current taxable
+  EAV _for each individual PIN in a TIF_, rather than the difference between the
+  frozen and current taxable EAV of its tax code as a whole. As a result of this
+  change, a TIF can now have a positive increment even if the total taxable EAV
+  of its tax code has declined since its establishment, as long as individual
+  PINs within the tax code have experienced EAV growth during that time.
 - **Changed a small number of agencies to funds**. An example is the City of
   Chicago library fund, whose agency number (`030210001`) had a non-zero levy
   in the `agency` table in 2023, but has a $0 levy in 2024. Instead, the library
@@ -53,11 +61,6 @@ SELECT * FROM agency_info WHERE agency_change_24
 SELECT * FROM agency_fund_info WHERE fund_num NOT LIKE '%000'
 ```
 
-- **Changed the TIF revenue share calculation so that it is performed at the
-  PIN-level rather than the tax-code-level**. This means that TIF increment is
-  now calculated based on the difference between the frozen and current taxable
-  EAV for each individual PIN in a TIF, rather than the frozen and current
-  taxable EAV of the tax code as a whole.
 - **Removed a number of minor columns from agency reports**. None of these
   columns were used in any core PTAXSIM functions, so we expect that their
   absence will not affect most users.
