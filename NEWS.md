@@ -73,12 +73,12 @@ database and functions to handle these changes in the source data.
 
 ## Breaking changes
 
-- **Added new `agency_info.agency_*_24` columns to handle changing agency
-  numbers in 2024**. You can use these columns to construct a crosswalk to
-  analyze agencies over time, even if their agency number changed in 2024.
+- **Added new `agency_info.agency_*_24` columns to handle agencies that have
+  changed to funds in 2024**. You can use these columns to construct a crosswalk
+  to analyze agencies over time, even if they changed to a fund in 2024.
     - The new columns include:
       - `agency.agency_change_24` (boolean, required): Whether the agency's
-        number changed in 2024.
+        number changed in 2024, due to becoming a fund.
       - `agency.agency_num_24` (string, optional): The agency's new number
         starting in 2024. Null if the agency number did not change in 2024.
       - `agency.agency_name_24` (string, optional): The agency's name starting in
