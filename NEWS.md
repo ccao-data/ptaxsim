@@ -74,14 +74,17 @@ database and functions to handle these changes in the source data.
 ## Breaking changes
 
 - **Added a new table `pin_tif_distribution` and associated lookup function
-  `lookup_pin_tif()` to handle the methodological change to the TIF
-  revenue share calculation.** The `tax_bill()` function now also accepts an
-  optional `pin_tif_dt` argument that you can use for post-2024 TIF
+  [`lookup_pin_tif()`](https://ccao-data.github.io/ptaxsim/reference/lookup_pin_tif.html)
+  to handle the methodological change to the TIF revenue share calculation**.
+  The [`tax_bill()`](https://ccao-data.github.io/ptaxsim/reference/tax_bill.html)
+  function now also accepts an optional `pin_tif_dt` argument that you can use for post-2024 TIF
   counterfactuals.
     - Note that there are now two different TIF lookup functions, each of
       which applies to a different set of years:
-      - `lookup_pin_tif()` will only return rows where `year >= 2024`.
-      - `lookup_tif()` will only return rows where `year < 2024`.
+      - [`lookup_pin_tif()`](https://ccao-data.github.io/ptaxsim/reference/lookup_pin_tif.html)
+        will only return rows where `year >= 2024`.
+      - [`lookup_tif()`](https://ccao-data.github.io/ptaxsim/reference/lookup_tif.html)
+        will only return rows where `year < 2024`.
     - **How this change affects you**: If you maintain any TIF counterfactuals,
       you will need to update your use of the `tax_bill()` function to pass in
       an altered `pin_tif_dt` for any tax years that you analyze beyond 2023.
@@ -100,11 +103,14 @@ database and functions to handle these changes in the source data.
       - `agency.agency_name_24` (string, optional): The agency's name starting in
         2024. Null if the agency number did not change in 2024.
     - **How this change affects you**: If you maintain code that analyzes
-      agencies over time, and you want to update your code to include 2024
-      data, you will need to use these new columns to handle changes to
-      agency numbers. See this vignette for a demonstration of how to
-      use the new columns to construct a crosswalk for agency numbers
-      across years: _TK: Link to vignette_
+      agencies over time, and you want to update your code to include 2024 data,
+      you should use the `agency.agency_change_24` column to determine whether
+      the Clerk changed any of the agencies you analyze to funds in 2024. If
+      any of your agencies have changed to funds, you will need to use the
+      `agency_num_24` column to join pre- and post-2024 data. See [this
+      vignette](https://ccao-data.github.io/ptaxsim/articles/agencies.html)
+      for an example using the City of Chicago Library Fund to show how to
+      handle this type of change.
 - **Added a new column `agency_fund.fund_type_num` to handle changing fund
   numbers in 2024**. In 2024, the Clerk changed their fund numbers so that
   they consist of six digits instead of three, and they are no longer
@@ -161,7 +167,9 @@ database and functions to handle these changes in the source data.
 - **Added a new exemption column `pin.exe_vet_dis_100`**. This column
   corresponds to the new 100% disability level for the [Veterans with
   Disabilities Exemption](https://www.cookcountyassessoril.gov/veterans-disabilities-exemption).
-  The lookup function `lookup_pin()` now returns this column.
+  The lookup function
+  [`lookup_pin()`](https://ccao-data.github.io/ptaxsim/reference/lookup_pin.html)
+  now returns this column.
     - **How this change affects you**: You may use this column if you would
       like to analyze this new exemption.
 - **Added a new column `agency.authority_num`**. We expect this column to be
@@ -184,11 +192,14 @@ database and functions to handle these changes in the source data.
   ([#77](https://github.com/ccao-data/ptaxsim/pull/77)).
     - **How this change affects you**: You should read the latest version of the
       vignette if you use PTAXSIM for TIF counterfactuals.
-- **Added a new vignette to demonstrate the correct way to handle agency
-  numbers that changed in 2024 (_TK: Link to vignette_)**
+- **Added [a new
+  vignette](https://ccao-data.github.io/ptaxsim/articles/agencies.html)
+  to demonstrate the correct way to analyze agencies and funds over time given
+  the 2024 change that switched some agencies to funds**.
   ([#84](https://github.com/ccao-data/ptaxsim/pull/84)).
-    - **How this change affects you**: You should read the latest version of the
-      vignette if you use PTAXSIM to analyze specific agencies over time.
+    - **How this change affects you**: You should read the vignette if you use
+      PTAXSIM to analyze specific agencies over time so that you understand how
+      to update your code.
 
 ## Bug fixes
 
