@@ -100,18 +100,18 @@ database and functions to handle these changes in the source data.
   changed to funds in 2024**. You can use these columns to construct a crosswalk
   to analyze agencies over time, even if they changed to a fund in 2024.
     - The new columns include:
-      - `agency.agency_change_24` (boolean, required): Whether the agency's
+      - `agency_info.agency_change_24` (boolean, required): Whether the agency's
         number changed in 2024, due to becoming a fund.
-      - `agency.agency_num_24` (string, optional): The agency's new number
+      - `agency_info.agency_num_24` (string, optional): The agency's new number
         starting in 2024. Null if the agency number did not change in 2024.
-      - `agency.agency_name_24` (string, optional): The agency's name starting in
-        2024. Null if the agency number did not change in 2024.
+      - `agency_info.agency_name_24` (string, optional): The agency's name
+        starting in 2024. Null if the agency number did not change in 2024.
     - **How this change affects you**: If you maintain code that analyzes
       agencies over time, and you want to update your code to include 2024 data,
-      you should use the `agency.agency_change_24` column to determine whether
-      the Clerk changed any of the agencies you analyze to funds in 2024. If
-      any of your agencies have changed to funds, you will need to use the
-      `agency_num_24` column to join pre- and post-2024 data. See [this
+      you should use the `agency_info.agency_change_24` column to determine
+      whether the Clerk changed any of the agencies you analyze to funds in
+      2024. If any of your agencies have changed to funds, you will need to use
+      the `agency_num_24` column to join pre- and post-2024 data. See [this
       vignette](https://ccao-data.github.io/ptaxsim/articles/agencies.html)
       for an example using the City of Chicago Library Fund to show how to
       handle this type of change.
