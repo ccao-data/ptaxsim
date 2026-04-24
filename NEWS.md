@@ -53,7 +53,11 @@ SELECT * FROM agency_info WHERE agency_change_24
   consisted of three digits, and funds with the same `fund_num` in different
   agencies always had the same `fund_name`. In 2024, the Clerk changed their
   fund numbers so that they consist of six digits, and they are no longer
-  guaranteed to share the same name across agencies.
+  guaranteed to share the same name across agencies. The Clerk also added many
+  new six-digit funds that were previously aggregated into larger three-digit
+  funds. For these new six-digit funds, the first three digits of the fund
+  number always matches the three-digit number for the aggregate fund that
+  existed prior to 2024.
     - To see the full list of funds that are new in 2024, run the following
       query against the 2024 PTAXSIM database:
 
@@ -122,6 +126,15 @@ database and functions to handle these changes in the source data.
     - **How this change affects you**: If you use `agency_fund.fund_num` to
       track specific funds across agencies, you will need to switch to
       using `agency_fund.fund_type_num` for that purpose.
+- **Appended three trailing zeros (`000`) to all fund numbers in `agency_fund`
+  and `agency_fund_info` for years prior to 2024**. This change is necessary
+  in order to align three-digit pre-2024 fund numbers with their new six-digit
+  representations in 2024.
+    - **How this change affects you**: If you maintain code that references
+      specific three-digit `fund_num` values, you will need to update these
+      values to append three trailing zeros. Alternatively, you could update
+      your code to reference `fund_type_num` instead of `fund_num`, per the
+      bullet point above.
 - **Changed the `agency_fund_info` table so that it is now unique by
   `(agency_num, fund_num)` instead of `(fund_num)`**. Since fund numbers are
   no longer consistent across agencies, we can't use them as the exclusive basis
