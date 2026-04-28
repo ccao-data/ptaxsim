@@ -172,7 +172,7 @@ We'll then plot the rate of change for each levy compared to inflation.
 <summary><strong>Click here</strong> to show plot code</summary>
 
 ```{r}
-highlight_key <- tibble::tibble(
+highlight_key <- tibble(
   agency_num = c("100", "050200000", "030210000", "044060000"),
   label      = c("CPI-U", "CPKD", "City", "CPS")
 )
