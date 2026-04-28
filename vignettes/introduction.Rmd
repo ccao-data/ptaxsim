@@ -275,7 +275,7 @@ print(rbind(pin_mailed, pin_board))
 
 * Expects a `data.table` with the columns above:
 * Each row represents a TIF that covers the specified `tax_code`. Each `tax_code` can only have one TIF, likewise for PINs
-* Returns TIF information by `tax_code` for all years from 2006-2023. For 2024 and after, the **`tax_bill()`** function relies on `pin_tif_dt` (see below)
+* Returns TIF information by `tax_code` for all years from 2006-2023. For 2024 and after, the **`tax_bill()`** function relies on `pin_tif_dt` ([see below](#pin_tif_dt))
 * The input `data.table` must be [keyed](https://cran.r-project.org/web/packages/data.table/vignettes/datatable-keys-fast-subset.html) on the `year`, `tax_code`, and `agency_num` columns and must be ***distinct***, e.i. it must not have repeat rows
 * Filled by **`lookup_tif()`**:
   * Takes years and tax codes as inputs and outputs a keyed `data.table` of TIF districts, including their identifying information and distribution percentage/TIF share. Here is an example:
