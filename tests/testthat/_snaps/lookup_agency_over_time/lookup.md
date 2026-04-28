@@ -1,4 +1,4 @@
-# lookup values/data are correct
+# agency lookup matches snapshots
 
     {
       "type": "list",
@@ -68,3 +68,4 @@
         }
       ]
     }
+

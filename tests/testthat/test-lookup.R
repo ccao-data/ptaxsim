@@ -286,7 +286,12 @@ test_that("lookup values/data are correct", {
       3178945619, 286280738, 0, 638172798
     )
   )
+})
 
+# These snapshot tests check to make sure we haven't done something obviously
+# wrong to mess up the `lookup_agency()` function. We do that by testing the
+# function on a sample of real-world data
+test_that("agency lookup matches snapshots", {
   local_edition(3) # Enable snapshot testing
   expect_snapshot_value(
     # Dataframe is necessary for json serialization in expect_snapshot_value,
@@ -297,8 +302,13 @@ test_that("lookup values/data are correct", {
     style = "json2",
     variant = "lookup_agency_over_time"
   )
+  # Extract a sample of years from the sample tax bills to test. We need to
+  # restrict the set of years before we test, otherwise the subsequent
+  # snapshot test will fail every time we add a new year of data
+  sum_df_2018_to_2024 <- sum_df %>% filter(year >= 2018, year <= 2024)
   expect_snapshot_value(
-    as.data.frame(lookup_agency(sum_df$year, sum_df$tax_code)),
+    lookup_agency(sum_df_2018_to_2024$year, sum_df_2018_to_2024$tax_code) %>%
+      as.data.frame(),
     style = "json2",
     variant = "lookup_agency_summary"
   )
