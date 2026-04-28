@@ -300,8 +300,8 @@ print(tif, topn = 3)
 |-------------------------|------------|-----|----------------------------------------------------------------------------------------------------------------------------|
 | **`year`**              | int        | 1   | See [tax_bill() outputs](#table1)                                                                                          |
 | **`pin`**               | varchar(14) | 2   | See [tax_bill() outputs](#table1).       
-| **`tax_code`**          | varchar(5) | 3   | See [tax_bill() outputs](#table1). Unique identifier for the *tax situation* created by the TIF      |
-| **`agency_num`**        | varchar(9) | 4   | See [tax_bill() outputs](#table1). Unique identifier for the TIF                                                           |
+| **`tax_code`**          | varchar(5) |     | See [tax_bill() outputs](#table1). Unique identifier for the *tax situation* created by the TIF      |
+| **`agency_num`**        | varchar(9) | 3   | See [tax_bill() outputs](#table1). Unique identifier for the TIF                                                           |
 | **`agency_name`**       | varchar    |     | See [tax_bill() outputs](#table1)                                                                                          |
 | **`agency_major_type`** | varchar    |     | See [tax_bill() outputs](#table1)                                                                                          |
 | **`agency_minor_type`** | varchar    |     | See [tax_bill() outputs](#table1)                                                                                          |
