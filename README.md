@@ -549,11 +549,11 @@ multiple_years
 #>   4:  2010 14081020210000    206    73001  69062 227905  030210001
 #>   5:  2010 14081020210000    206    73001  69062 227905  030210002
 #>  ---                                                              
-#> 154:  2024 14081020210000    206    73105 125001 379441  043030000
-#> 155:  2024 14081020210000    206    73105 125001 379441  044060000
-#> 156:  2024 14081020210000    206    73105 125001 379441  050200000
-#> 157:  2024 14081020210000    206    73105 125001 379441  050200001
-#> 158:  2024 14081020210000    206    73105 125001 379441  080180000
+#> 163:  2024 14081020210000    206    73105 125001 379441  044060000
+#> 164:  2024 14081020210000    206    73105 125001 379441  044060000
+#> 165:  2024 14081020210000    206    73105 125001 379441  050200000
+#> 166:  2024 14081020210000    206    73105 125001 379441  050200001
+#> 167:  2024 14081020210000    206    73105 125001 379441  080180000
 #>                       agency_name     agency_major_type agency_minor_type
 #>                            <char>                <char>            <char>
 #>   1:               COUNTY OF COOK           COOK COUNTY              COOK
@@ -562,11 +562,11 @@ multiple_years
 #>   4: CITY OF CHICAGO LIBRARY F... MUNICIPALITY/TOWNSHIP           LIBRARY
 #>   5: CITY OF CHICAGO SCHOOL BL... MUNICIPALITY/TOWNSHIP              MISC
 #>  ---                                                                     
-#> 154: CHICAGO COMMUNITY COLLEGE...                SCHOOL         COMM COLL
-#> 155:           BOARD OF EDUCATION                SCHOOL           UNIFIED
-#> 156:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
-#> 157: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
-#> 158: METRO WATER RECLAMATION D...         MISCELLANEOUS             WATER
+#> 163:           BOARD OF EDUCATION                SCHOOL           UNIFIED
+#> 164: BOARD OF EDUCATION - from...                SCHOOL           UNIFIED
+#> 165:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
+#> 166: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
+#> 167: METRO WATER RECLAMATION D...         MISCELLANEOUS             WATER
 #>      agency_tax_rate final_tax
 #>                <num>     <num>
 #>   1:      0.00423000    964.04
@@ -575,11 +575,11 @@ multiple_years
 #>   4:      0.00102000    232.46
 #>   5:      0.00116000    264.37
 #>  ---                          
-#> 154:      0.00149480    567.19
-#> 155:      0.03630964  13777.37
-#> 156:      0.00294209   1116.35
-#> 157:      0.00000000      0.00
-#> 158:      0.00340445   1291.79
+#> 163:      0.03630964   5662.50
+#> 164:      0.00000000   8114.87
+#> 165:      0.00294209    590.33
+#> 166:      0.00000000      0.00
+#> 167:      0.00340445    683.10
 ```
 
 The `tax_bill()` function will automatically combine the years and PIN
