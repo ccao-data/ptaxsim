@@ -329,9 +329,9 @@ print(tif, topn = 3)
 
     ```{r}
 pin_tax_to_tif <- tax_bill(2023:2024, "14172270080000") %>%
-      filter(agency_num == "030210610") %>%
-      group_by(year, agency_name) %>%
-      summarise(total_tax_to_tif = sum(final_tax))
+  filter(agency_num == "030210610") %>%
+  group_by(year, agency_name) %>%
+  summarise(total_tax_to_tif = sum(final_tax))
 print(pin_tax_to_tif, topn = 3)
     ```
 
