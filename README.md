@@ -685,6 +685,14 @@ data was available in mid-2020.
   database and package. Please see the PTAXSIM
   [changelog](https://ccao-data.github.io/ptaxsim/news) for more
   details.
+- The per-district tax calculation using `tax_bill(simplify = TRUE)` for
+  properties in transit TIFs do not match the amounts that the Treasurer
+  reports on their tax bills. We believe the amounts we report are
+  correct, however. See issues
+  [\#4](https://github.com/ccao-data/ptaxsim/issues/4) and
+  [\#56](https://github.com/ccao-data/ptaxsim/issues/56) for more
+  information, as well as PR
+  [\#58](https://github.com/ccao-data/ptaxsim/pull/58).
 - Special Service Area (SSA) rates must be calculated manually when
   creating counterfactual bills. See issue
   [\#3](https://github.com/ccao-data/ptaxsim/issues/3) for more
