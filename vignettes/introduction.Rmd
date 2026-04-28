@@ -325,7 +325,7 @@ print(tif, topn = 3)
 tif <- lookup_pin_tif(2023, "14172270080000")
 print(tif, topn = 3)
     ```
-  * Looking up TIF information before and after the 2024 TIF methodology update requires using both **`lookup_tif()`** and **`lookup_pin_tif()**; however, for tax bill calculations we have built in functionality in **`tax_bill()`** to enable correct bill calculation for TIF'd PINs across all years:
+  * Looking up TIF information before and after the 2024 TIF methodology update requires using both **`lookup_tif()`** and **`lookup_pin_tif()`**; however, for tax bill calculations we have built in functionality in **`tax_bill()`** to enable correct bill calculation for TIF'd PINs across all years:
 
     ```{r}
 pin_tax_to_tif <- tax_bill(2023:2024, "14172270080000") %>%
