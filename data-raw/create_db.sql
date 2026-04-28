@@ -83,7 +83,7 @@ CREATE INDEX ix_agency_fund_fund_num ON agency_fund(fund_num);
 /** agency_fund_info **/
 CREATE TABLE agency_fund_info (
     agency_num              varchar(9)                                 NOT NULL,
-    fund_type_num           varchar(6)                                 NOT NULL,
+    fund_type_num           varchar(3)                                 NOT NULL,
     fund_type_name          varchar                                    NOT NULL,
     fund_num                varchar(6)                                 NOT NULL,
     fund_name               varchar                                    NOT NULL,
