@@ -309,7 +309,7 @@ print(tif, topn = 3)
 
 * Expects a `data.table` with the columns above:
 * Each row represents a `pin` and its TIF. Each `pin` can only have one TIF. 
-* Returns TIF information by `pin` for years 2024 and after. This accounts for the TIF share calculation methodology change that began in 2024 (more information about this change is described in the PTAXSIM [changelog](https://ccao-data.github.io/ptaxsim/news) and the [TIF vignette](https://ccao-data.github.io/ptaxsim/articles/tifs.html)
+* Returns TIF information by `pin` for years 2024 and after. This accounts for the TIF share calculation methodology change that began in 2024 (more information about this change is described in the PTAXSIM [changelog](https://ccao-data.github.io/ptaxsim/news) and the [TIF vignette](https://ccao-data.github.io/ptaxsim/articles/tifs.html))
 * The input `data.table` must be [keyed](https://cran.r-project.org/web/packages/data.table/vignettes/datatable-keys-fast-subset.html) on the `year`, `pin`, `tax_code` and `agency_num` columns and must be ***distinct***, e.i. it must not have repeat rows
 * Filled by **`lookup_pin_tif()`**:
   * Takes years and PINs as inputs and outputs a keyed `data.table` of the PINs and their TIF districts, including their identifying information and distribution percentage/TIF share. Here is an example:
