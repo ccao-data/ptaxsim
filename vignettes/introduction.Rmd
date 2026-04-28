@@ -434,7 +434,7 @@ rbind(
   arrange(desc(type))
 ```
 
-A 5% increase in the Chicago levy leads to a roughly $100 increase in taxes for this PIN, holding all else constant.
+A 5% increase in the Chicago levy leads to a roughly $150 increase in taxes for this PIN, holding all else constant.
 
 ## Tax bills over time
 
