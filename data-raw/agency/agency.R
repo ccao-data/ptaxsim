@@ -637,6 +637,18 @@ changed_funds <- agency_fund_info %>%
     )
   )
 
+# Perform some quick data integrity checks
+if (any(is.na(changed_funds$agency_name))) {
+  stop(
+    "Could not join fund to agency info when constructing agency_fund_crosswalk"
+  )
+}
+if (any(is.na(changed_funds$fund_num_final))) {
+  stop(
+    "Could not parse final fund number for some funds in agency_fund_crosswalk"
+  )
+}
+
 agency_fund_crosswalk <- changed_funds %>%
   mutate(year = "2024") %>%
   select(year, agency_num, agency_num_final, fund_num, fund_num_final)
