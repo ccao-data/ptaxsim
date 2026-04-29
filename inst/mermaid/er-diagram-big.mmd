@@ -3,6 +3,7 @@ erDiagram
   agency {
     int     year              PK
     varchar agency_num        PK
+    varchar authority_num
     boolean home_rule_ind
     int     agg_ext_base_year
     bigint  lim_numerator
@@ -11,26 +12,14 @@ erDiagram
     bigint  prior_eav
     bigint  curr_new_prop
     bigint  cty_cook_eav
-    bigint  cty_dupage_eav
-    bigint  cty_lake_eav
-    bigint  cty_will_eav
-    bigint  cty_kane_eav
-    bigint  cty_mchenry_eav
-    bigint  cty_dekalb_eav
-    bigint  cty_grundy_eav
-    bigint  cty_kankakee_eav
-    bigint  cty_kendall_eav
-    bigint  cty_lasalle_eav
-    bigint  cty_livingston_eav
+    bigint  cty_overlap_eav
     bigint  cty_total_eav
     double  pct_burden
     bigint  total_levy
     bigint  total_max_levy
     double  total_prelim_rate
-    bigint  total_reduced_levy
     bigint  total_final_levy
     double  total_final_rate
-    varchar reduction_type
     double  reduction_pct
     double  total_non_cap_ext
     double  total_ext
@@ -43,6 +32,9 @@ erDiagram
     varchar agency_name_original
     varchar major_type
     varchar minor_type
+    varchar agency_num_24
+    varchar agency_name_24
+    boolean agency_change_24
   }
 
   agency_fund {
@@ -56,12 +48,14 @@ erDiagram
     bigint  max_levy
     double  prelim_rate
     bigint  ptell_reduced_levy
-    boolean ptell_reduced_ind
     bigint  final_levy
     double  final_rate
   }
 
   agency_fund_info {
+    varchar agency_num         PK
+    varchar fund_type_num
+    varchar fund_type_name
     varchar fund_num           PK
     varchar fund_name
     boolean capped_ind
@@ -113,6 +107,7 @@ erDiagram
     int     exe_vet_dis_lt50
     int     exe_vet_dis_50_69
     int     exe_vet_dis_ge70
+    int     exe_vet_dis_100
     int     exe_abate
   }
 
@@ -167,8 +162,26 @@ erDiagram
     double  tax_code_distribution_pct
   }
 
+  pin_tif_distribution {
+    int     year               PK
+    varchar pin                PK
+    varchar agency_num         PK
+    varchar tax_code_num
+    double  tax_code_rate
+    int     pin_eav
+    int     pin_frozen_eav
+    double  pin_revenue
+    int     pin_increment_eav
+    double  pin_distribution_pct
+    double  transit_tif_to_cps
+    double  transit_tif_to_tif
+    double  transit_tif_to_dist
+    boolean is_transit_tif
+  }
+
   eq_factor ||--|{ pin : "applies to"
   pin ||--|{ tax_code : "within"
+  pin ||--o| pin_tif_distribution : "may have"
   cpi ||--|{ agency : "applies to"
   tax_code }|--|| agency : "has"
   tax_code ||--o| tif_distribution : "may have"
@@ -177,6 +190,7 @@ erDiagram
   agency_fund_info ||--|{ agency_fund : "describes"
   tif ||--|| tif_crosswalk : "in"
   tif_distribution }|--|| tif_crosswalk : "in"
+  pin_tif_distribution }|--|| tif_crosswalk : "in"
   agency_info ||--o{ tif: "describes"
   tax_code }|--o| tif : "may have"
   pin_geometry ||--o| pin : "has"
