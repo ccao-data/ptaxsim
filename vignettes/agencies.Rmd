@@ -568,15 +568,22 @@ Then, we can track the pension fund across all years using its post-2024 agency 
 
 ```{r}
 chi_library_pension_fund <- chi_agency_fund %>%
+  # Left join to the full agency fund crosswalk by `agency_num` in order to
+  # resolve the final agency/fund numbers for all funds
   left_join(agency_fund_crosswalk, by = c("agency_num", "fund_num")) %>%
   mutate(
-    agency_num_final = coalesce(agency_num_final, agency_num),
-    fund_num_final = coalesce(fund_num_final, fund_num)
+    agency_num = coalesce(agency_num_final, agency_num),
+    fund_num = coalesce(fund_num_final, fund_num)
   ) %>%
+  # Inner join to the version of the agency fund crosswalk that only contains
+  # the CPL pension fund so that we can filter for only that fund
   inner_join(
     chi_library_pension_agency_fund_crosswalk %>%
       select(agency_num_final, fund_num_final),
-    by = c("agency_num_final", "fund_num_final")
+    by = c(
+      "agency_num" = "agency_num_final",
+      "fund_num" = "fund_num_final"
+    )
   ) %>%
   select(year, agency_num, fund_num, final_levy)
 
