@@ -203,7 +203,7 @@ database and functions to handle these changes in the source data.
   ([#77](https://github.com/ccao-data/ptaxsim/pull/77)).
     - **How this change affects you**: You should read the latest version of the
       vignette if you use PTAXSIM for TIF counterfactuals.
-- **Added a new vignette [[Tracking taxing agency revenue over
+- **Added a new vignette [Tracking taxing agency revenue over
   time](https://ccao-data.github.io/ptaxsim/articles/agencies.html)
   to demonstrate the correct way to analyze agencies and funds over time given
   the 2024 change that switched some agencies to funds**.
