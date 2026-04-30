@@ -614,7 +614,7 @@ agency_crosswalk <-
   # levy in the legacy fund line. Because of this, it continues to follow the
   # pre-2024 pattern for library fund reporting, so we need to remove it from
   # the crosswalk
-  filter(!(agency_num == "031170001" & agency_num_24 == "031170000"))
+  filter(!(agency_num == "031170001" & agency_num_final == "031170000"))
 
 
 # agency_fund_crosswalk --------------------------------------------------------

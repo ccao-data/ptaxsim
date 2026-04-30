@@ -32,6 +32,7 @@ library(DT)
 library(here)
 library(ggplot2)
 library(ptaxsim)
+library(stringr)
 library(tidyr)
 
 ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.db"))
@@ -178,9 +179,9 @@ chi_agencies <- chi_agencies_raw %>%
 
 Now that we have the correct total levies for the City of Chicago, Chicago Public Schools and Chicago Park District across all years, we can look at how those levies have changed from 2006 to 2024.
 
-CPS and CPKD are both subject to PTELL (Property Tax Extension Law Limit), which ensures certain taxing agencies do not increase their levies beyond the rate of inflation (with some exceptions[^2]). The City of Chicago is not by virtue of being a non-home rule agency. However, the City of Chicago imposes [its own limits](https://codelibrary.amlegal.com/codes/chicago/latest/chicago_il/0-0-0-2608573) which mirror PTELL's and prohibit a taxing agency from increasing its levy more than the rate of inflation or 5%, whichever is less.
+CPS and CPKD are both subject to PTELL (Property Tax Extension Law Limit), which ensures certain taxing agencies do not increase their levies beyond the rate of inflation (with some exceptions[^3]). The City of Chicago is not by virtue of being a non-home rule agency. However, the City of Chicago imposes [its own limits](https://codelibrary.amlegal.com/codes/chicago/latest/chicago_il/0-0-0-2608573) which mirror PTELL's and prohibit a taxing agency from increasing its levy more than the rate of inflation or 5%, whichever is less.
 
-[^2]: PTELL, as well as Chicago's property tax limitation ordinance, contain loopholes that allow taxing agencies to [increase their levies beyond the rate of inflation](https://civicfed.org/press/new-report-finds-illinois-property-tax-cap-law-not-working-intended). Let's see how Chicago's levy has fared compared to inflation since 2006.
+[^3]: PTELL, as well as Chicago's property tax limitation ordinance, contain loopholes that allow taxing agencies to [increase their levies beyond the rate of inflation](https://civicfed.org/press/new-report-finds-illinois-property-tax-cap-law-not-working-intended). Let's see how Chicago's levy has fared compared to inflation since 2006.
 
 To do so, we'll calculate the rate at which the levies have grown compared to the [CPI-U](https://www.bls.gov/cpi/). Fortunately CPI data, as reported by the Illinois Department of Revenue (IDOR) for purpose of PTELL calculatios, is available in the PTAXSIM data base in the `cpi` table.
 
@@ -356,7 +357,7 @@ To demonstrate working with the agency fund data, we will query the fund informa
 The level of detail provided in `fund_name` varies across years and agencies which can make analysis or plotting the data tricky. To simplify `agency_fund` data further, we opted below to add broader categories to define funds. In this case, we'll tag any fund with "A & B" (Annuities and Benefits) in the name as a pension fund. We'll label funds related to bond and interest payments, as well as note redemption, as "Bond Payments".
 
 ```{r}
-chi_agency_fund <- DBI::dbGetQuery(
+chi_agency_fund_raw <- DBI::dbGetQuery(
   ptaxsim_db_conn,
   "
   SELECT *
@@ -366,7 +367,7 @@ chi_agency_fund <- DBI::dbGetQuery(
   "
 )
 
-chi_agency_fund_info <- DBI::dbGetQuery(
+chi_agency_fund_info_raw <- DBI::dbGetQuery(
   ptaxsim_db_conn,
   "
   SELECT *
@@ -376,8 +377,8 @@ chi_agency_fund_info <- DBI::dbGetQuery(
   "
 )
 
-chi_agency_fund <- chi_agency_fund %>%
-  left_join(chi_agency_fund_info) %>%
+chi_agency_fund <- chi_agency_fund_raw %>%
+  left_join(chi_agency_fund_info_raw) %>%
   # Remove funds that levy equal to 0
   filter(
     final_levy > 0,
@@ -520,14 +521,17 @@ The PTAXSIM database includes a table called `agency_fund_crosswalk` that allows
 As an example, let's look at the City of Chicago Library Fund again. We know that the agency number for this fund prior to 2024 was `030210001`. Let's look at the pension fund specifically:
 
 ```{r}
-chi_library_pension_fund_num <- chi_agency_fund %>%
+chi_library_pension_fund_num <- chi_agency_fund_raw %>%
   filter(agency_num == "030210001") %>%
   select(year, agency_num, fund_num) %>%
-  left_join(chi_agency_fund_info, by = c("agency_num", "fund_num")) %>%
+  left_join(chi_agency_fund_info_raw, by = c("agency_num", "fund_num")) %>%
   filter(str_detect(fund_name, "A & B")) %>%
   select(year, agency_num, fund_num, fund_name)
 
-datatable(chi_library_pension_fund_num)
+datatable(
+  chi_library_pension_fund_num,
+  options = list(pageLength = nrow(chi_library_pension_fund_num))
+)
 ```
 
 This table shows us that the fund number for the library pension fund was `128000` prior to 2024.
@@ -567,27 +571,32 @@ datatable(chi_library_pension_agency_fund_crosswalk)
 Then, we can track the pension fund across all years using its post-2024 agency and fund number. Note the change to the agency and fund numbers in 2024:
 
 ```{r}
-chi_library_pension_fund <- chi_agency_fund %>%
+chi_library_pension_fund <- chi_agency_fund_raw %>%
   # Left join to the full agency fund crosswalk by `agency_num` in order to
   # resolve the final agency/fund numbers for all funds
   left_join(agency_fund_crosswalk, by = c("agency_num", "fund_num")) %>%
   mutate(
-    agency_num = coalesce(agency_num_final, agency_num),
-    fund_num = coalesce(fund_num_final, fund_num)
+    # In most use cases, it makes more sense to resolve the final agency number
+    # to the `agency_num` column. However, for the purposes of this demo, we
+    # want to show the original agency numbers, so we resolve the final number
+    # to `agency_num_final` instead
+    agency_num_final = coalesce(agency_num_final, agency_num),
+    fund_num_final = coalesce(fund_num_final, fund_num)
   ) %>%
   # Inner join to the version of the agency fund crosswalk that only contains
   # the CPL pension fund so that we can filter for only that fund
   inner_join(
     chi_library_pension_agency_fund_crosswalk %>%
       select(agency_num_final, fund_num_final),
-    by = c(
-      "agency_num" = "agency_num_final",
-      "fund_num" = "fund_num_final"
-    )
+    by = c("agency_num_final", "fund_num_final")
   ) %>%
-  select(year, agency_num, fund_num, final_levy)
+  select(year, agency_num, fund_num, final_levy) %>%
+  arrange(year)
 
-datatable(chi_library_pension_fund, options = list(pageLength = 20))
+datatable(
+  chi_library_pension_fund,
+  options = list(pageLength = nrow(chi_library_pension_fund))
+)
 ```
 
 Here's a chart showing the same data:
