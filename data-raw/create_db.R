@@ -36,17 +36,18 @@ db_send_queries <- function(conn, sql) {
 # Set the database version. This gets incremented manually whenever the database
 # changes. This is checked against Config/Requires_DB_Version in the DESCRIPTION
 # file via check_db_version(). Schema is:
-# "MAX_YEAR_OF_DATA.MAJOR_VERSION.MINOR_VERSION-PRE_RELEASE_VERSION"
+# "MAX_YEAR_OF_DATA.MAJOR_VERSION.MINOR_VERSION"
 db_version <- "2024.0.0"
 # Optional pre-release identifier. Informational only, not compared.
 # Set this to an empty string for a public release, or to a string like
-# "alpha.1" for a release candidate
-db_pre_release_version <- "alpha.2"
+# "alpha.1" for a release candidate. Setting this to a non-empty string will
+# append it to `db_version`, separated by a hyphen
+db_pre_release_version <- "alpha.3"
 
 # Set the package version required to use this database. This is checked against
 # Version in the DESCRIPTION file. Basically, we have a two-way check so that
 # both the package version and DB version are synced. Schema is SemVer.
-requires_pkg_version <- "0.6.0"
+requires_pkg_version <- "1.1.0"
 
 
 # Create tables ----------------------------------------------------------------
@@ -125,6 +126,7 @@ DBI::dbAppendTable(conn, "metadata", metadata_df)
 # Load tables contained in a single file
 files <- c(
   "agency", "agency_info", "agency_fund", "agency_fund_info",
+  "agency_crosswalk", "agency_fund_crosswalk",
   "cpi", "eq_factor", "tif", "tif_crosswalk", "tif_distribution",
   "pin_tif_distribution"
 )
@@ -139,10 +141,15 @@ datasets <- c("pin", "tax_code")
 for (dataset in datasets) {
   message("Now loading: ", dataset)
   df <- collect(arrow::open_dataset(file.path(remote_bucket, dataset),
-    # Starting in 2024, there are some major changes regarding the columns
-    # that are present in these data files. That means we need to unify the
-    # schemas across files, since otherwise arrow will take the schema from
-    # the first file it finds in the dataset
+    # Starting in 2024, the data source for the `pin` table has changed.
+    # The current package maintainers do not have access to the old data source,
+    # which was a snapshot mirror of a mainframe system that has been
+    # decommissioned. To facilitate future updates, we copied over pre-2024
+    # `pin` files without edits. These legacy files are missing some columns
+    # that we added in 2024, so we need to unify the schemas across files, since
+    # otherwise arrow will take the schema from the first file it finds in the
+    # dataset. In the future, we could also consider editing the old files to
+    # add empty values for the new columns
     unify_schemas = TRUE
   ))
   DBI::dbAppendTable(conn, dataset, df)
