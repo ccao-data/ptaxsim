@@ -214,9 +214,9 @@ database and functions to handle these changes in the source data.
       PTAXSIM to analyze specific agencies over time so that you understand how
       to update your code.
 - **Corrected how the `tax_bill` function treats PINs with an EAV that is less
-  than $150, now defaulting the final tax output to zero. This aligns with the 
+  than $150, now defaulting the final tax output to zero**. This aligns with the 
   Treasurer's treatment of these PINs, so the tax bill calculation for these 
-  PINs will now match the what is shown on the final tax bill.**.
+  PINs will now match the what is shown on the final tax bill
   ([#91](https://github.com/ccao-data/ptaxsim/pull/91)).
     - **How this change affects you**: This improves the accuracy of the 
     `tax_bill` function to match what is displayed the Treasurer's tax bills.
