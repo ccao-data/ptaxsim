@@ -425,12 +425,14 @@ test_that("PINs with EAV <= $150 have $0 tax bill", {
   AND av_board > 0
   "
     ) %>%
-    mutate(eav = av_board * eq_factor_final) %>%
-    filter(eav < 150) %>%
+    mutate(eav = av_board * eq_factor_final,
+           exe_total = rowSums(across(starts_with("exe_")))) %>%
+    filter( eav - exe_total < 150) %>%
     distinct(pin)
 
   eav_lt_150_bills <- tax_bill(2006:2024, eav_lt_150_pins$pin) %>%
-    filter(eav < 150)
+    mutate(exe_total = rowSums(across(starts_with("exe_")))) %>%
+    filter(eav - exe_total < 150)
 
   expect_equal(sum(eav_lt_150_bills$final_tax), 0)
 })
