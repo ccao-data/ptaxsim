@@ -620,6 +620,6 @@ chi_library_pension_fund_plot <- chi_library_pension_fund %>%
 chi_library_pension_fund_plot
 ```
 
-## Conclusion
+# Conclusion
 
 The code provided in this vignette are very simple tutorials on how to query taxing agency data from the PTAXSIM database. We hope access to a free and open data source that aggregates data from multiple disparate sources for the first time enables rigorous analysis of the Cook County property tax system!
