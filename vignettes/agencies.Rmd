@@ -281,11 +281,13 @@ chi_levy_plot_1 <-
 
 </details>
 
-We can see that the City of Chicago's levy has increased the most, having more than doubled from 2006 to 2024. Both Chicago and CPS's levies have increased far beyond the rate of inflation.
+<br>
 
 ```{r, echo=FALSE, out.width="100%"}
 chi_levy_plot_1
 ```
+
+We can see that the City of Chicago's levy has increased the most, having more than doubled from 2006 to 2024. Both Chicago and CPS's levies have increased far beyond the rate of inflation.
 
 Even though the City's levy has increased the most in percentage terms since 2006, it does not have the largest levy. The taxing agencies that rely most on property taxes are school districts and this is true for Chicago as well. The plot below shows the final tax extensions (meaning the final amount to be received by taxing agencies after the levies are validated by PTELL), for each of the three agencies. CPS is slightly more than double the City's extension in 2024 at about \$4 billion. Chicago Park District's extension is substantially less at around \$300 million.
 
