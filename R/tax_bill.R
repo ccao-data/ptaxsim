@@ -242,6 +242,7 @@ tax_bill <- function(year_vec,
   dt[, tax_amt_pre_exe := round(eav * agency_tax_rate, 2)]
   dt[, tax_amt_post_exe := round(tax_amt_pre_exe - tax_amt_exe, 2)]
   dt[tax_amt_post_exe < 0, tax_amt_post_exe := 0]
+  dt[eav < 150, tax_amt_post_exe := 0]
   dt[, final_tax_to_tif := tax_amt_post_exe * tif_share]
 
   # add transit tifs
