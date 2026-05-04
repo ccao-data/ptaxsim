@@ -41,6 +41,17 @@ The main changes that the Clerk and the Treasurer made in 2024 include:
         - General assistance funds
         - Road and bridge funds
         - Library funds
+    - As part of this change, the Clerk also consolidated levy adjustments for
+      every agency that changed to a fund in 2024, rolling them into a single
+      levy adjustment that applies to the parent agency as a whole. For example,
+      the Clerk used to report separate levy adjustments using the fund number
+      `408000` for the Berwyn general assistance fund (agency number `020020002`),
+      the Berwyn mental health fund (agency number `020020004`), and the Berwyn
+      public health fund (`020020005`); prior to 2024, each of these funds had
+      its own row in the `agency_fund` table. However, in 2024 they consolidated
+      those levy adjustments into a single fund with number `408000` for the
+      township agency (`020020000`), meaning we can no longer analyze levy
+      adjustments on a per-fund basis in Berwyn.
     - To see the full list of agencies and funds that changed in this manner in
       2024, run the following SQL queries against the 2024 PTAXSIM database:
 
@@ -112,6 +123,14 @@ database and functions to handle these changes in the source data.
       post-2024 data. For an example using the City of Chicago Library Fund to
       show how to handle this type of change, see the vignette [Tracking taxing
       agency revenue over time](https://ccao-data.github.io/ptaxsim/articles/agencies.html).
+        - **⚠️ Warning**: If you maintain code that specifically analyzes levy
+          adjustments for any agencies that changed to become funds in 2024,
+          you will also need to update your analysis to handle the fact that
+          the Clerk consolidated levy adjustments for these funds into their
+          parent agency in 2024. For a detailed example, see the
+          [Caveat: Levy adjustment funds require special
+          handling](https://ccao-data.github.io/ptaxsim/articles/agencies.html##caveat-levy-adjustment-funds-require-special-handling)
+          section of the vignette.
 - **Added a new column `agency_fund.fund_type_num` to handle changing fund
   numbers in 2024**. In 2024, the Clerk changed their fund numbers so that
   they consist of six digits instead of three, and they are no longer

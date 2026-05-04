@@ -56,7 +56,6 @@ The following types of funds were affected by this change:
 - General assistance funds
 - Infrastructure funds (road and bridge)
 - Mental health and public health funds
-- Levy adjustments
 
 Most tax codes contain at least one of these types of agencies.
 
@@ -626,6 +625,102 @@ chi_library_pension_fund_plot <- chi_library_pension_fund %>%
 
 ```{r, echo=FALSE, out.width="100%"}
 chi_library_pension_fund_plot
+```
+
+#### Caveat: Levy adjustment funds require special handling
+
+The code above that uses the fund crosswalk to track funds over time should work for nearly all types of funds, but there is one exception: **levy adjustment funds**. These funds show the amount that an agency recaptures in a given year, and they always have fund number `408000`.
+
+When the Clerk switched to reporting some agencies as funds in 2024, they consolidated 2024 levy adjustments for those funds into the levy adjustment fund that applies to the parent agency as a whole. For example, in 2023, the township of Berwyn had levy adjustments for three funds that the Clerk reported as independent agencies:
+
+```{r}
+berwyn_agency_fund <- DBI::dbGetQuery(
+  ptaxsim_db_conn,
+  "
+  SELECT *
+  FROM agency_fund
+  wHERE agency_num LIKE '02002000%'
+  "
+)
+
+berwyn_agency_info <- DBI::dbGetQuery(
+  ptaxsim_db_conn,
+  "
+  SELECT *
+  FROM agency_info
+  WHERE agency_num LIKE '02002000%'
+  "
+)
+
+berwyn_agency_fund_info <- DBI::dbGetQuery(
+  ptaxsim_db_conn,
+  "
+  SELECT *
+  FROM agency_fund_info
+  WHERE agency_num LIKE '02002000%'
+  "
+)
+
+berwyn_agency_fund_levy_adj <- berwyn_agency_fund %>%
+  left_join(
+    berwyn_agency_info %>%
+      select(agency_num, agency_name),
+    by = "agency_num"
+  ) %>%
+  left_join(
+    berwyn_agency_fund_info %>%
+      select(agency_num, fund_num, fund_type_num, fund_name),
+    by = c("agency_num", "fund_num")
+  ) %>%
+  filter(fund_type_num == "408") %>%
+  arrange(agency_num) %>%
+  select(year, agency_num, agency_name, fund_num, fund_name, levy)
+
+berwyn_agency_fund_levy_adj %>%
+  filter(year == 2023) %>%
+  datatable() %>%
+  formatCurrency(
+    columns = c("levy"),
+    currency = "$",
+    digits = 0
+  )
+```
+
+<br>
+
+However, in 2024, there was only one levy adjustment fund for the entirety of the town of Berwyn:
+
+```{r}
+berwyn_agency_fund_levy_adj %>%
+  filter(year == 2024) %>%
+  datatable() %>%
+  formatCurrency(
+    columns = c("levy"),
+    currency = "$",
+    digits = 0
+  )
+```
+
+<br>
+
+Since the Clerk no longer reports levy adjustments for individual funds that it used to report as agencies, it's not possible to analyze levy adjustments at the fund level starting in 2024. Instead, we must analyze levy adjustments at the agency level. This is easy using the fund crosswalk, but we need to take care to sum together the per-fund levy adjustments prior to 2024:
+
+```{r}
+berwyn_levy_adj <- berwyn_agency_fund_levy_adj %>%
+  left_join(agency_fund_crosswalk, by = c("agency_num", "fund_num")) %>%
+  mutate(
+    agency_num = coalesce(agency_num_final, agency_num),
+    fund_num = coalesce(fund_num_final, fund_num)
+  ) %>%
+  group_by(year, agency_num, fund_num) %>%
+  summarize(levy = sum(levy, na.rm = TRUE))
+
+datatable(berwyn_levy_adj) %>%
+  formatCurrency(
+    columns = c("levy"),
+    currency = "$",
+    digits = 0
+  )
 ```
 
 # Conclusion
