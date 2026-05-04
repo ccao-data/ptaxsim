@@ -597,6 +597,9 @@ arrow::write_parquet(
 
 # agency_crosswalk ------------------------------------------------------------
 
+# Extract rows from the Clerk tax code agency rate report for agencies that the
+# Clerk has switched to reporting as funds. The resulting crosswalk allows
+# users to analyze these agencies (really funds) over time
 agency_crosswalk <-
   openxlsx::read.xlsx(
     "data-raw/tax_code/2024-tax-code-agency-rate-file.xlsx"
@@ -619,6 +622,9 @@ agency_crosswalk <-
 
 # agency_fund_crosswalk --------------------------------------------------------
 
+# Similar to `agency_crosswalk`, extract a mapping for funds whose agency
+# and/or fund number have changed to support the Clerk's switch to reporting
+# the fund as a fund, rather than an independent agency
 changed_funds <- agency_fund_info %>%
   left_join(
     agency_info %>%
