@@ -282,8 +282,6 @@ chi_levy_plot_1 <-
 
 </details>
 
-<br>
-
 We can see that the City of Chicago's levy has increased the most, having more than doubled from 2006 to 2024. Both Chicago and CPS's levies have increased far beyond the rate of inflation.
 
 ```{r, echo=FALSE, out.width="100%"}
@@ -601,6 +599,10 @@ datatable(
 
 Here's a chart showing the same data:
 
+<details>
+
+<summary><strong>Click here</strong> to show plot code</summary>
+
 ```{r}
 chi_library_pension_fund_plot <- chi_library_pension_fund %>%
   ggplot(aes(x = as.integer(year), y = final_levy)) +
@@ -616,7 +618,13 @@ chi_library_pension_fund_plot <- chi_library_pension_fund %>%
     y = "Final Levy (Millions)"
   ) +
   theme_minimal(base_size = 12)
+```
 
+</details>
+
+<br>
+
+```{r, echo=FALSE, out.width="100%"}
 chi_library_pension_fund_plot
 ```
 
