@@ -423,7 +423,8 @@ test_that("PINs with EAV <= $150 have $0 tax bill", {
   LEFT JOIN eq_factor b on a.year = b.year
   WHERE av_board < 1000
   AND av_board > 0
-  ") %>%
+  "
+    ) %>%
     mutate(eav = av_board * eq_factor_final) %>%
     filter(eav < 150) %>%
     distinct(pin)
@@ -431,6 +432,7 @@ test_that("PINs with EAV <= $150 have $0 tax bill", {
   eav_lt_150_bills <- tax_bill(2006:2024, eav_lt_150_pins$pin) %>%
     filter(eav < 150)
 
-  expect_equal(sum(eav_lt_150_bills$final_tax), 0)})
+  expect_equal(sum(eav_lt_150_bills$final_tax), 0)
+})
 
 DBI::dbDisconnect(ptaxsim_db_conn)
