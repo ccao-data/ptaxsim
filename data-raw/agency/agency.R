@@ -631,8 +631,7 @@ changed_funds <- agency_fund_info %>%
       select(agency_num, agency_name, minor_type),
     by = "agency_num"
   ) %>%
-  left_join(agency_crosswalk, by = "agency_num") %>%
-  filter(!is.na(agency_num_final)) %>%
+  inner_join(agency_crosswalk, by = "agency_num") %>%
   mutate(
     fund_num_final = case_when(
       # Levy adjustments (408) have the same fund numbers across all years, so
