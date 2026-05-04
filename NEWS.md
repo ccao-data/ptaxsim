@@ -98,8 +98,7 @@ database and functions to handle these changes in the source data.
       an altered `pin_tif_dt` for any tax years that you analyze beyond 2023.
       For an example of this type of change, see the [Tinkering with TIFs
       vignette](https://ccao-data.github.io/ptaxsim/articles/tifs.html), which
-      we have updated to include a TIF counterfactual with data for tax year
-      2024.
+      we have updated to include a TIF counterfactual with data for tax year 2024.
 - **Added new tables `agency_crosswalk` and `agency_fund_crosswalk` to support
   tracking agencies that have changed to funds in 2024**. You can use these
   tables to analyze agencies over time, even if the Clerk switched to reporting
