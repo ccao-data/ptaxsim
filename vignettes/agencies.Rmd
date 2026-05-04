@@ -183,7 +183,7 @@ CPS and CPKD are both subject to PTELL (Property Tax Extension Law Limit), which
 
 [^3]: PTELL, as well as Chicago's property tax limitation ordinance, contain loopholes that allow taxing agencies to [increase their levies beyond the rate of inflation](https://civicfed.org/press/new-report-finds-illinois-property-tax-cap-law-not-working-intended). Let's see how Chicago's levy has fared compared to inflation since 2006.
 
-To do so, we'll calculate the rate at which the levies have grown compared to the [CPI-U](https://www.bls.gov/cpi/). Fortunately CPI data, as reported by the Illinois Department of Revenue (IDOR) for purpose of PTELL calculatios, is available in the PTAXSIM data base in the `cpi` table.
+To do so, we'll calculate the rate at which the levies have grown compared to the [CPI-U](https://www.bls.gov/cpi/). Fortunately CPI data, as reported by the Illinois Department of Revenue (IDOR) for purpose of PTELL calculations, is available in the PTAXSIM data base in the `cpi` table.
 
 ```{r}
 # Calculate the levy percent change for each agency indexed to 2006
