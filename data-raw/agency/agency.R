@@ -605,9 +605,9 @@ agency_crosswalk <-
     "data-raw/tax_code/2024-tax-code-agency-rate-file.xlsx"
   ) %>%
   set_names(snakecase::to_snake_case(names(.))) %>%
-  mutate(year = as.character(ty_2024)) %>%
+  mutate(year_of_change = as.character(ty_2024)) %>%
   select(
-    year,
+    year_of_change,
     agency_num = legacy_num,
     agency_num_final = agency
   ) %>%
@@ -673,8 +673,8 @@ if (any(is.na(changed_funds$fund_num_final))) {
 }
 
 agency_fund_crosswalk <- changed_funds %>%
-  mutate(year = "2024") %>%
-  select(year, agency_num, agency_num_final, fund_num, fund_num_final)
+  mutate(year_of_change = "2024") %>%
+  select(year_of_change, agency_num, agency_num_final, fund_num, fund_num_final)
 
 # Write both data sets to S3
 arrow::write_parquet(

@@ -55,7 +55,7 @@ CREATE INDEX ix_agency_info_minor_type ON agency_info(minor_type);
 
 /** agency_crosswalk **/
 CREATE TABLE agency_crosswalk (
-    year                    int                                        NOT NULL,
+    year_of_change          int                                        NOT NULL,
     agency_num              varchar(9)                                 NOT NULL,
     agency_num_final        varchar(9)                                 NOT NULL,
     PRIMARY KEY (agency_num)
@@ -102,7 +102,7 @@ CREATE INDEX ix_agency_fund_info_capped_ind ON agency_fund_info(capped_ind);
 
 /** agency_fund_crosswalk **/
 CREATE TABLE agency_fund_crosswalk (
-    year                    int                                        NOT NULL,
+    year_of_change          int                                        NOT NULL,
     agency_num              varchar(9)                                 NOT NULL,
     agency_num_final        varchar(9)                                 NOT NULL,
     fund_num                varchar(6)                                 NOT NULL,
