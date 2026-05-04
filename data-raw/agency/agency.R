@@ -633,9 +633,17 @@ changed_funds <- agency_fund_info %>%
   ) %>%
   inner_join(agency_crosswalk, by = "agency_num") %>%
   mutate(
+    # Unlike agency numbers, the Clerk does not publish a mapping for fund
+    # numbers that have changed, so we need to derive them. Luckily, the
+    # logic is deterministic, with new fund numbers following a clear pattern
+    # based on the agency minor type and agency name
     fund_num_final = case_when(
-      # Levy adjustments (408) have the same fund numbers across all years, so
-      # handle them separately
+      # Unlike other types of changed funds, levy adjustments (408) do not have
+      # new fund numbers corresponding to the former agency minor type; instead,
+      # all levy adjustments get rolled into a single fund with fund number
+      # 408000 that applies to the agency as a whole rather than its constituent
+      # funds. As such, ensure all levy adjustments end up with the same fund
+      # number in the crosswalk, regardless of the former agency minor type
       fund_type_num == "408" ~ fund_num,
       minor_type == "LIBRARY" ~ paste0(fund_type_num, "001"),
       minor_type == "GEN ASST" ~ paste0(fund_type_num, "002"),
@@ -643,7 +651,12 @@ changed_funds <- agency_fund_info %>%
       minor_type == "HEALTH" &
         str_detect(agency_name, "MENTAL") ~ paste0(fund_type_num, "004"),
       minor_type == "HEALTH" &
-        str_detect(agency_name, "PUBLIC") ~ paste0(fund_type_num, "005")
+        str_detect(agency_name, "PUBLIC") ~ paste0(fund_type_num, "005"),
+      # If the pattern matching logic fails to match an old fund number to its
+      # new version, fall through to a null. The resulting null enables us to
+      # fail loudly for these cases in the data integrity checks below, so that
+      # we can add handling for that type of fund number
+      TRUE ~ NA_character_
     )
   )
 
