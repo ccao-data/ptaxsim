@@ -120,9 +120,9 @@ Now let's see how to use this crosswalk to track Chicago agencies over time.
 
 ## Tracking Chicago taxing agencies over time
 
-To track Chicago taxing agencies over time, let's first filter `agency_info` to find the agency numbers for the agencies that we are interested in[^1]:
+Let's start by filtering `agency_info` to find the agency numbers for Chicago taxing agencies[^1] so that we can track them over time. We'll assume that the precise names of these agencies are already known, but you can browse `agency_info.agency_name` to find the names of agencies that interest you if you don't know them.
 
-[^1]: If you don't know the names of the agencies you are interested in, you can browse `agency_info.agency_name` to find them.
+[^1]: Chicago Public Schools and the Chicago Park District are technically sister agencies of the City of Chicago. This means that while they are closely tied to and collaborate with the City, they are independent government bodies with their own taxing authority. The Chicago Public Library is a department of the City of Chicago whose budget is proposed by the Mayor and approved by City Council. However, in years prior to 2024, the Clerk reported the Library Fund as a taxing agency separate from the City of Chicago, so we need to include it when we query for data related to Chicago taxing agencies before 2024.
 
 ```{r}
 chi_agency_info <- agency_info %>%
