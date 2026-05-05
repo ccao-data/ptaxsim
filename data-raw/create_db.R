@@ -42,7 +42,7 @@ db_version <- "2024.0.0"
 # Set this to an empty string for a public release, or to a string like
 # "alpha.1" for a release candidate. Setting this to a non-empty string will
 # append it to `db_version`, separated by a hyphen
-db_pre_release_version <- "alpha.3"
+db_pre_release_version <- ""
 
 # Set the package version required to use this database. This is checked against
 # Version in the DESCRIPTION file. Basically, we have a two-way check so that

@@ -384,8 +384,8 @@ sb_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
     setkey(year, tax_code, agency_num)
 
   tax_bill(
-    year = 2019,
-    pin = sb_pin_dt_stage$pin,
+    2019,
+    sb_pin_dt_stage$pin,
     pin_dt = sb_pin_dt_stage,
     agency_dt = sb_agency_dt
   ) %>%
@@ -608,8 +608,8 @@ sb_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
     setkey(year, pin)
 
   tax_bill(
-    year = 2019,
-    pin = sb_pin_dt_combo$pin,
+    2019,
+    sb_pin_dt_combo$pin,
     pin_dt = sb_pin_dt_combo,
     agency_dt = sb_agency_dt
   ) %>%
