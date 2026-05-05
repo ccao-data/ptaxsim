@@ -175,7 +175,8 @@ check_pin_dt_str <- function(pin_dt) {
     "exe_longtime_homeowner" = "numeric", "exe_disabled" = "numeric",
     "exe_vet_returning" = "numeric", "exe_vet_dis_lt50" = "numeric",
     "exe_vet_dis_50_69" = "numeric", "exe_vet_dis_ge70" = "numeric",
-    "exe_vet_dis_100" = "numeric", "exe_abate" = "numeric"
+    "exe_vet_dis_100" = "numeric", "exe_wwii" = "numeric",
+    "exe_abate" = "numeric"
   )
 
   if (!identical(pin_dt_str, sapply(pin_dt, mode))) {
