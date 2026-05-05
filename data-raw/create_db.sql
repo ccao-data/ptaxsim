@@ -46,14 +46,20 @@ CREATE TABLE agency_info (
     agency_name_original    varchar                                    NOT NULL,
     major_type              varchar(21)                                NOT NULL,
     minor_type              varchar(10)                                NOT NULL,
-    agency_num_24           varchar(9)                                         ,
-    agency_name_24          varchar                                            ,
-    agency_change_24        boolean                                    NOT NULL,
     PRIMARY KEY (agency_num)
 ) WITHOUT ROWID;
 
 CREATE INDEX ix_agency_info_major_type ON agency_info(major_type);
 CREATE INDEX ix_agency_info_minor_type ON agency_info(minor_type);
+
+
+/** agency_crosswalk **/
+CREATE TABLE agency_crosswalk (
+    year_of_change          int                                        NOT NULL,
+    agency_num              varchar(9)                                 NOT NULL,
+    agency_num_final        varchar(9)                                 NOT NULL,
+    PRIMARY KEY (agency_num)
+) WITHOUT ROWID;
 
 
 /** agency_fund **/
@@ -92,6 +98,17 @@ CREATE TABLE agency_fund_info (
 ) WITHOUT ROWID;
 
 CREATE INDEX ix_agency_fund_info_capped_ind ON agency_fund_info(capped_ind);
+
+
+/** agency_fund_crosswalk **/
+CREATE TABLE agency_fund_crosswalk (
+    year_of_change          int                                        NOT NULL,
+    agency_num              varchar(9)                                 NOT NULL,
+    agency_num_final        varchar(9)                                 NOT NULL,
+    fund_num                varchar(6)                                 NOT NULL,
+    fund_num_final          varchar(6)                                 NOT NULL,
+    PRIMARY KEY (agency_num, fund_num)
+) WITHOUT ROWID;
 
 
 /** cpi **/

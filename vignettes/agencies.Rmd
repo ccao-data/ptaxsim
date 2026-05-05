@@ -32,6 +32,7 @@ library(DT)
 library(here)
 library(ggplot2)
 library(ptaxsim)
+library(stringr)
 library(tidyr)
 
 ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.db"))
@@ -47,74 +48,125 @@ ptaxsim_db_conn <- DBI::dbConnect(
 
 ## Accounting for 2024 changes to agency fund reporting
 
-Before we query the relevant agency data, we first will need to check if any of the agencies of interest were impacted by the Clerk's 2024 updates to the data structure. We added new fields to the `agency_info` table to document these changes - we'll query this table and select only the agencies where the field `agency_change_24 = TRUE`.
+In 2024, the Clerk switched to reporting 78 agencies as funds underneath a separate agency. These agencies had always represented funds in the real world, but the Clerk reported them as independent taxing agencies prior to 2024. We need to account for this change when analyzing agencies and funds over time.
+
+The following types of funds were affected by this change:
+
+- Library funds
+- General assistance funds
+- Infrastructure funds (road and bridge)
+- Mental health and public health funds
+
+Most tax codes contain at least one of these types of agencies.
+
+### Using the agency crosswalk
+
+Before we query the relevant agency data for our analysis, we first will need to check if any of the agencies of interest changed to funds in 2024. To do this, we can query the `agency_crosswalk` table:
 
 ```{r}
-# Query agency_info table for all agencies with the 2024 update
-agency_cw_24 <- DBI::dbGetQuery(
+agency_crosswalk <- DBI::dbGetQuery(
   ptaxsim_db_conn,
   "
-  SELECT *
-  FROM agency_info
+  SELECT agency_num, agency_num_final
+  FROM agency_crosswalk
   "
-) %>%
-  select(agency_num, agency_name, agency_num_24, agency_name_24)
+)
 
-datatable(agency_cw_24 %>%
-  filter(!is.na(agency_num_24)))
+datatable(agency_crosswalk)
 ```
 
-From this table it appears that the updated agencies are specific funds for various municipalities - the Clerk had previously reported certain municipal fund levies as separate taxing agencies. This updated data structure begins in 2024 while years prior to 2024 remain the same, meaning users will need to account for this discrepancy if ever analyzing these taxing agency data over time.
+The crosswalk contains the following columns:
 
-To make this process possible, we added new fields to the `agency_info` table in the PTAXSIM database which identify the agencies that have been folded into their parent agencies. `agency_num_24` and `agency_name_24` contain the agency info that the "sub-agency" has been merged into. With this table we can create a crosswalk, as we did above, calling it `agency_cw_24`. Note that the user can still see details about these former agencies, now funds, by querying the `agency_fund` table.
+- **`year_of_change`**: The year that the agency changed
+  - This is not relevant to our analysis, so we exclude it from our query; however, it may be useful for other types of analysis
+- **`agency_num`**: The agency number prior to the change, when the fund was reported as an independent agency
+- **`agency_num_final`**: The agency number after the change, representing the agency under which the fund is now reported
 
-A quick search of the crosswalk shows that the `CITY OF CHICAGO LIBRARY FUND` was previously defined as an independent agency and has now been folded into the `CITY OF CHICAGO`. This is in fact aligned with how the City of Chicago reports its property tax levy in its own budget [documentation](https://chicityclerk.s3.us-west-2.amazonaws.com/s3fs-public/O2023-0005291_Tax_Levy.pdf). When we eventually query the agency data for `CITY OF CHICAGO`, we'll want to include the `CITY OF CHICAGO LIBRARY FUND` as well.
-
-Next, we'll search the database table `agency_info` to find the right `agency_num` key assigned to the taxing agencies we want to learn more about. The table below displays all taxing agencies and TIFs with `CHICAGO` present in the `agency_name`.
+Note that the user can still see details about these former agencies, now funds, by querying the `agency_fund` and `agency_fund_info` tables. Let's join the agency crosswalk to `agency_fund_info` to confirm that the `CITY OF CHICAGO LIBRARY FUND` was previously defined as an independent agency and has now been folded into the `CITY OF CHICAGO` agency:
 
 ```{r}
-chi_agency_nums <- DBI::dbGetQuery(
+agency_info <- DBI::dbGetQuery(
   ptaxsim_db_conn,
   "
   SELECT agency_num, agency_name
   FROM agency_info
-  WHERE agency_name LIKE '%CHICAGO%'
   "
 )
 
-datatable(chi_agency_nums)
+agency_crosswalk_info <- agency_crosswalk %>%
+  left_join(
+    agency_info,
+    by = c("agency_num" = "agency_num")
+  ) %>%
+  rename(agency_name_prev = agency_name) %>%
+  left_join(
+    agency_info,
+    by = c("agency_num_final" = "agency_num")
+  ) %>%
+  rename(agency_name_final = agency_name) %>%
+  rename(agency_num_prev = agency_num) %>%
+  select(
+    agency_num_prev, agency_name_prev,
+    agency_num_final, agency_name_final
+  )
+
+agency_crosswalk_info %>%
+  filter(str_detect(agency_name_prev, "CITY OF CHICAGO LIBRARY FUND")) %>%
+  datatable()
 ```
 
-Using the table above, we learn that the `agency_num` values for the agencies `CITY OF CHICAGO`, `CITY OF CHICAGO LIBRARY FUND`, `BOARD OF EDUCATION`, and `CHICAGO PARK DISTRICT` are `030210000`, `030210001`, `050200000`, and `044060000` respectively. We'll query all fields from the `agency` table and filter by their `agency_num`.
+Now let's see how to use this crosswalk to track Chicago agencies over time.
+
+## Tracking Chicago taxing agencies over time
+
+Let's start by filtering `agency_info` to find the agency numbers for Chicago taxing agencies[^1] so that we can track them over time. We'll assume that the precise names of these agencies are already known, but you can browse `agency_info.agency_name` to find the names of agencies that interest you if you don't know them.
+
+[^1]: Chicago Public Schools and the Chicago Park District are technically sister agencies of the City of Chicago. This means that while they are closely tied to and collaborate with the City, they are independent government bodies with their own taxing authority. The Chicago Public Library is a department of the City of Chicago whose budget is proposed by the Mayor and approved by City Council. However, in years prior to 2024, the Clerk reported the Library Fund as a taxing agency separate from the City of Chicago, so we need to include it when we query for data related to Chicago taxing agencies before 2024.
 
 ```{r}
-chi_agencies <- DBI::dbGetQuery(
+chi_agency_info <- agency_info %>%
+  filter(
+    agency_name %in% c(
+      "CITY OF CHICAGO",
+      "CITY OF CHICAGO LIBRARY FUND",
+      "BOARD OF EDUCATION",
+      "CHICAGO PARK DISTRICT"
+    )
+  )
+
+datatable(chi_agency_info)
+```
+
+Now that we have the agency numbers for the agencies we are interested in, we'll use them to extract levies and extensions[^2] from the `agency` table:
+
+[^2]: *Terminology note*: The **levy** (called `total_final_levy` in the database) is the amount of money a local government budgets for and requests to receive from property taxes. Many taxing agencies are subject to limits imposed by Illinois state law. The **extension** (called `total_ext` in the database) is the total, final amount a taxing body is allowed to receive which is calculated and confirmed by the Cook County Clerk.
+
+```{r}
+agency <- DBI::dbGetQuery(
   ptaxsim_db_conn,
   "
-  SELECT DISTINCT *
+  SELECT *
   FROM agency
-  WHERE agency_num IN ('030210000', '030210001', '050200000', '044060000')
   "
 )
+
+chi_agencies_raw <- chi_agency_info %>%
+  left_join(agency, by = "agency_num")
+
+chi_agencies_raw %>%
+  select(year, agency_num, agency_name, total_final_levy, total_ext) %>%
+  datatable()
 ```
 
-Before we do anything, we need to fold the `CITY OF CHICAGO LIBRARY FUND` into the `CITY OF CHICAGO` levy total for all years prior to 2024. We can do this by joining `agency_cw_24` by `agency_num` to `chi_agencies` and replacing the old `agency_num` with `agency_num_24`, then grouping by agency and year and then summing the fields `total_final_levy` and `total_ext`.[^1]
-
-[^1]: *Terminology note*: The **levy** is the amount of money a local government budgets for and requests to receive from property taxes. Many taxing agencies are subject to limits imposed by State law. The **extension** (called `final_ext` in the database) is the total, final amount a taxing body is allowed to receive which is calculated and confirmed by the Cook County Clerk. 
+Before we do anything with these levies and extensions, we need to fold the `CITY OF CHICAGO LIBRARY FUND` into the `CITY OF CHICAGO` levy total for all years prior to 2024. We can do this using the agency crosswalk and a simple summation:
 
 ```{r}
-chi_agencies <- chi_agencies %>%
+chi_agencies <- chi_agencies_raw %>%
   # Join the agency crosswalk to get the parent agency number for pre-2024 years
-  left_join(agency_cw_24, "agency_num") %>%
-  # for the agencies that did have an agency number change in 2024, replace the
+  left_join(agency_crosswalk, "agency_num") %>%
+  # For the agencies that did have an agency number change in 2024, replace the
   # old agency_num with the new one
-  mutate(
-    agency_num =
-      ifelse(!is.na(agency_num_24),
-        agency_num_24,
-        agency_num
-      )
-  ) %>%
+  mutate(agency_num = coalesce(agency_num_final, agency_num)) %>%
   group_by(year, agency_num) %>%
   summarize(
     total_final_levy = sum(total_final_levy),
@@ -126,11 +178,11 @@ chi_agencies <- chi_agencies %>%
 
 Now that we have the correct total levies for the City of Chicago, Chicago Public Schools and Chicago Park District across all years, we can look at how those levies have changed from 2006 to 2024.
 
-CPS and CPKD are both subject to PTELL (Property Tax Extension Law Limit), which ensures certain taxing agencies do not increase their levies beyond the rate of inflation (with some exceptions[^2]). The City of Chicago is not by virtue of being a non-home rule agency. However, the City of Chicago imposes [its own limits](https://codelibrary.amlegal.com/codes/chicago/latest/chicago_il/0-0-0-2608573) which mirror PTELL's and prohibit a taxing agency from increasing its levy more than the rate of inflation or 5%, whichever is less.
+CPS and CPKD are both subject to PTELL (Property Tax Extension Law Limit), which ensures certain taxing agencies do not increase their levies beyond the rate of inflation (with some exceptions[^3]). The City of Chicago is not by virtue of being a non-home rule agency. However, the City of Chicago imposes [its own limits](https://codelibrary.amlegal.com/codes/chicago/latest/chicago_il/0-0-0-2608573) which mirror PTELL's and prohibit a taxing agency from increasing its levy more than the rate of inflation or 5%, whichever is less.
 
-[^2]: PTELL, as well as Chicago's property tax limitation ordinance, contain loopholes that allow taxing agencies to [increase their levies beyond the rate of inflation](https://civicfed.org/press/new-report-finds-illinois-property-tax-cap-law-not-working-intended). Let's see how Chicago's levy has fared compared to inflation since 2006.
+[^3]: PTELL, as well as Chicago's property tax limitation ordinance, contain loopholes that allow taxing agencies to [increase their levies beyond the rate of inflation](https://civicfed.org/press/new-report-finds-illinois-property-tax-cap-law-not-working-intended). Let's see how Chicago's levy has fared compared to inflation since 2006.
 
-To do so, we'll calculate the rate at which the levies have grown compared to the [CPI-U](https://www.bls.gov/cpi/). Fortunately CPI data, as reported by the Illinois Department of Revenue (IDOR) for purpose of PTELL calculatios, is available in the PTAXSIM data base in the `cpi` table.
+To do so, we'll calculate the rate at which the levies have grown compared to the [CPI-U](https://www.bls.gov/cpi/). Fortunately CPI data, as reported by the Illinois Department of Revenue (IDOR) for purpose of PTELL calculations, is available in the PTAXSIM data base in the `cpi` table.
 
 ```{r}
 # Calculate the levy percent change for each agency indexed to 2006
@@ -231,13 +283,13 @@ chi_levy_plot_1 <-
 
 <br>
 
-We can see that the City of Chicago's levy has increased the most, having more than doubled from 2006 to 2024. Both Chicago and CPS's levies have increased far beyond the rate of inflation.
-
 ```{r, echo=FALSE, out.width="100%"}
 chi_levy_plot_1
 ```
 
-Even though the City's levy has increased the most in percentage terms since 2006, it does not have the largest levy. The taxing agencies that rely most on property taxes are school districts and this is true for Chicago as well. The plot below shows the final tax extensions (meaning the final amount to be received by taxing agencies after the levies are validated by PTELL), for each of the three agencies. CPS is slightly more than double the City's extension in 2024 at about \$4 Billion. Chicago Park District's extension is substantially less at less than 1 Billion.
+We can see that the City of Chicago's levy has increased the most, having more than doubled from 2006 to 2024. Both Chicago and CPS's levies have increased far beyond the rate of inflation.
+
+Even though the City's levy has increased the most in percentage terms since 2006, it does not have the largest levy. The taxing agencies that rely most on property taxes are school districts and this is true for Chicago as well. The plot below shows the final tax extensions (meaning the final amount to be received by taxing agencies after the levies are validated by PTELL), for each of the three agencies. CPS is slightly more than double the City's extension in 2024 at about \$4 billion. Chicago Park District's extension is substantially less at around \$300 million.
 
 <details>
 
@@ -295,18 +347,16 @@ chi_levy_plot_2 <- ggplot(plot_2_df, aes(year, total_ext, group = agency_num)) +
 chi_levy_plot_2
 ```
 
-## Agency fund data updates and query demo
+## Tracking specific fund revenue over time
 
-The PTAXSIM database also contains information related to taxing agency's property tax funds so we can understand in greater detail what they intend to spend their property tax revenue on. This information can be found in the `agency_fund` and `agency_fund_info` tables. This data is not utilized by any of PTAXSIM's functions, but it is available to be queried an analyzed.
-
-In 2024, the Cook County Clerk's agency fund identifier keys were updated, now showing a greater level of detail than in prior years. You can learn more about this change and how we account for it in the PTAXSIM database by reading out 2024 update [changelog](https://ccao-data.github.io/ptaxsim/news/). 
+The PTAXSIM database also contains information related to taxing agency's property tax funds so we can understand in greater detail what they intend to spend their property tax revenue on. This information can be found in the `agency_fund` and `agency_fund_info` tables. This data is not utilized by any of PTAXSIM's functions, but it is available to be queried and analyzed.
 
 To demonstrate working with the agency fund data, we will query the fund information for the `CITY OF CHICAGO` and the `CITY OF CHICAGO LIBRARY FUND`.
 
 The level of detail provided in `fund_name` varies across years and agencies which can make analysis or plotting the data tricky. To simplify `agency_fund` data further, we opted below to add broader categories to define funds. In this case, we'll tag any fund with "A & B" (Annuities and Benefits) in the name as a pension fund. We'll label funds related to bond and interest payments, as well as note redemption, as "Bond Payments".
 
 ```{r}
-chi_agency_fund <- DBI::dbGetQuery(
+chi_agency_fund_raw <- DBI::dbGetQuery(
   ptaxsim_db_conn,
   "
   SELECT *
@@ -316,7 +366,7 @@ chi_agency_fund <- DBI::dbGetQuery(
   "
 )
 
-chi_agency_fund_info <- DBI::dbGetQuery(
+chi_agency_fund_info_raw <- DBI::dbGetQuery(
   ptaxsim_db_conn,
   "
   SELECT *
@@ -326,8 +376,8 @@ chi_agency_fund_info <- DBI::dbGetQuery(
   "
 )
 
-chi_agency_fund <- chi_agency_fund %>%
-  left_join(chi_agency_fund_info) %>%
+chi_agency_fund <- chi_agency_fund_raw %>%
+  left_join(chi_agency_fund_info_raw) %>%
   # Remove funds that levy equal to 0
   filter(
     final_levy > 0,
@@ -462,4 +512,219 @@ fund_type_table %>%
     suffix = "%"
   )
 ```
+
+### Using the fund crosswalk to track funds over time
+
+The PTAXSIM database includes a table called `agency_fund_crosswalk` that allows you to track specific funds over time, similar to `agency_crosswalk`. If you know the specific agency and fund numbers that you want to analyze, you can use this crosswalk to handle the 2024 change that turned some agencies into funds.
+
+As an example, let's look at the City of Chicago Library Fund again. We know that the agency number for this fund prior to 2024 was `030210001`. Let's look at the pension fund specifically:
+
+```{r}
+chi_library_pension_fund_num <- chi_agency_fund_raw %>%
+  filter(agency_num == "030210001") %>%
+  select(year, agency_num, fund_num) %>%
+  left_join(chi_agency_fund_info_raw, by = c("agency_num", "fund_num")) %>%
+  filter(str_detect(fund_name, "A & B")) %>%
+  select(year, agency_num, fund_num, fund_name)
+
+datatable(
+  chi_library_pension_fund_num,
+  options = list(pageLength = nrow(chi_library_pension_fund_num))
+)
+```
+
+This table shows us that the fund number for the library pension fund was `128000` prior to 2024.
+
+Let's use the agency fund crosswalk to handle the Clerk's 2024 change that switched from reporting the City of Chicago Library Fund as an independent agency to reporting it as a fund. We can query the agency fund crosswalk to see that it looks quite similar to `agency_crosswalk`:
+
+```{r}
+agency_fund_crosswalk <- DBI::dbGetQuery(
+  ptaxsim_db_conn,
+  "
+  SELECT agency_num, agency_num_final, fund_num, fund_num_final
+  FROM agency_fund_crosswalk
+  "
+)
+
+datatable(agency_fund_crosswalk)
+```
+
+The crosswalk contains the following columns, similar to `agency_crosswalk`:
+
+- **`year_of_change`**: The year that the fund changed
+  - This is not relevant to our analysis, so we exclude it from our query; however, it may be useful for other types of analysis
+- **`agency_num`**: The agency number prior to the change, when the fund was reported as an independent agency
+- **`agency_num_final`**: The agency number after the change, representing the agency under which the fund is now reported
+- **`fund_num`**: The fund number prior to the change
+- **`fund_num_final`**: The fund number after the change
+
+Using the agency fund crosswalk, we can find the final fund number for the pension fund:
+
+```{r}
+chi_library_pension_agency_fund_crosswalk <- agency_fund_crosswalk %>%
+  filter(agency_num == "030210001", fund_num == "128000")
+
+datatable(chi_library_pension_agency_fund_crosswalk)
+```
+
+Then, we can track the pension fund across all years using its post-2024 agency and fund number. Note the change to the agency and fund numbers in 2024:
+
+```{r}
+chi_library_pension_fund <- chi_agency_fund_raw %>%
+  # Left join to the full agency fund crosswalk by `agency_num` in order to
+  # resolve the final agency/fund numbers for all funds
+  left_join(agency_fund_crosswalk, by = c("agency_num", "fund_num")) %>%
+  mutate(
+    # In most use cases, it makes more sense to resolve the final agency number
+    # to the `agency_num` column. However, for the purposes of this demo, we
+    # want to show the original agency numbers, so we resolve the final number
+    # to `agency_num_final` instead
+    agency_num_final = coalesce(agency_num_final, agency_num),
+    fund_num_final = coalesce(fund_num_final, fund_num)
+  ) %>%
+  # Inner join to the version of the agency fund crosswalk that only contains
+  # the CPL pension fund so that we can filter for only that fund
+  inner_join(
+    chi_library_pension_agency_fund_crosswalk %>%
+      select(agency_num_final, fund_num_final),
+    by = c("agency_num_final", "fund_num_final")
+  ) %>%
+  select(year, agency_num, fund_num, final_levy) %>%
+  arrange(year)
+
+datatable(
+  chi_library_pension_fund,
+  options = list(pageLength = nrow(chi_library_pension_fund))
+)
+```
+
+Here's a chart showing the same data:
+
+<details>
+
+<summary><strong>Click here</strong> to show plot code</summary>
+
+```{r}
+chi_library_pension_fund_plot <- chi_library_pension_fund %>%
+  ggplot(aes(x = as.integer(year), y = final_levy)) +
+  geom_line(linewidth = 0.5, color = "black") +
+  geom_point(color = "black") +
+  scale_x_continuous(n.breaks = 10) +
+  scale_y_continuous(
+    labels = scales::label_dollar(scale = 1e-6, suffix = "M"),
+    limits = c(5e6, NA)
+  ) +
+  labs(
+    x = NULL,
+    y = "Final Levy (Millions)"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+</details>
+
+<br>
+
+```{r, echo=FALSE, out.width="100%"}
+chi_library_pension_fund_plot
+```
+
+#### Caveat: Levy adjustment funds require special handling
+
+The code above that uses the fund crosswalk to track funds over time should work for nearly all types of funds, but there is one exception: **levy adjustment funds**. These funds show the amount that an agency recaptures in a given year, and they always have fund number `408000`.
+
+When the Clerk switched to reporting some agencies as funds in 2024, they consolidated 2024 levy adjustments for those funds into the levy adjustment fund that applies to the parent agency as a whole. For example, in 2023, the township of Berwyn had levy adjustments for three funds that the Clerk reported as independent agencies:
+
+```{r}
+berwyn_agency_fund <- DBI::dbGetQuery(
+  ptaxsim_db_conn,
+  "
+  SELECT *
+  FROM agency_fund
+  wHERE agency_num LIKE '02002000%'
+  "
+)
+
+berwyn_agency_info <- DBI::dbGetQuery(
+  ptaxsim_db_conn,
+  "
+  SELECT *
+  FROM agency_info
+  WHERE agency_num LIKE '02002000%'
+  "
+)
+
+berwyn_agency_fund_info <- DBI::dbGetQuery(
+  ptaxsim_db_conn,
+  "
+  SELECT *
+  FROM agency_fund_info
+  WHERE agency_num LIKE '02002000%'
+  "
+)
+
+berwyn_agency_fund_levy_adj <- berwyn_agency_fund %>%
+  left_join(
+    berwyn_agency_info %>%
+      select(agency_num, agency_name),
+    by = "agency_num"
+  ) %>%
+  left_join(
+    berwyn_agency_fund_info %>%
+      select(agency_num, fund_num, fund_type_num, fund_name),
+    by = c("agency_num", "fund_num")
+  ) %>%
+  filter(fund_type_num == "408") %>%
+  arrange(agency_num) %>%
+  select(year, agency_num, agency_name, fund_num, fund_name, levy)
+
+berwyn_agency_fund_levy_adj %>%
+  filter(year == 2023) %>%
+  datatable() %>%
+  formatCurrency(
+    columns = c("levy"),
+    currency = "$",
+    digits = 0
+  )
+```
+
+<br>
+
+However, in 2024, there was only one levy adjustment fund for the entirety of the town of Berwyn:
+
+```{r}
+berwyn_agency_fund_levy_adj %>%
+  filter(year == 2024) %>%
+  datatable() %>%
+  formatCurrency(
+    columns = c("levy"),
+    currency = "$",
+    digits = 0
+  )
+```
+
+<br>
+
+Since the Clerk no longer reports levy adjustments for individual funds that it used to report as agencies, it's not possible to analyze levy adjustments at the fund level starting in 2024. Instead, we must analyze levy adjustments at the agency level. This is easy using the fund crosswalk, but we need to take care to sum together the per-fund levy adjustments prior to 2024:
+
+```{r}
+berwyn_levy_adj <- berwyn_agency_fund_levy_adj %>%
+  left_join(agency_fund_crosswalk, by = c("agency_num", "fund_num")) %>%
+  mutate(
+    agency_num = coalesce(agency_num_final, agency_num),
+    fund_num = coalesce(fund_num_final, fund_num)
+  ) %>%
+  group_by(year, agency_num, fund_num) %>%
+  summarize(levy = sum(levy, na.rm = TRUE))
+
+datatable(berwyn_levy_adj) %>%
+  formatCurrency(
+    columns = c("levy"),
+    currency = "$",
+    digits = 0
+  )
+```
+
+# Conclusion
+
 The code provided in this vignette are very simple tutorials on how to query taxing agency data from the PTAXSIM database. We hope access to a free and open data source that aggregates data from multiple disparate sources for the first time enables rigorous analysis of the Cook County property tax system!

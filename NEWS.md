@@ -41,11 +41,26 @@ The main changes that the Clerk and the Treasurer made in 2024 include:
         - General assistance funds
         - Road and bridge funds
         - Library funds
-    - To see the full list of agencies that changed in this manner in 2024,
-      run the following SQL query against the 2024 PTAXSIM database:
+    - As part of this change, the Clerk also consolidated levy adjustments for
+      every agency that changed to a fund in 2024, rolling them into a single
+      levy adjustment that applies to the parent agency as a whole. For example,
+      the Clerk used to report separate levy adjustments using the fund number
+      `408000` for the Berwyn general assistance fund (agency number `020020002`),
+      the Berwyn mental health fund (agency number `020020004`), and the Berwyn
+      public health fund (`020020005`); prior to 2024, each of these funds had
+      its own row in the `agency_fund` table. However, in 2024 they consolidated
+      those levy adjustments into a single fund with number `408000` for the
+      township agency (`020020000`), meaning we can no longer analyze levy
+      adjustments on a per-fund basis in Berwyn.
+    - To see the full list of agencies and funds that changed in this manner in
+      2024, run the following SQL queries against the 2024 PTAXSIM database:
 
 ```sql
-SELECT * FROM agency_info WHERE agency_change_24
+-- See all agencies that have changed to funds
+SELECT * FROM agency_crosswalk;
+
+-- See the same change at the fund level
+SELECT * FROM agency_fund_crosswalk;
 ```
 
 - **Switched from three-digit to six-digit fund numbers to add a greater level
@@ -94,27 +109,28 @@ database and functions to handle these changes in the source data.
       an altered `pin_tif_dt` for any tax years that you analyze beyond 2023.
       For an example of this type of change, see the [Tinkering with TIFs
       vignette](https://ccao-data.github.io/ptaxsim/articles/tifs.html), which
-      we have updated to include a TIF counterfactual with data for tax year
-      2024.
-- **Added new `agency_info.agency_*_24` columns to handle agencies that have
-  changed to funds in 2024**. You can use these columns to construct a crosswalk
-  to analyze agencies over time, even if they changed to a fund in 2024.
-    - The new columns include:
-      - `agency_info.agency_change_24` (boolean, required): Whether the agency's
-        number changed in 2024, due to becoming a fund.
-      - `agency_info.agency_num_24` (string, optional): The agency's new number
-        starting in 2024. Null if the agency number did not change in 2024.
-      - `agency_info.agency_name_24` (string, optional): The agency's name
-        starting in 2024. Null if the agency number did not change in 2024.
+      we have updated to include a TIF counterfactual with data for tax year 2024.
+- **Added new tables `agency_crosswalk` and `agency_fund_crosswalk` to support
+  tracking agencies that have changed to funds in 2024**. You can use these
+  tables to analyze agencies over time, even if the Clerk switched to reporting
+  them as funds in 2024.
     - **How this change affects you**: If you maintain code that analyzes
-      agencies over time, and you want to update your code to include 2024 data,
-      you should use the `agency_info.agency_change_24` column to determine
-      whether the Clerk changed any of the agencies you analyze to funds in
-      2024. If any of your agencies have changed to funds, you will need to use
-      the `agency_num_24` column to join pre- and post-2024 data. See [this
-      vignette](https://ccao-data.github.io/ptaxsim/articles/agencies.html)
-      for an example using the City of Chicago Library Fund to show how to
-      handle this type of change.
+      agencies or funds over time, and you want to update your code to include
+      2024 data, you should use the crosswalk tables to determine whether the
+      Clerk changed any of the agencies or funds that interest you in 2024. If
+      any of your agencies or funds have changed, you will need to use
+      the `agency_num_final` and `fund_num_final` columns to join pre- and
+      post-2024 data. For an example using the City of Chicago Library Fund to
+      show how to handle this type of change, see the vignette [Tracking taxing
+      agency revenue over time](https://ccao-data.github.io/ptaxsim/articles/agencies.html).
+        - **⚠️ Warning**: If you maintain code that specifically analyzes levy
+          adjustments for any agencies that changed to become funds in 2024,
+          you will also need to update your analysis to handle the fact that
+          the Clerk consolidated levy adjustments for these funds into their
+          parent agency in 2024. For a detailed example, see the
+          [Caveat: Levy adjustment funds require special
+          handling](https://ccao-data.github.io/ptaxsim/articles/agencies.html##caveat-levy-adjustment-funds-require-special-handling)
+          section of the vignette.
 - **Added a new column `agency_fund.fund_type_num` to handle changing fund
   numbers in 2024**. In 2024, the Clerk changed their fund numbers so that
   they consist of six digits instead of three, and they are no longer
@@ -205,8 +221,8 @@ database and functions to handle these changes in the source data.
   ([#77](https://github.com/ccao-data/ptaxsim/pull/77)).
     - **How this change affects you**: You should read the latest version of the
       vignette if you use PTAXSIM for TIF counterfactuals.
-- **Added [a new
-  vignette](https://ccao-data.github.io/ptaxsim/articles/agencies.html)
+- **Added a new vignette [Tracking taxing agency revenue over
+  time](https://ccao-data.github.io/ptaxsim/articles/agencies.html)
   to demonstrate the correct way to analyze agencies and funds over time given
   the 2024 change that switched some agencies to funds**.
   ([#84](https://github.com/ccao-data/ptaxsim/pull/84)).

@@ -32,9 +32,12 @@ erDiagram
     varchar agency_name_original
     varchar major_type
     varchar minor_type
-    varchar agency_num_24
-    varchar agency_name_24
-    boolean agency_change_24
+  }
+
+  agency_crosswalk {
+    int     year_of_change
+    varchar agency_num         PK
+    varchar agency_num_final
   }
 
   agency_fund {
@@ -59,6 +62,14 @@ erDiagram
     varchar fund_num           PK
     varchar fund_name
     boolean capped_ind
+  }
+
+  agency_fund_crosswalk {
+    int     year_of_change
+    varchar agency_num         PK
+    varchar agency_num_final
+    varchar fund_num           PK
+    varchar fund_num_final
   }
 
   cpi {
@@ -186,7 +197,9 @@ erDiagram
   tax_code }|--|| agency : "has"
   tax_code ||--o| tif_distribution : "may have"
   agency ||--|{ agency_fund : "contains"
+  agency ||--o| agency_crosswalk : "may have"
   agency_info ||--|{ agency : "describes"
+  agency_fund ||--o| agency_fund_crosswalk : "may have"
   agency_fund_info ||--|{ agency_fund : "describes"
   tif ||--|| tif_crosswalk : "in"
   tif_distribution }|--|| tif_crosswalk : "in"

@@ -36,8 +36,8 @@ Table of Contents
 > installation](#database-installation) for details.
 >
 > [**Link to PTAXSIM
-> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2024.0.0-alpha.2.db.bz2)
-> (DB version: 2024.0.0; Last updated: 2026-04-14 22:42:59)
+> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2024.0.0-alpha.3.db.bz2)
+> (DB version: 2024.0.0; Last updated: 2026-04-30 15:24:09)
 
 PTAXSIM is an R package/database to approximate Cook County property tax
 bills. It uses real assessment, exemption, TIF, and levy data to
@@ -172,7 +172,7 @@ database:
 
 1.  Download the compressed database file from the CCAO’s public S3
     bucket. [Link
-    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2024.0.0-alpha.2.db.bz2).
+    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2024.0.0-alpha.3.db.bz2).
 2.  (Optional) Rename the downloaded database file by removing the
     version number, i.e. ptaxsim-2024.0.0.db.bz2 becomes
     `ptaxsim.db.bz2`.
@@ -660,8 +660,10 @@ data was available in mid-2020.
 |----|----|----|----|----|
 | agency | Clerk | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/agency/agency.R](data-raw/agency/agency.R) | Taxing district extensions, limits, and base EAV |
 | agency_info | Clerk + imputed | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/agency/agency.R](data-raw/agency/agency.R) | Taxing district name, type, and subtype |
+| agency_crosswalk | Clerk + imputed | [Tax Extension - Tax Code Agency Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/agency/agency.R](data-raw/agency/agency.R) | Mapping to handle changes to agency numbers over time |
 | agency_fund | Clerk | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/agency/agency.R](data-raw/agency/agency.R) | Funds and line-items that contribute to each district’s extension |
 | agency_fund_info | Clerk | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/agency/agency.R](data-raw/agency/agency.R) | Fund name and whether the fund is statutorily capped |
+| agency_fund_crosswalk | Clerk + imputed | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/agency/agency.R](data-raw/agency/agency.R) | Mapping to handle changes to fund numbers over time |
 | cpi | IDOR | [History of CPI’s Used for the PTELL](https://tax.illinois.gov/localgovernments/property/cpihistory.html) | [data-raw/cpi/cpi.R](data-raw/cpi/cpi.R) | CPI-U used to calculate PTELL limits |
 | eq_factor | IDOR | Manually created from [IDOR press releases](https://tax.illinois.gov/research/press-releases-archive.html) | [data-raw/eq_factor/eq_factor.R](data-raw/eq_factor/eq_factor.R) | Equalization factor applied to AV to get EAV |
 | pin | Clerk + Treasurer | CLERKVALUES and TAXBILLAMOUNTS internal SQL tables | [data-raw/pin/pin.R](data-raw/pin/pin.R) | PIN-level tax code, AV, and exemptions |

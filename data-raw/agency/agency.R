@@ -28,11 +28,17 @@ remote_path_agency <- file.path(
 remote_path_agency_info <- file.path(
   remote_bucket, "agency_info", "part-0.parquet"
 )
+remote_path_agency_crosswalk <- file.path(
+  remote_bucket, "agency_crosswalk", "part-0.parquet"
+)
 remote_path_agency_fund <- file.path(
   remote_bucket, "agency_fund", "part-0.parquet"
 )
 remote_path_agency_fund_info <- file.path(
   remote_bucket, "agency_fund_info", "part-0.parquet"
+)
+remote_path_agency_fund_crosswalk <- file.path(
+  remote_bucket, "agency_fund_crosswalk", "part-0.parquet"
 )
 
 # Get a list of all levy report spreadsheets
@@ -576,51 +582,6 @@ agency_info <- agency_info %>%
     )
   )
 
-# Load 2024 tax code agency rate file to import legacy-new agency_num crosswalk
-agency_legacy_cw <-
-  openxlsx::read.xlsx(
-    "data-raw/tax_code/2024-tax-code-agency-rate-file.xlsx"
-  ) %>%
-  set_names(snakecase::to_snake_case(names(.))) %>%
-  select(
-    agency_num_24 = agency,
-    agency_num = legacy_num,
-    authority_num = authority,
-    agency_name_24 = authority_name
-  ) %>%
-  unique() %>%
-  # Account for error in Clerk's report which lists Village of Skokie Library
-  # Fund twice
-  filter(!(agency_num == "031170001" & agency_num_24 == "031170000"))
-
-
-agency_info <- agency_info %>%
-  left_join(agency_legacy_cw, by = "agency_num") %>%
-  mutate(
-    agency_change_24 = coalesce(agency_num != agency_num_24, FALSE),
-    agency_num_24 =
-      ifelse(agency_change_24,
-        agency_num_24,
-        NA
-      ),
-    agency_name_24 =
-      ifelse(agency_change_24,
-        agency_name_24,
-        NA
-      )
-  ) %>%
-  select(
-    agency_num,
-    agency_name,
-    agency_name_short,
-    agency_name_original,
-    major_type,
-    minor_type,
-    agency_num_24,
-    agency_name_24,
-    agency_change_24
-  )
-
 # Write both data sets to S3
 arrow::write_parquet(
   x = agency %>% select(-agency_name),
@@ -630,5 +591,100 @@ arrow::write_parquet(
 arrow::write_parquet(
   x = agency_info,
   sink = remote_path_agency_info,
+  compression = "zstd"
+)
+
+
+# agency_crosswalk ------------------------------------------------------------
+
+# Extract rows from the Clerk tax code agency rate report for agencies that the
+# Clerk has switched to reporting as funds. The resulting crosswalk allows
+# users to analyze these agencies (really funds) over time
+agency_crosswalk <-
+  openxlsx::read.xlsx(
+    "data-raw/tax_code/2024-tax-code-agency-rate-file.xlsx"
+  ) %>%
+  set_names(snakecase::to_snake_case(names(.))) %>%
+  mutate(year_of_change = as.character(ty_2024)) %>%
+  select(
+    year_of_change,
+    agency_num = legacy_num,
+    agency_num_final = agency
+  ) %>%
+  distinct() %>%
+  filter(agency_num != agency_num_final) %>%
+  # Account for error in Clerk's report which lists the Skokie Library fund
+  # levy in the legacy fund line. Because of this, it continues to follow the
+  # pre-2024 pattern for library fund reporting, so we need to remove it from
+  # the crosswalk
+  filter(!(agency_num == "031170001" & agency_num_final == "031170000"))
+
+
+# agency_fund_crosswalk --------------------------------------------------------
+
+# Similar to `agency_crosswalk`, extract a mapping for funds whose agency
+# and/or fund number have changed to support the Clerk's switch to reporting
+# the fund as a fund, rather than an independent agency
+changed_funds <- agency_fund_info %>%
+  left_join(
+    agency_info %>%
+      select(agency_num, agency_name, minor_type),
+    by = "agency_num"
+  ) %>%
+  inner_join(agency_crosswalk, by = "agency_num") %>%
+  mutate(
+    # Unlike agency numbers, the Clerk does not publish a mapping for fund
+    # numbers that have changed, so we need to derive them. Luckily, the
+    # logic is deterministic, with new fund numbers following a clear pattern
+    # based on the agency minor type and agency name
+    fund_num_final = case_when(
+      # Unlike other types of changed funds, levy adjustments (408) do not have
+      # new fund numbers corresponding to the former agency minor type; instead,
+      # all levy adjustments get rolled into a single fund with fund number
+      # 408000 that applies to the agency as a whole rather than its constituent
+      # funds. As such, ensure all levy adjustments end up with the same fund
+      # number in the crosswalk, regardless of the former agency minor type
+      fund_type_num == "408" ~ fund_num,
+      minor_type == "LIBRARY" ~ paste0(fund_type_num, "001"),
+      minor_type == "GEN ASST" ~ paste0(fund_type_num, "002"),
+      minor_type == "INFRA" ~ paste0(fund_type_num, "003"),
+      minor_type == "HEALTH" &
+        str_detect(agency_name, "MENTAL") ~ paste0(fund_type_num, "004"),
+      minor_type == "HEALTH" &
+        str_detect(agency_name, "PUBLIC") ~ paste0(fund_type_num, "005"),
+      # If the pattern matching logic fails to match an old fund number to its
+      # new version, fall through to a null. The resulting null enables us to
+      # fail loudly for these cases in the data integrity checks below, so that
+      # we can add handling for that type of fund number
+      TRUE ~ NA_character_
+    )
+  )
+
+# Perform some quick data integrity checks
+if (any(is.na(changed_funds$agency_name))) {
+  stop(
+    "Could not join fund to agency info when constructing agency_fund_crosswalk"
+  )
+}
+if (any(is.na(changed_funds$fund_num_final))) {
+  stop(
+    "Could not parse final fund number for some funds in agency_fund_crosswalk"
+  )
+}
+
+agency_fund_crosswalk <- changed_funds %>%
+  mutate(year_of_change = "2024") %>%
+  select(year_of_change, agency_num, agency_num_final, fund_num, fund_num_final)
+
+# Write both data sets to S3
+arrow::write_parquet(
+  x = agency_crosswalk,
+  sink = remote_path_agency_crosswalk,
+  compression = "zstd"
+)
+
+arrow::write_parquet(
+  x = agency_fund_crosswalk,
+  sink = remote_path_agency_fund_crosswalk,
   compression = "zstd"
 )
