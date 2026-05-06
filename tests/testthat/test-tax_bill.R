@@ -136,8 +136,9 @@ exclude_pins <- c(
   # Bill lists different pre- and post-exemption amounts, but does not show
   # any exemptions, and the Clerk data also has no exemptions
   "20031180060000",
-  # Has a 2022 vetdis 100% exemption that doesn't seem to be present in the
-  # Clerk data
+  # Has a 2022 vetdis 100% exemption on the Treasurer bill that is not present
+  # in the Clerk data because our Clerk data export did not include vetdis 100%
+  # exemptions in 2022
   "10252080490000"
 )
 sum_dt_filtered <- sum_dt %>%
@@ -200,16 +201,8 @@ rollup_agencies <- function(df) {
 
 test_that("returns correct row counts for all sample bills", {
   expect_equal(
-    # We're not sure if this will continue to hold after 2024, when the
-    # Treasurer started reporting a slightly different set of agencies on
-    # tax bills compared to the Clerk's data (largely driven by the Clerk's
-    # decision to split some funds out into their own agencies, though there
-    # are other inconsistencies). It may just be a coincidence that the counts
-    # match in 2024. If this is the case, we should switch to an approach that
-    # rolls up funds into their parent agency, and then compares the row counts
-    # for parent agencies only
-    nrow(sum_tax_bill_simplified),
-    nrow(det_dt_filtered)
+    sum_tax_bill_simplified %>% rollup_agencies() %>% nrow(),
+    det_dt_filtered %>% rollup_agencies() %>% nrow()
   )
   expect_equal(
     nrow(sum_tax_bill_unsimplified),

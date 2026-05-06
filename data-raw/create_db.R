@@ -140,18 +140,7 @@ for (file in files) {
 datasets <- c("pin", "tax_code")
 for (dataset in datasets) {
   message("Now loading: ", dataset)
-  df <- collect(arrow::open_dataset(file.path(remote_bucket, dataset),
-    # Starting in 2024, the data source for the `pin` table has changed.
-    # The current package maintainers do not have access to the old data source,
-    # which was a snapshot mirror of a mainframe system that has been
-    # decommissioned. To facilitate future updates, we copied over pre-2024
-    # `pin` files without edits. These legacy files are missing some columns
-    # that we added in 2024, so we need to unify the schemas across files, since
-    # otherwise arrow will take the schema from the first file it finds in the
-    # dataset. In the future, we could also consider editing the old files to
-    # add empty values for the new columns
-    unify_schemas = TRUE
-  ))
+  df <- collect(arrow::open_dataset(file.path(remote_bucket, dataset)))
   DBI::dbAppendTable(conn, dataset, df)
 }
 

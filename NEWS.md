@@ -160,6 +160,17 @@ database and functions to handle these changes in the source data.
     - **How this change affects you**: If you use the `agency_fund_info` table
       and treat it as unique by `fund_num`, you will need to update your
       code to add `agency_num` when joining to this table.
+- **Added new exemption columns `pin.exe_vet_dis_100` and `pin.exe_wwii`**.
+  These columns correspond to the new 100% disability level for the [Veterans with
+  Disabilities Exemption](https://www.cookcountyassessoril.gov/veterans-disabilities-exemption)
+  and the [WWII Exemption](https://www.cookcountyassessoril.gov/wwii-veterans-exemption),
+  respectively. The lookup function
+  [`lookup_pin()`](https://ccao-data.github.io/ptaxsim/reference/lookup_pin.html)
+  now returns these columns, and the `tax_bill()` function expects these
+  columns to be present in the `pin_dt` datatable argument.
+    - **How this change affects you**: If you maintain code that constructs a
+      `pin_dt` datatable to pass into `tax_bill()`, you will need to update it
+      to ensure you are including these new exemption columns.
 - **Dropped a few columns that the Clerk has removed from its agency reports**.
     - The dropped columns are:
       - `agency_fund.ptell_reduced_ind` (PTELL-reduced levy indicator)
@@ -193,14 +204,6 @@ database and functions to handle these changes in the source data.
 
 ## Improvements
 
-- **Added a new exemption column `pin.exe_vet_dis_100`**. This column
-  corresponds to the new 100% disability level for the [Veterans with
-  Disabilities Exemption](https://www.cookcountyassessoril.gov/veterans-disabilities-exemption).
-  The lookup function
-  [`lookup_pin()`](https://ccao-data.github.io/ptaxsim/reference/lookup_pin.html)
-  now returns this column.
-    - **How this change affects you**: You may use this column if you would
-      like to analyze this new exemption.
 - **Added a new column `agency.authority_num`**. We expect this column to be
   more useful in future years when the Clerk continues migrating from the
   core "Agency" entity to the "Authority" entity.
