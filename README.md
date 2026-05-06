@@ -36,13 +36,13 @@ Table of Contents
 > installation](#database-installation) for details.
 >
 > [**Link to PTAXSIM
-> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2023.0.0.db.bz2)
-> (DB version: 2023.0.0; Last updated: 2024-08-05 19:43:42)
+> database**](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2024.0.0.db.bz2)
+> (DB version: 2024.0.0; Last updated: 2026-05-05 15:28:10)
 
 PTAXSIM is an R package/database to approximate Cook County property tax
 bills. It uses real assessment, exemption, TIF, and levy data to
 generate historic, line-item tax bills (broken out by taxing district)
-for any property from 2006 to 2023. Given some careful assumptions and
+for any property from 2006 to 2024. Given some careful assumptions and
 data manipulation, it can also provide hypothetical, but factually
 grounded, answers to questions such as:
 
@@ -172,9 +172,9 @@ database:
 
 1.  Download the compressed database file from the CCAO’s public S3
     bucket. [Link
-    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2023.0.0.db.bz2).
+    here](https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/ptaxsim-2024.0.0.db.bz2).
 2.  (Optional) Rename the downloaded database file by removing the
-    version number, i.e. ptaxsim-2023.0.0.db.bz2 becomes
+    version number, i.e. ptaxsim-2024.0.0.db.bz2 becomes
     `ptaxsim.db.bz2`.
 3.  Decompress the downloaded database file. The file is compressed
     using [bzip2](https://sourceware.org/bzip2/).
@@ -538,22 +538,22 @@ broken out by taxing district. To do so, pass a vector of multiple years
 to the `year_vec` argument of `tax_bill()`:
 
 ``` r
-multiple_years <- tax_bill(2010:2023, "14081020210000")
+multiple_years <- tax_bill(2010:2024, "14081020210000")
 multiple_years
 #> Key: <year, pin, agency_num>
-#>       year            pin  class tax_code    av    eav agency_num
-#>      <int>         <char> <char>   <char> <int>  <int>     <char>
-#>   1:  2010 14081020210000    206    73001 69062 227905  010010000
-#>   2:  2010 14081020210000    206    73001 69062 227905  010020000
-#>   3:  2010 14081020210000    206    73001 69062 227905  030210000
-#>   4:  2010 14081020210000    206    73001 69062 227905  030210001
-#>   5:  2010 14081020210000    206    73001 69062 227905  030210002
-#>  ---                                                             
-#> 152:  2023 14081020210000    206    73105 70000 211141  044060000
-#> 153:  2023 14081020210000    206    73105 70000 211141  044060000
-#> 154:  2023 14081020210000    206    73105 70000 211141  050200000
-#> 155:  2023 14081020210000    206    73105 70000 211141  050200001
-#> 156:  2023 14081020210000    206    73105 70000 211141  080180000
+#>       year            pin  class tax_code     av    eav agency_num
+#>      <int>         <char> <char>   <char>  <int>  <int>     <char>
+#>   1:  2010 14081020210000    206    73001  69062 227905  010010000
+#>   2:  2010 14081020210000    206    73001  69062 227905  010020000
+#>   3:  2010 14081020210000    206    73001  69062 227905  030210000
+#>   4:  2010 14081020210000    206    73001  69062 227905  030210001
+#>   5:  2010 14081020210000    206    73001  69062 227905  030210002
+#>  ---                                                              
+#> 163:  2024 14081020210000    206    73105 125001 379441  044060000
+#> 164:  2024 14081020210000    206    73105 125001 379441  044060000
+#> 165:  2024 14081020210000    206    73105 125001 379441  050200000
+#> 166:  2024 14081020210000    206    73105 125001 379441  050200001
+#> 167:  2024 14081020210000    206    73105 125001 379441  080180000
 #>                       agency_name     agency_major_type agency_minor_type
 #>                            <char>                <char>            <char>
 #>   1:               COUNTY OF COOK           COOK COUNTY              COOK
@@ -562,24 +562,24 @@ multiple_years
 #>   4: CITY OF CHICAGO LIBRARY F... MUNICIPALITY/TOWNSHIP           LIBRARY
 #>   5: CITY OF CHICAGO SCHOOL BL... MUNICIPALITY/TOWNSHIP              MISC
 #>  ---                                                                     
-#> 152:           BOARD OF EDUCATION                SCHOOL           UNIFIED
-#> 153: BOARD OF EDUCATION - from...                SCHOOL           UNIFIED
-#> 154:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
-#> 155: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
-#> 156: METRO WATER RECLAMATION D...         MISCELLANEOUS             WATER
+#> 163:           BOARD OF EDUCATION                SCHOOL           UNIFIED
+#> 164: BOARD OF EDUCATION - from...                SCHOOL           UNIFIED
+#> 165:        CHICAGO PARK DISTRICT         MISCELLANEOUS              PARK
+#> 166: CHICAGO PARK DISTRICT AQU...         MISCELLANEOUS              BOND
+#> 167: METRO WATER RECLAMATION D...         MISCELLANEOUS             WATER
 #>      agency_tax_rate final_tax
 #>                <num>     <num>
-#>   1:         0.00423   964.040
-#>   2:         0.00051   116.230
-#>   3:         0.00914  2083.050
-#>   4:         0.00102   232.460
-#>   5:         0.00116   264.370
+#>   1:      0.00423000    964.04
+#>   2:      0.00051000    116.23
+#>   3:      0.00914000   2083.05
+#>   4:      0.00102000    232.46
+#>   5:      0.00116000    264.37
 #>  ---                          
-#> 152:         0.03829  5411.540
-#> 153:         0.00000  2673.052
-#> 154:         0.00318   493.830
-#> 155:         0.00000     0.000
-#> 156:         0.00345   535.760
+#> 163:      0.03630964   5662.50
+#> 164:      0.00000000   8114.87
+#> 165:      0.00294209    590.33
+#> 166:      0.00000000      0.00
+#> 167:      0.00340445    683.10
 ```
 
 The `tax_bill()` function will automatically combine the years and PIN
@@ -629,10 +629,10 @@ multiple_years_plot <- ggplot(data = multiple_years_summ) +
   scale_y_continuous(
     name = "Total Tax Amount",
     labels = scales::dollar,
-    expand = c(0, 0),
+    expand = expansion(mult = c(0, .05)),
     n.breaks = 8
   ) +
-  scale_x_continuous(name = "Year", n.breaks = 7) +
+  scale_x_continuous(name = "Year", n.breaks = 8) +
   scale_fill_manual(values = scales::hue_pal()(10)) +
   theme_minimal() +
   guides(fill = guide_legend(title = "District Type"))
@@ -660,15 +660,18 @@ data was available in mid-2020.
 |----|----|----|----|----|
 | agency | Clerk | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/agency/agency.R](data-raw/agency/agency.R) | Taxing district extensions, limits, and base EAV |
 | agency_info | Clerk + imputed | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/agency/agency.R](data-raw/agency/agency.R) | Taxing district name, type, and subtype |
+| agency_crosswalk | Clerk + imputed | [Tax Extension - Tax Code Agency Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/agency/agency.R](data-raw/agency/agency.R) | Mapping to handle changes to agency numbers over time |
 | agency_fund | Clerk | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/agency/agency.R](data-raw/agency/agency.R) | Funds and line-items that contribute to each district’s extension |
 | agency_fund_info | Clerk | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/agency/agency.R](data-raw/agency/agency.R) | Fund name and whether the fund is statutorily capped |
-| cpi | IDOR | [History of CPI’s Used for the PTELL](https://www2.illinois.gov/rev/localgovernments/property/Documents/cpihistory.pdf) | [data-raw/cpi/cpi.R](data-raw/cpi/cpi.R) | CPI-U used to calculate PTELL limits |
-| eq_factor | Clerk | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/eq_factor/eq_factor.R](data-raw/eq_factor/eq_factor.R) | Equalization factor applied to AV to get EAV |
+| agency_fund_crosswalk | Clerk + imputed | [Tax Extension - Agency Tax Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/agency/agency.R](data-raw/agency/agency.R) | Mapping to handle changes to fund numbers over time |
+| cpi | IDOR | [History of CPI’s Used for the PTELL](https://tax.illinois.gov/localgovernments/property/cpihistory.html) | [data-raw/cpi/cpi.R](data-raw/cpi/cpi.R) | CPI-U used to calculate PTELL limits |
+| eq_factor | IDOR | Manually created from [IDOR press releases](https://tax.illinois.gov/research/press-releases-archive.html) | [data-raw/eq_factor/eq_factor.R](data-raw/eq_factor/eq_factor.R) | Equalization factor applied to AV to get EAV |
 | pin | Clerk + Treasurer | CLERKVALUES and TAXBILLAMOUNTS internal SQL tables | [data-raw/pin/pin.R](data-raw/pin/pin.R) | PIN-level tax code, AV, and exemptions |
 | tax_code | Clerk | [Tax Extension - Tax Code Agency Rate Reports](https://www.cookcountyclerkil.gov/property-taxes/tax-extension-and-rates) | [data-raw/tax_code/tax_code.R](data-raw/tax_code/tax_code.R) | Crosswalk of tax codes by district |
 | tif | Clerk | [TIF Reports - Cook County Summary Reports](https://www.cookcountyclerkil.gov/property-taxes/tifs-tax-increment-financing/tif-reports) | [data-raw/tif/tif.R](data-raw/tif/tif.R) | TIF revenue, start year, and cancellation year |
 | tif_crosswalk | Clerk | Manually created from TIF summary and distribution reports | [data-raw/tif/tif.R](data-raw/tif/tif.R) | Fix for data issue identified in \#39 |
 | tif_distribution | Clerk | [TIF Reports - Tax Increment Agency Distribution Reports](https://www.cookcountyclerkil.gov/property-taxes/tifs-tax-increment-financing/tif-reports) | [data-raw/tif/tif.R](data-raw/tif/tif.R) | TIF EAV, frozen EAV, and distribution percentage by tax code |
+| pin_tif_distribution | Clerk | [TIF Reports - Tax Increment Agency Distribution Reports](https://www.cookcountyclerkil.gov/property-taxes/tifs-tax-increment-financing/tif-reports) | [data-raw/tif/tif.R](data-raw/tif/tif.R) | TIF EAV, frozen EAV, and distribution percentage by PIN |
 
 ### Database diagram
 
@@ -680,12 +683,18 @@ data was available in mid-2020.
 
 ## Notes and caveats
 
-- Currently, the per-district tax calculations for properties in the
-  Red-Purple Modernization (RPM) TIF are slightly flawed. However, the
-  total tax bill per PIN is still accurate. See issue
-  [\#4](https://github.com/ccao-data/ptaxsim/issues/4) for more
-  information or issue
-  [\#56](https://github.com/ccao-data/ptaxsim/issues/56).
+- PTAXSIM’s tax year 2024 update required significant changes to the
+  database and package. Please see the PTAXSIM
+  [changelog](https://ccao-data.github.io/ptaxsim/news) for more
+  details.
+- The per-district tax calculation using `tax_bill(simplify = TRUE)` for
+  properties in transit TIFs do not match the amounts that the Treasurer
+  reports on their tax bills. We believe the amounts we report are
+  correct, however. See issues
+  [\#4](https://github.com/ccao-data/ptaxsim/issues/4) and
+  [\#56](https://github.com/ccao-data/ptaxsim/issues/56) for more
+  information, as well as PR
+  [\#58](https://github.com/ccao-data/ptaxsim/pull/58).
 - Special Service Area (SSA) rates must be calculated manually when
   creating counterfactual bills. See issue
   [\#3](https://github.com/ccao-data/ptaxsim/issues/3) for more

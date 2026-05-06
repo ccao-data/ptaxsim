@@ -1,10 +1,13 @@
 Package: ptaxsim
 Type: Package
 Title: Calculate Cook County Property Tax Bills and Simulate Scenarios
-Version: 1.0.0
+Version: 1.1.0
 Authors@R: c(
-    person(given = "Dan", family = "Snow", email = "daniel.snow@cookcountyil.gov", role = c("aut", "cre")),
-    person(given = "Rob", family = "Ross", role = c("aut", "ctb")),
+    person(given = "Kyra", family = "Sturgill", email = "Assessor.Data@cookcountyil.gov", role = c("aut", "cre")),
+    person(given = "Dan", family = "Snow", role = c("aut")),
+    person(given = "Jean", family = "Cochrane", role = c("aut")),
+    person(given = "Rob", family = "Ross", role = c("aut")),
+    person(give = "Eric", family = "Langowski", role = c("ctb")),
     person(given = "Mike", family = "Wu", role = c("ctb"))
     )
 Description: An R package to estimate property tax bills and simulate tax
@@ -25,6 +28,7 @@ Imports:
 RoxygenNote: 7.3.3
 Suggests:
     arrow,
+    aws.s3,
     covr,
     devtools,
     dplyr,
@@ -59,8 +63,8 @@ Suggests:
     usethis
 Depends:
     R (>= 3.5)
-Remotes: 
+Remotes:
     paleolimbot/geoarrow,
     ropensci/tabulapdf
-Config/Requires_DB_Version: 2021.0.4
-Config/Wants_DB_Version: 2023.0.0
+Config/Requires_DB_Version: 2024.0.0
+Config/Wants_DB_Version: 2024.0.0

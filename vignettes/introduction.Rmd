@@ -67,7 +67,7 @@ PTAXSIM has a single primary function - `tax_bill()` - with two *required* argum
 The output is a `data.table` containing the tax amount directed to each taxing district, by PIN and year. Let's look at an example using just one property and year:
 
 ```{r}
-bill <- tax_bill(year_vec = 2021, pin_vec = "13264290020000")
+bill <- tax_bill(year_vec = 2024, pin_vec = "13264290020000")
 print(bill)
 ```
 
@@ -93,14 +93,14 @@ print(bill)
 The `tax_bill()` function can take multiple years in the `year_vec` argument:
 
 ```{r}
-bills <- tax_bill(2010:2021, "13264290020000")
+bills <- tax_bill(2010:2024, "13264290020000")
 print(bills, topn = 3)
 ```
 
 And multiple PINs in the `pin_vec` argument:
 
 ```{r}
-bills <- tax_bill(2021, c("13264290020000", "07101010391078", "10153080520000"))
+bills <- tax_bill(2024, c("13264290020000", "07101010391078", "10153080520000"))
 print(bills, topn = 3)
 ```
 
@@ -108,7 +108,7 @@ Passing `year_vec` and `pin_vec` of different lengths will yield the Cartesian p
 
 ```{r}
 bills <- tax_bill(
-  year_vec = 2006:2021,
+  year_vec = 2006:2024,
   pin_vec = c("13264290020000", "07101010391078", "10153080520000")
 )
 print(bills, topn = 3)
@@ -118,7 +118,7 @@ Passing `year_vec` and `pin_vec` of the same length will match the vectors eleme
 
 ```{r}
 bills <- tax_bill(
-  year_vec = c(2012, 2006, 2021),
+  year_vec = c(2012, 2021, 2024),
   pin_vec = c("13264290020000", "07101010391078", "10153080520000")
 )
 print(bills, topn = 3)
@@ -131,7 +131,7 @@ These basic arguments can even be used to calculate line-item bills for all PINs
 pins <- DBI::dbGetQuery(ptaxsim_db_conn, "SELECT DISTINCT pin FROM pin")
 
 # Calculate all bills for all years (~350M rows, takes about 10 minutes)
-bills <- tax_bill(2006:2021, pins$pin)
+bills <- tax_bill(2006:2024, pins$pin)
 print(bills, topn = 3)
 #> NOT RUN, takes too long on GitHub CI and requires ~90 GB of RAM
 ```
@@ -152,7 +152,7 @@ By default, these arguments are filled with historic data from the PTAXSIM datab
   * Takes PINs and years as inputs and outputs a character vector of tax codes. Here is an example:
 
     ```{r}
-tax_code <- lookup_tax_code(2018:2021, "13264290020000")
+tax_code <- lookup_tax_code(2018:2024, "13264290020000")
 print(tax_code)
     ```
 
@@ -160,13 +160,13 @@ print(tax_code)
 
     ```{r}
 tax_code <- lookup_tax_code(
-  year = 2018:2021,
+  year = 2018:2024,
   pin = c("13264290020000", "07101010391078", "10153080520000")
 )
 print(tax_code)
 
 tax_code <- lookup_tax_code(
-  year = 2006:2021,
+  year = 2006:2024,
   pin = c("13264290020000", "07101010391078", "10153080520000")
 )
 print(tax_code)
@@ -193,8 +193,8 @@ print(tax_code)
   * Takes years and tax codes as inputs and outputs a keyed `data.table` of taxing districts, including their identifying information, extension, and base. Here is an example:
 
     ```{r}
-tax_code <- lookup_tax_code(2021, "13264290020000")
-agency <- lookup_agency(2021, tax_code)
+tax_code <- lookup_tax_code(2024, "13264290020000")
+agency <- lookup_agency(2024, tax_code)
 print(agency, topn = 3)
     ```
 
@@ -202,32 +202,34 @@ print(agency, topn = 3)
 
     ```{r}
 tax_codes <- lookup_tax_code(
-  year = 2021,
+  year = 2024,
   pin = c("13264290020000", "13264290020000", "13264290020000")
 )
-agency <- lookup_agency(c(2021, 2021, 2021), tax_codes)
+agency <- lookup_agency(c(2024, 2024, 2024), tax_codes)
 print(agency, topn = 3)
     ```
 
 ### `pin_dt` {#pin_dt}
 
-| Column Name                  | Type        | Key | Note                                                                                                                                                                                 |
-|------------------------------|-------------|-----|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **`year`**                   | int         | 1   | See [tax_bill() outputs](#table1)                                                                                                                                                    |
-| **`pin`**                    | varchar(14) | 2   | See [tax_bill() outputs](#table1)                                                                                                                                                    |
-| **`class`**                  | varchar(3)  |     | See [tax_bill() outputs](#table1)                                                                                                                                                    |
-| **`av`**                     | int         |     | See [tax_bill() outputs](#table1)                                                                                                                                                    |
-| **`eav`**                    | int         |     | See [tax_bill() outputs](#table1)                                                                                                                                                    |
-| **`exe_homeowner`**          | int         |     | [Homeowner Exemption](https://www.cookcountyassessor.com/homeowner-exemption). All exemption amounts are in EAV, e.i. the Homeowner Exemption is typically an integer equal to 10000 |
-| **`exe_senior`**             | int         |     | [Senior Exemption](https://www.cookcountyassessor.com/senior-citizen-exemption)                                                                                                      |
-| **`exe_freeze`**             | int         |     | [Senior Freeze Exemption](https://www.cookcountyassessor.com/senior-freeze-exemption). Subtract from `eav` to get the frozen amount                                                  |
-| **`exe_longtime_homeowner`** | int         |     | [Longtime Homeowner Exemption](https://www.cookcountyassessor.com/longtime-homeowner-exemption)                                                                                      |
-| **`exe_disabled`**           | int         |     | [Persons with Disabilities Exemption](https://www.cookcountyassessor.com/persons-disabilities-exemption)                                                                             |
-| **`exe_vet_returning`**      | int         |     | [Returning Veterans Exemption](https://www.cookcountyassessor.com/returning-veterans-exemption)                                                                                      |
-| **`exe_vet_dis_lt50`**       | int         |     | [Veterans with Disabilities Exemption](https://www.cookcountyassessor.com/veterans-disabilities-exemption). Level of disability < 50%                                                |
-| **`exe_vet_dis_50_69`**      | int         |     | [Veterans with Disabilities Exemption](https://www.cookcountyassessor.com/veterans-disabilities-exemption). Level of disability >= 51% and <= 69%                                    |
-| **`exe_vet_dis_ge70`**       | int         |     | [Veterans with Disabilities Exemption](https://www.cookcountyassessor.com/veterans-disabilities-exemption). Level of disability >= 70%                                               |
-| **`exe_abate`**              | int         |     | Other tax abatements, exemptions, etc.                                                                                                                                               |
+| Column Name                  | Type        | Key | Note                                                                                                                                                                                                                                |
+|------------------------------|-------------|-----|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **`year`**                   | int         | 1   | See [tax_bill() outputs](#table1)                                                                                                                                                                                                   |
+| **`pin`**                    | varchar(14) | 2   | See [tax_bill() outputs](#table1)                                                                                                                                                                                                   |
+| **`class`**                  | varchar(3)  |     | See [tax_bill() outputs](#table1)                                                                                                                                                                                                   |
+| **`av`**                     | int         |     | See [tax_bill() outputs](#table1)                                                                                                                                                                                                   |
+| **`eav`**                    | int         |     | See [tax_bill() outputs](#table1)                                                                                                                                                                                                   |
+| **`exe_homeowner`**          | int         |     | [Homeowner Exemption](https://www.cookcountyassessor.com/homeowner-exemption). All exemption amounts are in EAV, e.i. the Homeowner Exemption is typically an integer equal to 10000                                                |
+| **`exe_senior`**             | int         |     | [Senior Exemption](https://www.cookcountyassessor.com/senior-citizen-exemption)                                                                                                                                                     |
+| **`exe_freeze`**             | int         |     | [Senior Freeze Exemption](https://www.cookcountyassessor.com/senior-freeze-exemption). Subtract from `eav` to get the frozen amount                                                                                                 |
+| **`exe_longtime_homeowner`** | int         |     | [Longtime Homeowner Exemption](https://www.cookcountyassessor.com/longtime-homeowner-exemption)                                                                                                                                     |
+| **`exe_disabled`**           | int         |     | [Persons with Disabilities Exemption](https://www.cookcountyassessor.com/persons-disabilities-exemption)                                                                                                                            |
+| **`exe_vet_returning`**      | int         |     | [Returning Veterans Exemption](https://www.cookcountyassessor.com/returning-veterans-exemption)                                                                                                                                     |
+| **`exe_vet_dis_lt50`**       | int         |     | [Veterans with Disabilities Exemption](https://www.cookcountyassessor.com/veterans-disabilities-exemption). Level of disability < 50%                                                                                               |
+| **`exe_vet_dis_50_69`**      | int         |     | [Veterans with Disabilities Exemption](https://www.cookcountyassessor.com/veterans-disabilities-exemption). Level of disability >= 51% and <= 69%                                                                                   |
+| **`exe_vet_dis_ge70`**       | int         |     | [Veterans with Disabilities Exemption](https://www.cookcountyassessor.com/veterans-disabilities-exemption). Level of disability >= 70%                                                                                              |
+| **`exe_vet_dis_100`**        | int         |     | [Veterans with Disabilities Exemption](https://www.cookcountyassessor.com/veterans-disabilities-exemption). New data point available as of 2024. Value for this field will be zero for all years < 2024. Level of disability = 100% |
+| **`exe_wwii`**               | int         |     | [WWII Veterans Exemption](https://www.cookcountyassessoril.gov/wwii-veterans-exemption). New data point available as of 2024. Value for this field will be zero for all years < 2024.                                               |
+| **`exe_abate`**              | int         |     | Other tax abatements, exemptions, etc.                                                                                                                                                                                              |
 
 * Expects a `data.table` with the columns above:
 * Each row represents the assessed value and [exemptions](https://www.cookcountyassessor.com/exemptions) for a specific PIN and year
@@ -237,14 +239,14 @@ print(agency, topn = 3)
   * Takes years and PINs as inputs and outputs a keyed `data.table` of PINs, including their class, assessed value, and individual exemptions. Here is an example:
 
     ```{r}
-pin <- lookup_pin(2021, "13264290020000")
+pin <- lookup_pin(2024, "13264290020000")
 print(pin)
     ```
 
   * Repeat inputs will yield distinct outputs:
 
     ```{r}
-pin <- lookup_pin(2021, c("13264290020000", "13264290020000"))
+pin <- lookup_pin(2024, c("13264290020000", "13264290020000"))
 print(pin)
     ```
 
@@ -255,8 +257,8 @@ print(pin)
     * `"clerk"` - Assessed values used by the Clerk to calculate the base and by the Treasurer to calculate bills. Identical to `"board"` in the huge majority of cases
 
     ```{r}
-pin_mailed <- lookup_pin(2021, "13264290020000", stage = "mailed")
-pin_board <- lookup_pin(2021, "13264290020000", stage = "board")
+pin_mailed <- lookup_pin(2024, "13264290020000", stage = "mailed")
+pin_board <- lookup_pin(2024, "13264290020000", stage = "board")
 print(rbind(pin_mailed, pin_board))
     ```
 
@@ -274,22 +276,64 @@ print(rbind(pin_mailed, pin_board))
 
 * Expects a `data.table` with the columns above:
 * Each row represents a TIF that covers the specified `tax_code`. Each `tax_code` can only have one TIF, likewise for PINs
+* Returns TIF information by `tax_code` for all years from 2006-2023. For 2024 and after, the **`tax_bill()`** function relies on `pin_tif_dt` ([see below](#pin_tif_dt))
 * The input `data.table` must be [keyed](https://cran.r-project.org/web/packages/data.table/vignettes/datatable-keys-fast-subset.html) on the `year`, `tax_code`, and `agency_num` columns and must be ***distinct***, e.i. it must not have repeat rows
 * Filled by **`lookup_tif()`**:
   * Takes years and tax codes as inputs and outputs a keyed `data.table` of TIF districts, including their identifying information and distribution percentage/TIF share. Here is an example:
 
     ```{r}
-tax_code <- lookup_tax_code(2021, "14172270080000")
-tif <- lookup_tif(2021, tax_code)
+tax_code <- lookup_tax_code(2023, "14172270080000")
+tif <- lookup_tif(2023, tax_code)
 print(tif, topn = 3)
     ```
 
   * Returns a `data.table` with zero rows if the specified `tax_code` is not within a TIF district:
 
     ```{r}
-tax_code <- lookup_tax_code(2021, "13264290020000")
-tif <- lookup_tif(2021, tax_code)
+tax_code <- lookup_tax_code(2023, "13264290020000")
+tif <- lookup_tif(2023, tax_code)
 print(tif, topn = 3)
+    ```
+
+### `pin_tif_dt` {#pin_tif_dt}
+
+| Column Name             | Type       | Key | Note                                                                                                                       |
+|-------------------------|------------|-----|----------------------------------------------------------------------------------------------------------------------------|
+| **`year`**              | int        | 1   | See [tax_bill() outputs](#table1)                                                                                          |
+| **`pin`**               | varchar(14) | 2   | See [tax_bill() outputs](#table1).       
+| **`tax_code`**          | varchar(5) |     | See [tax_bill() outputs](#table1). Unique identifier for the *tax situation* created by the TIF      |
+| **`agency_num`**        | varchar(9) | 3   | See [tax_bill() outputs](#table1). Unique identifier for the TIF                                                           |
+| **`agency_name`**       | varchar    |     | See [tax_bill() outputs](#table1)                                                                                          |
+| **`agency_major_type`** | varchar    |     | See [tax_bill() outputs](#table1)                                                                                          |
+| **`agency_minor_type`** | varchar    |     | See [tax_bill() outputs](#table1)                                                                                          |
+| **`tif_share`**         | double     |     | The percentage of this tax PIN's revenue dedicated to the TIF. Increases as the PIN's EAV above its frozen EAV increases |
+
+* Expects a `data.table` with the columns above:
+* Each row represents a `pin` and its TIF. Each `pin` can only have one TIF. 
+* Returns TIF information by `pin` for years 2024 and after. This accounts for the TIF share calculation methodology change that began in 2024 (more information about this change is described in the PTAXSIM [changelog](https://ccao-data.github.io/ptaxsim/news) and the [TIF vignette](https://ccao-data.github.io/ptaxsim/articles/tifs.html))
+* The input `data.table` must be [keyed](https://cran.r-project.org/web/packages/data.table/vignettes/datatable-keys-fast-subset.html) on the `year`, `pin`, and `agency_num` columns and must be ***distinct***, i.e. it must not have repeat rows
+* Filled by **`lookup_pin_tif()`**:
+  * Takes years and PINs as inputs and outputs a keyed `data.table` of the PINs and their TIF districts, including their identifying information and distribution percentage/TIF share. Here is an example:
+
+    ```{r}
+tif <- lookup_pin_tif(2024, "14172270080000")
+print(tif, topn = 3)
+    ```
+
+  * Returns a `data.table` with zero rows if the input year is before 2024:
+
+    ```{r}
+tif <- lookup_pin_tif(2023, "14172270080000")
+print(tif, topn = 3)
+    ```
+  * Looking up TIF information before and after the 2024 TIF methodology update requires using both **`lookup_tif()`** and **`lookup_pin_tif()`**; however, for tax bill calculations we have built in functionality in **`tax_bill()`** to enable correct bill calculation for TIF'd PINs across all years:
+
+    ```{r}
+pin_tax_to_tif <- tax_bill(2023:2024, "14172270080000") %>%
+  filter(agency_num == "030210610") %>%
+  group_by(year, agency_name) %>%
+  summarise(total_tax_to_tif = sum(final_tax))
+print(pin_tax_to_tif, topn = 3)
     ```
 
 # 2. Common scenarios {#common-scenarios}
@@ -300,37 +344,37 @@ In this section, we'll look at how to use the `tax_bill()` function to model com
 
 ## Change in assessed value
 
-To recalculate a tax bill with a counterfactual assessed value, simply change the `pin_dt` column `eav`. For example, PIN **13-26-429-002-0000** had a 2020 estimated market value of \$403,710. What if it had a market value of $800,000?
+To recalculate a tax bill with a counterfactual assessed value, simply change the `pin_dt` column `eav`. For example, PIN **13-26-429-002-0000** had a 2024 estimated market value of \$638,750. What if it had a market value of $1,000,000?
 
 To find out, we'll first convert the new market value into the equalized assessed value (EAV).
 
 ```{r}
-mkt_value <- 800000
+mkt_value <- 1000000
 
 # For residential properties, AV is 10% of market value
 assmt_value <- mkt_value * 0.1
 
-# Get the final equalization factor for 2020 to get the equalized assessed value
+# Get the final equalization factor for 2024 to get the equalized assessed value
 eq_factor <- DBI::dbGetQuery(
   ptaxsim_db_conn,
-  "SELECT * FROM eq_factor WHERE year = 2020"
+  "SELECT * FROM eq_factor WHERE year = 2024"
 ) %>%
   pull(eq_factor_final)
 
 eq_value <- assmt_value * eq_factor
 ```
 
-Then we'll recalculate the bill using the new EAV and compare to the original. To do so, we'll create a counterfactual `pin_dt` input by replacing the original 2020 `eav` column with our newly calculated EAV.
+Then we'll recalculate the bill using the new EAV and compare to the original. To do so, we'll create a counterfactual `pin_dt` input by replacing the original 2024 `eav` column with our newly calculated EAV.
 
 ```{r}
-pin_dt_new <- lookup_pin(2020, "13264290020000") %>%
+pin_dt_new <- lookup_pin(2024, "13264290020000") %>%
   mutate(av = assmt_value, eav = eq_value) %>%
   setDT(key = c("year", "pin")) # convert to data.table or R will complain
 
 # Combine the original and updated bills into one output
 rbind(
-  tax_bill(2020, "13264290020000") %>% mutate(type = "original"),
-  tax_bill(2020, "13264290020000", pin_dt = pin_dt_new) %>%
+  tax_bill(2024, "13264290020000") %>% mutate(type = "original"),
+  tax_bill(2024, "13264290020000", pin_dt = pin_dt_new) %>%
     mutate(type = "counterfactual")
 ) %>%
   group_by(year, pin, type, av) %>%
@@ -338,20 +382,20 @@ rbind(
   arrange(desc(type))
 ```
 
-What if the market value went down to $300,000?
+What if the market value went down to $400,000?
 
 ```{r}
-mkt_value <- 300000
+mkt_value <- 400000
 assmt_value <- mkt_value * 0.1
 eq_value <- assmt_value * eq_factor
 
-pin_dt_new <- lookup_pin(2020, "13264290020000") %>%
+pin_dt_new <- lookup_pin(2024, "13264290020000") %>%
   mutate(av = assmt_value, eav = eq_value) %>%
   setDT(key = c("year", "pin"))
 
 rbind(
-  tax_bill(2020, "13264290020000") %>% mutate(type = "original"),
-  tax_bill(2020, "13264290020000", pin_dt = pin_dt_new) %>%
+  tax_bill(2024, "13264290020000") %>% mutate(type = "original"),
+  tax_bill(2024, "13264290020000", pin_dt = pin_dt_new) %>%
     mutate(type = "counterfactual")
 ) %>%
   group_by(year, pin, type, av) %>%
@@ -363,17 +407,17 @@ In this case, the percentage change in total tax roughly mirrors the percentage 
 
 ## Change in levy
 
-Changes in levies are another common cause of increased tax bills. Calculating a levy change is not as straightforward as a change in AV, but a good rule-of-thumb is that levies can only increase by 5% or the rate of inflation, whichever is less.
+Changes in levies are another common cause of increased tax bills. Calculating a levy change is not as straightforward as a change in AV, but a good rule-of-thumb is that levies typically can only increase by 5% or the rate of inflation, whichever is less.
 
 > **NOTE:** Correctly calculating a levy increase can be extremely complicated. Most levies are subject to numerous limiting laws (PTELL, rate limits, tax caps) that can vary by municipality/district
 
 To change a levy, we need to alter the `agency_total_ext` column of the `agency_dt` input. Let's see what happens if we increase Chicago's levy by 5%.
 
 ```{r}
-tax_code <- lookup_tax_code(2020, "13264290020000")
+tax_code <- lookup_tax_code(2024, "13264290020000")
 
 # Add 5% to only Chicago's levy for this PIN
-agency_dt_new <- lookup_agency(2020, tax_code) %>%
+agency_dt_new <- lookup_agency(2024, tax_code) %>%
   mutate(agency_total_ext = ifelse(
     agency_num == "030210000",
     agency_total_ext + (agency_total_ext * 0.05),
@@ -382,8 +426,8 @@ agency_dt_new <- lookup_agency(2020, tax_code) %>%
   setDT(key = c("year", "tax_code", "agency_num"))
 
 rbind(
-  tax_bill(2020, "13264290020000") %>% mutate(type = "original"),
-  tax_bill(2020, "13264290020000", agency_dt = agency_dt_new) %>%
+  tax_bill(2024, "13264290020000") %>% mutate(type = "original"),
+  tax_bill(2024, "13264290020000", agency_dt = agency_dt_new) %>%
     mutate(type = "counterfactual")
 ) %>%
   group_by(year, pin, type, av) %>%
@@ -391,14 +435,14 @@ rbind(
   arrange(desc(type))
 ```
 
-A 5% increase in the Chicago levy leads to a roughly $100 increase in taxes for this PIN, holding all else constant.
+A 5% increase in the Chicago levy leads to a roughly $150 increase in taxes for this PIN, holding all else constant.
 
 ## Tax bills over time
 
 We can also use PTAXSIM to look at how tax bills have changed over time. To do so, simply use `tax_bill()` to get multiple years' worth of bills. The PTAXSIM database starts in 2006, so we can use that as our earliest year.
 
 ```{r}
-bills <- tax_bill(2006:2021, "13264290020000")
+bills <- tax_bill(2006:2024, "13264290020000")
 
 bills_summ <- bills %>%
   group_by(pin, year) %>%
@@ -422,7 +466,7 @@ bills_summ_plot <- ggplot(data = bills_summ) +
     limits = c(0, 13000),
     n.breaks = 7
   ) +
-  scale_x_continuous(name = "Year", n.breaks = 9) +
+  scale_x_continuous(name = "Year", n.breaks = 10) +
   scale_fill_manual(values = scales::hue_pal()(8)) +
   theme_minimal() +
   theme(
@@ -469,7 +513,7 @@ bills_summ_plot2 <- ggplot(data = bills_summ2) +
     limits = c(0, 13000),
     n.breaks = 7
   ) +
-  scale_x_continuous(name = "Year", n.breaks = 9) +
+  scale_x_continuous(name = "Year", n.breaks = 10) +
   scale_fill_manual(name = "District Type", values = scales::hue_pal()(10)) +
   theme_minimal() +
   theme(

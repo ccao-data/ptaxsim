@@ -28,11 +28,17 @@ remote_path_agency <- file.path(
 remote_path_agency_info <- file.path(
   remote_bucket, "agency_info", "part-0.parquet"
 )
+remote_path_agency_crosswalk <- file.path(
+  remote_bucket, "agency_crosswalk", "part-0.parquet"
+)
 remote_path_agency_fund <- file.path(
   remote_bucket, "agency_fund", "part-0.parquet"
 )
 remote_path_agency_fund_info <- file.path(
   remote_bucket, "agency_fund_info", "part-0.parquet"
+)
+remote_path_agency_fund_crosswalk <- file.path(
+  remote_bucket, "agency_fund_crosswalk", "part-0.parquet"
 )
 
 # Get a list of all levy report spreadsheets
@@ -41,8 +47,6 @@ file_names <- list.files(
   pattern = "*.xls*",
   full.names = TRUE
 )
-
-
 
 
 # agency_fund ------------------------------------------------------------------
@@ -78,21 +82,26 @@ agency_fund <- map_dfr(file_names, function(file) {
       "ptell_levy", "fund_ptell_levy", "ptell_red_levy",
       "fund_ptell_reduced_levy"
     ))) %>%
-    rename_with(~"ptell_reduced_ind", any_of(c(
-      "ptell_ind", "reduction_ind", "rate_reduction_indicator",
-      "reduction_indicator"
-    ))) %>%
     rename_with(~"final_levy", any_of(c(
       "final_levy", "fund_final_levy"
     ))) %>%
     rename_with(~"final_rate", any_of(c(
       "fund_rate", "final_rate", "fund_final_rate", "final_fund_rate"
     ))) %>%
+    mutate(
+      fund_num =
+        ifelse(
+          str_length(fund) == 3,
+          paste0(fund, "000"),
+          fund
+        ),
+      fund_type_num = substr(fund, 1, 3)
+    ) %>%
     select(
       year,
-      agency_num = agency, fund_num = fund, fund_name, levy, loss_pct,
+      agency_num = agency, fund_type_num, fund_num, fund_name, levy, loss_pct,
       levy_plus_loss, rate_ceiling, max_levy, prelim_rate, ptell_reduced_levy,
-      ptell_reduced_ind, final_levy, final_rate
+      final_levy, final_rate
     ) %>%
     mutate(across(year, as.character))
 }) %>%
@@ -100,7 +109,7 @@ agency_fund <- map_dfr(file_names, function(file) {
     agency_num = str_pad(agency_num, 9, "left", "0"),
     fund_num = str_pad(fund_num, 3, "left", "0"),
     loss_pct = ifelse(
-      year == 2011 & agency_num == "030380104" & fund_num == "001",
+      year == 2011 & agency_num == "030380104" & fund_num == "001000",
       0,
       loss_pct
     ),
@@ -122,10 +131,8 @@ agency_fund <- map_dfr(file_names, function(file) {
     rate_ceiling = replace_na(rate_ceiling, 0),
     rate_ceiling = ifelse(final_rate == 0 & final_levy == 0, 0, rate_ceiling),
     ptell_reduced_levy = na_if(ptell_reduced_levy, 0),
-    ptell_reduced_ind = ptell_reduced_ind == "*",
-    ptell_reduced_ind = replace_na(ptell_reduced_ind, FALSE),
     final_rate = ifelse(
-      agency_num == "050200000" & fund_num == "202" & year == 2006,
+      agency_num == "050200000" & fund_num == "202000" & year == 2006,
       0,
       final_rate
     )
@@ -141,22 +148,33 @@ agency_fund <- map_dfr(file_names, function(file) {
       as.double
     )
   ) %>%
-  arrange(year, agency_num, fund_num)
-
-
+  arrange(year, agency_num, fund_num) %>%
+  # Remove duplicate rows included in Clerk report in 2024 for certain
+  # bond funds where levy data is empty
+  filter(
+    !is.na(levy_plus_loss)
+  )
 
 
 # agency_fund_info -------------------------------------------------------------
 
+# Create fund_type crosswalk
+fund_type_cw <- agency_fund %>%
+  filter(year < 2024) %>%
+  group_by(fund_type_num) %>%
+  summarise(fund_type_name = calc_mode(fund_name))
+
+
 # Breakout the fund names into their own table
 agency_fund_info <- agency_fund %>%
-  group_by(fund_num) %>%
+  group_by(agency_num, fund_type_num, fund_num) %>%
   summarise(fund_name = calc_mode(fund_name)) %>%
   ungroup() %>%
+  left_join(fund_type_cw) %>%
   arrange(fund_num) %>%
   mutate(
     fund_name = str_trim(str_squish(fund_name)),
-    capped_ind = !fund_num %in% c(
+    capped_ind = !fund_type_num %in% c(
       "003", "027", "054", "182", "202", "259", "261", "284", "286", "287",
       "293", "294", "315", "320", "321", "322", "351", "400", "401", "402",
       "404", "405", "406", "407"
@@ -165,7 +183,7 @@ agency_fund_info <- agency_fund %>%
 
 # Drop names from the fund table since they're now stored separately
 agency_fund <- agency_fund %>%
-  select(-fund_name)
+  select(-fund_name, -fund_type_num)
 
 # Write the resulting datasets to S3
 arrow::write_parquet(
@@ -180,9 +198,23 @@ arrow::write_parquet(
 )
 
 
-
-
 # agency -----------------------------------------------------------------------
+
+# Define collar county EAV fields
+collar_counties <-
+  c(
+    "cty_dupage_eav",
+    "cty_lake_eav",
+    "cty_will_eav",
+    "cty_kane_eav",
+    "cty_mchenry_eav",
+    "cty_dekalb_eav",
+    "cty_kankakee_eav",
+    "cty_kendall_eav",
+    "cty_grundy_eav",
+    "cty_lasalle_eav",
+    "cty_livingston_eav"
+  )
 
 # Load the overview of each agency file. This includes the agency name, total
 # EAV, final extension, and much more
@@ -197,8 +229,7 @@ agency <- map_dfr(file_names, function(file) {
       ),
       across(
         c(
-          contains("year"), contains("agency"),
-          contains("reduction_type"), contains("agg_ext_base")
+          contains("year"), contains("agency")
         ),
         as.character
       )
@@ -208,10 +239,6 @@ agency <- map_dfr(file_names, function(file) {
     rename_with(~ str_remove(.x, "_18"), ends_with("_18")) %>%
     rename_with(~ str_remove(.x, "_num"), starts_with("agency")) %>%
     rename_with(~ str_replace(.x, "county", "cook"), any_of("county_eav")) %>%
-    rename_with(~"agg_ext_base_year", any_of(c(
-      "agg_ext_base_year", "agg_ext_base_yr", "agg_ext_base",
-      "prior_year", "agg_yr"
-    ))) %>%
     rename_with(~"lim_numerator", any_of(c(
       "lim_numerator", "prior_agg_ext"
     ))) %>%
@@ -224,12 +251,6 @@ agency <- map_dfr(file_names, function(file) {
     rename_with(~"curr_new_prop", any_of(c(
       "current_new_prop", "new_prop", "curr_new_prop", "current_new_property"
     ))) %>%
-    rename_with(~"lasalle_eav", any_of(c("lasalle_eav", "la_salle_eav"))) %>%
-    rename_with(~"mchenry_eav", any_of(c("mc_henry_eav", "mchency_eav"))) %>%
-    rename_with(
-      ~"reduction_type",
-      any_of(c("reduction_type", "reduction"))
-    ) %>%
     rename_with(~"reduction_pct", any_of(c(
       "reduction_percent", "reduction_factor", "clerk_reduction_factor"
     ))) %>%
@@ -240,43 +261,36 @@ agency <- map_dfr(file_names, function(file) {
       "total_ext", "final_ext",
       "grand_total_ext"
     ))) %>%
+    rename_with(~ rep("lasalle_eav", length(.x)), any_of(c(
+      "lasalle_eav",
+      "la_salle_eav"
+    ))) %>%
+    rename_with(~ rep("mchenry_eav", length(.x)), any_of(c(
+      "mc_henry_eav",
+      "mchency_eav"
+    ))) %>%
     # Select, order, and rename columns
     select(
       year,
-      agency_num = agency, agency_name, home_rule_ind, agg_ext_base_year,
+      authority_num = any_of("authority"),
+      agency_num = agency, agency_name, home_rule_ind,
       lim_numerator, lim_denominator, lim_rate, prior_eav, curr_new_prop,
       ends_with("_eav"), percent_burden,
       starts_with("grand_total_"),
-      reduction_type, reduction_pct, total_non_cap_ext,
+      reduction_pct, total_non_cap_ext,
       any_of("total_ext")
     ) %>%
     rename_with(~ paste0("cty_", .x), ends_with("_eav")) %>%
-    select(-any_of("cty_total_eav")) %>%
     rename(
       prior_eav = cty_prior_eav,
-      cty_total_eav = cty_overall_eav,
       pct_burden = percent_burden
     ) %>%
     rename_with(
       ~ gsub("grand_total_", "total_", .x),
       starts_with("grand_total_")
-    ) %>%
-    relocate(total_ext, .after = everything())
+    )
 }) %>%
   mutate(
-    agency_num = str_pad(agency_num, 9, "left", "0"),
-    agency_name = str_trim(str_squish(agency_name)),
-    agg_ext_base_year = as.integer(agg_ext_base_year),
-    agg_ext_base_year = na_if(agg_ext_base_year, 0),
-    home_rule_ind = home_rule_ind %in% c("Y", "HR", "No PTELL"),
-    home_rule_ind = replace_na(home_rule_ind, FALSE),
-    across(
-      c(
-        starts_with("lim_"), "agg_ext_base_year", "total_reduced_levy",
-        starts_with("reduction_")
-      ),
-      ~ ifelse(home_rule_ind, NA, .x)
-    ),
     # One row is missing a Cook EAV value. Fill manually from prior year
     cty_cook_eav = ifelse(
       agency_num == "030580002" & year == "2006",
@@ -284,6 +298,21 @@ agency <- map_dfr(file_names, function(file) {
       cty_cook_eav
     ),
     across(starts_with("cty_"), ~ replace_na(.x, 0)),
+    agency_num = str_pad(agency_num, 9, "left", "0"),
+    agency_name = str_trim(str_squish(agency_name)),
+    home_rule_ind = home_rule_ind %in% c("Y", "HR", "No PTELL"),
+    home_rule_ind = replace_na(home_rule_ind, FALSE),
+    cty_overlap_eav = ifelse(year < "2024",
+      rowSums(across(all_of(collar_counties))),
+      cty_overlap_eav
+    ),
+    across(
+      c(
+        starts_with("lim_"),
+        starts_with("reduction_")
+      ),
+      ~ ifelse(home_rule_ind, NA, .x)
+    ),
     # Make all percentages decimals
     across(
       pct_burden,
@@ -292,11 +321,6 @@ agency <- map_dfr(file_names, function(file) {
     across(
       reduction_pct,
       ~ ifelse(!year %in% c(2017), .x / 100, .x)
-    ),
-    reduction_type = ifelse(
-      !toupper(reduction_type) %in% c("NO REDUCTION", "NONE"),
-      toupper(reduction_type),
-      NA_character_
     )
   ) %>%
   arrange(year, agency_num) %>%
@@ -317,7 +341,9 @@ agency <- map_dfr(file_names, function(file) {
       ),
       ~ as.double(.x)
     )
-  )
+  ) %>%
+  select(-total_reduced_levy, -all_of(collar_counties)) %>%
+  relocate(total_ext, .after = everything())
 
 # Tax year 2013 is missing the total levy columns from its overview sheet, but
 # we can fill it in by joining the totals from each fund sheet
@@ -328,25 +354,24 @@ agency_fund_2013 <- agency_fund %>%
     total_levy = sum(levy),
     total_max_levy = sum(max_levy),
     total_prelim_rate = ceiling(sum(prelim_rate) * 1000) / 1000,
-    total_reduced_levy = sum(ptell_reduced_levy),
     total_final_levy = sum(final_levy),
     total_final_rate = sum(final_rate)
   )
 
 agency_2013 <- agency %>%
   filter(year == 2013) %>%
+  mutate(cty_total_eav = as.integer64(cty_overall_eav)) %>%
   select(-c(
     total_levy, total_max_levy, total_prelim_rate,
-    total_reduced_levy, total_final_levy, total_final_rate
+    total_final_levy, total_final_rate
   )) %>%
   left_join(agency_fund_2013, by = "agency_num")
 
 agency <- agency %>%
   filter(year != 2013) %>%
   bind_rows(agency_2013) %>%
+  select(-cty_overall_eav) %>%
   arrange(year, agency_num)
-
-
 
 
 # agency_info ------------------------------------------------------------------
@@ -566,5 +591,100 @@ arrow::write_parquet(
 arrow::write_parquet(
   x = agency_info,
   sink = remote_path_agency_info,
+  compression = "zstd"
+)
+
+
+# agency_crosswalk ------------------------------------------------------------
+
+# Extract rows from the Clerk tax code agency rate report for agencies that the
+# Clerk has switched to reporting as funds. The resulting crosswalk allows
+# users to analyze these agencies (really funds) over time
+agency_crosswalk <-
+  openxlsx::read.xlsx(
+    "data-raw/tax_code/2024-tax-code-agency-rate-file.xlsx"
+  ) %>%
+  set_names(snakecase::to_snake_case(names(.))) %>%
+  mutate(year_of_change = as.character(ty_2024)) %>%
+  select(
+    year_of_change,
+    agency_num = legacy_num,
+    agency_num_final = agency
+  ) %>%
+  distinct() %>%
+  filter(agency_num != agency_num_final) %>%
+  # Account for error in Clerk's report which lists the Skokie Library fund
+  # levy in the legacy fund line. Because of this, it continues to follow the
+  # pre-2024 pattern for library fund reporting, so we need to remove it from
+  # the crosswalk
+  filter(!(agency_num == "031170001" & agency_num_final == "031170000"))
+
+
+# agency_fund_crosswalk --------------------------------------------------------
+
+# Similar to `agency_crosswalk`, extract a mapping for funds whose agency
+# and/or fund number have changed to support the Clerk's switch to reporting
+# the fund as a fund, rather than an independent agency
+changed_funds <- agency_fund_info %>%
+  left_join(
+    agency_info %>%
+      select(agency_num, agency_name, minor_type),
+    by = "agency_num"
+  ) %>%
+  inner_join(agency_crosswalk, by = "agency_num") %>%
+  mutate(
+    # Unlike agency numbers, the Clerk does not publish a mapping for fund
+    # numbers that have changed, so we need to derive them. Luckily, the
+    # logic is deterministic, with new fund numbers following a clear pattern
+    # based on the agency minor type and agency name
+    fund_num_final = case_when(
+      # Unlike other types of changed funds, levy adjustments (408) do not have
+      # new fund numbers corresponding to the former agency minor type; instead,
+      # all levy adjustments get rolled into a single fund with fund number
+      # 408000 that applies to the agency as a whole rather than its constituent
+      # funds. As such, ensure all levy adjustments end up with the same fund
+      # number in the crosswalk, regardless of the former agency minor type
+      fund_type_num == "408" ~ fund_num,
+      minor_type == "LIBRARY" ~ paste0(fund_type_num, "001"),
+      minor_type == "GEN ASST" ~ paste0(fund_type_num, "002"),
+      minor_type == "INFRA" ~ paste0(fund_type_num, "003"),
+      minor_type == "HEALTH" &
+        str_detect(agency_name, "MENTAL") ~ paste0(fund_type_num, "004"),
+      minor_type == "HEALTH" &
+        str_detect(agency_name, "PUBLIC") ~ paste0(fund_type_num, "005"),
+      # If the pattern matching logic fails to match an old fund number to its
+      # new version, fall through to a null. The resulting null enables us to
+      # fail loudly for these cases in the data integrity checks below, so that
+      # we can add handling for that type of fund number
+      TRUE ~ NA_character_
+    )
+  )
+
+# Perform some quick data integrity checks
+if (any(is.na(changed_funds$agency_name))) {
+  stop(
+    "Could not join fund to agency info when constructing agency_fund_crosswalk"
+  )
+}
+if (any(is.na(changed_funds$fund_num_final))) {
+  stop(
+    "Could not parse final fund number for some funds in agency_fund_crosswalk"
+  )
+}
+
+agency_fund_crosswalk <- changed_funds %>%
+  mutate(year_of_change = "2024") %>%
+  select(year_of_change, agency_num, agency_num_final, fund_num, fund_num_final)
+
+# Write both data sets to S3
+arrow::write_parquet(
+  x = agency_crosswalk,
+  sink = remote_path_agency_crosswalk,
+  compression = "zstd"
+)
+
+arrow::write_parquet(
+  x = agency_fund_crosswalk,
+  sink = remote_path_agency_fund_crosswalk,
   compression = "zstd"
 )

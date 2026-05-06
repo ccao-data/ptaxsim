@@ -11,6 +11,7 @@ tax_bill(
   agency_dt = lookup_agency(year_vec, tax_code_vec),
   pin_dt = lookup_pin(year_vec, pin_vec),
   tif_dt = lookup_tif(year_vec, tax_code_vec),
+  pin_tif_dt = lookup_pin_tif(year_vec, pin_vec),
   simplify = TRUE
 )
 }
@@ -38,11 +39,18 @@ is used to retrieve each PIN's information based on \code{year_vec}
 and \code{pin_vec}.}
 
 \item{tif_dt}{\code{data.table} containing any TIF applicable to the
-specified tax code. Is an empty \code{data.table} if no TIF exists for
-the property. Data \emph{must} be identical to the format returned by
-\code{\link{lookup_tif}}. If missing, \code{\link{lookup_tif}} is
-used to retrieve the tax code's TIF share based on \code{year_vec}
-and \code{tax_code_vec}.}
+specified tax code for tax years prior to 2024. Is an empty
+\code{data.table} if no TIF exists for the property. Data \emph{must} be
+identical to the format returned by \code{\link{lookup_tif}}. If missing,
+\code{\link{lookup_tif}} is used to retrieve the tax code's TIF share
+based on \code{year_vec} and \code{tax_code_vec}.}
+
+\item{pin_tif_dt}{\code{data.table} containing any TIF applicable to the
+specified PIN for tax year 2024 and after. Is an empty \code{data.table}
+if no TIF exists for the property. Data \emph{must} be identical to the format
+returned by \code{\link{lookup_pin_tif}}. If missing,
+\code{\link{lookup_pin_tif}} is used to retrieve the PIN's TIF share based
+on \code{year_vec} and \code{pin_vec}.}
 
 \item{simplify}{Default \code{TRUE}. Boolean to keep only the columns
 that appear on a real tax bill.
