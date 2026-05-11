@@ -1,5 +1,3 @@
-context("test tax_bill()")
-
 ##### TEST tax_bill() #####
 
 library(data.table)
@@ -101,7 +99,7 @@ test_that("function returns expected data type/structure", {
 
 test_that("returned amount/output correct for single PIN", {
   # District level tax amounts
-  expect_equivalent(
+  expect_equal(
     tax_bill(2018, pins[3], simplify = TRUE) %>%
       select(year, pin, agency_num, final_tax) %>%
       arrange(agency_num) %>%
@@ -111,7 +109,8 @@ test_that("returned amount/output correct for single PIN", {
       select(year, pin, agency_num, final_tax) %>%
       arrange(agency_num) %>%
       as_tibble(),
-    tolerance = 0.005
+    tolerance = 0.005,
+    ignore_attr = TRUE
   )
 })
 
@@ -396,13 +395,14 @@ test_that("Simplify FALSE / TRUE identical", {
   simp_bills <- tax_bill(2023, rpm_tif_pins, simplify = TRUE)
   not_simp_bills <- tax_bill(2023, rpm_tif_pins, simplify = FALSE)
 
-  expect_equivalent(
-    simp_bills %>% summarize(total_tax = sum(final_tax)),
-    not_simp_bills %>%
-      summarize(total_tax = sum(final_tax_to_tif +
-        final_tax_to_dist - transit_tif_to_dist)),
-    tolerance = 0.005
-  )
+expect_equal(
+  simp_bills %>% summarize(total_tax = sum(final_tax)),
+  not_simp_bills %>%
+    summarize(total_tax = sum(final_tax_to_tif +
+      final_tax_to_dist - transit_tif_to_dist)),
+  tolerance = 0.005,
+  ignore_attr = TRUE
+)
 })
 
 test_that("PINs with EAV <= $150 have $0 tax bill", {
