@@ -154,26 +154,26 @@ test_that("lookup values/data are correct", {
   )
 
   # Match all values in real data to lookup values
-expect_equal(
-  lookup_pin(2018:max_year, sum_df$pin) %>%
-    mutate(
-      exe_vet_dis = (
-        exe_vet_dis_lt50 + exe_vet_dis_50_69 +
-          exe_vet_dis_ge70 + exe_vet_dis_100 +
-          exe_wwii
-      ),
-      across(starts_with("exe_"), ~ .x != 0)
-    ) %>%
-    select(year, pin, exe_homeowner:exe_disabled, exe_vet_dis) %>%
-    semi_join(sum_df, by = c("year", "pin")),
-  sum_df %>%
-    select(
-      year, pin, exe_homeowner:exe_disabled,
-      exe_vet_dis = exe_vet_disabled
-    ) %>%
-    as_tibble(),
-  ignore_attr = TRUE
-)
+  expect_equal(
+    lookup_pin(2018:max_year, sum_df$pin) %>%
+      mutate(
+        exe_vet_dis = (
+          exe_vet_dis_lt50 + exe_vet_dis_50_69 +
+            exe_vet_dis_ge70 + exe_vet_dis_100 +
+            exe_wwii
+        ),
+        across(starts_with("exe_"), ~ .x != 0)
+      ) %>%
+      select(year, pin, exe_homeowner:exe_disabled, exe_vet_dis) %>%
+      semi_join(sum_df, by = c("year", "pin")),
+    sum_df %>%
+      select(
+        year, pin, exe_homeowner:exe_disabled,
+        exe_vet_dis = exe_vet_disabled
+      ) %>%
+      as_tibble(),
+    ignore_attr = TRUE
+  )
 })
 
 test_that("function returns expect data type/structure", {

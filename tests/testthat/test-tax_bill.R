@@ -395,14 +395,14 @@ test_that("Simplify FALSE / TRUE identical", {
   simp_bills <- tax_bill(2023, rpm_tif_pins, simplify = TRUE)
   not_simp_bills <- tax_bill(2023, rpm_tif_pins, simplify = FALSE)
 
-expect_equal(
-  simp_bills %>% summarize(total_tax = sum(final_tax)),
-  not_simp_bills %>%
-    summarize(total_tax = sum(final_tax_to_tif +
-      final_tax_to_dist - transit_tif_to_dist)),
-  tolerance = 0.005,
-  ignore_attr = TRUE
-)
+  expect_equal(
+    simp_bills %>% summarize(total_tax = sum(final_tax)),
+    not_simp_bills %>%
+      summarize(total_tax = sum(final_tax_to_tif +
+        final_tax_to_dist - transit_tif_to_dist)),
+    tolerance = 0.005,
+    ignore_attr = TRUE
+  )
 })
 
 test_that("PINs with EAV <= $150 have $0 tax bill", {
