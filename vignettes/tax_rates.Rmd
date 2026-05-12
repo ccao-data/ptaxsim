@@ -75,7 +75,10 @@ north_tri_tax_codes <- data.frame(
 )
 
 for (year in 2012:2023) {
-  response <- GET(
+  # Retry request in case of failure, since the Socrata API sometimes closes
+  # connections unexpectedly
+  response <- RETRY(
+    "GET",
     base_url,
     query = list(
       year = year,
