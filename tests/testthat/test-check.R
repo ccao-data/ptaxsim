@@ -1,5 +1,3 @@
-context("test check_dt()")
-
 ##### TEST check_dt() #####
 
 library(data.table)
@@ -88,8 +86,6 @@ test_that("outputs fail if not keyed data.table", {
 })
 
 
-context("test check_db_conn()")
-
 ##### TEST check_db_conn() #####
 
 test_that("correct database path works as expected", {
@@ -113,8 +109,6 @@ test_that("missing tables throws error", {
   expect_error(check_db_conn(ptaxsim_db_conn_wrong), regexp = "missing")
 })
 
-
-context("test check_db_sync()")
 
 ##### TEST check_db_sync() #####
 
