@@ -1,5 +1,3 @@
-context("Test sample_tax_bills_summary")
-
 ##### TEST sample_tax_bills_summary #####
 
 library(dplyr)

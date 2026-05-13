@@ -1,5 +1,3 @@
-context("test lookup_vec()")
-
 ##### TEST lookup_vec() #####
 
 library(dplyr)
@@ -72,8 +70,6 @@ test_that("test that lookup values are correct compared to real bill data", {
 # Testing the lookups for functions that return data frames. These are harder to
 # test since their output returns complex structured data/objects
 
-context("test lookup_tif()")
-
 ##### TEST lookup_tif() #####
 
 test_that("lookup values/data are correct", {
@@ -125,8 +121,6 @@ test_that("bad/incorrect inputs throw errors", {
 })
 
 
-context("test lookup_pin()")
-
 ##### TEST lookup_pin() #####
 
 test_that("lookup values/data are correct", {
@@ -160,7 +154,7 @@ test_that("lookup values/data are correct", {
   )
 
   # Match all values in real data to lookup values
-  expect_equivalent(
+  expect_equal(
     lookup_pin(2018:max_year, sum_df$pin) %>%
       mutate(
         exe_vet_dis = (
@@ -177,7 +171,8 @@ test_that("lookup values/data are correct", {
         year, pin, exe_homeowner:exe_disabled,
         exe_vet_dis = exe_vet_disabled
       ) %>%
-      as_tibble()
+      as_tibble(),
+    ignore_attr = TRUE
   )
 })
 
@@ -212,8 +207,6 @@ test_that("bad/incorrect inputs throw errors", {
   expect_error(lookup_pin(2019, pins[1], eq_version = 1))
 })
 
-
-context("test lookup_pin_tif()")
 
 ##### TEST lookup_pin_tif() #####
 
@@ -264,8 +257,6 @@ test_that("lookup_pin_tif handles multiple PINs", {
   expect_equal(nrow(result), 2)
 })
 
-
-context("test lookup_agency()")
 
 ##### TEST lookup_agency() #####
 
@@ -340,8 +331,6 @@ test_that("bad/incorrect inputs throw errors", {
   expect_error(lookup_agency(2019, 73105))
 })
 
-
-context("test lookup_pin10_geometry()")
 
 ##### TEST lookup_pin10_geometry() #####
 
