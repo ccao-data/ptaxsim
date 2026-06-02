@@ -45,7 +45,7 @@ Suggests:
     odbc,
     openxlsx,
     pdftools,
-    pkgdown,
+    pkgdown (>= 2.2.0),
     prettymapr,
     purrr,
     readr,

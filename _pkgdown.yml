@@ -1,5 +1,6 @@
 destination: public
 url: https://github.com/ccao-data/ptaxsim
+llm-docs: true
 template:
   bootstrap: 5
 
