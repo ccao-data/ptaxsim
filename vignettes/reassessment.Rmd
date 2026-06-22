@@ -249,7 +249,10 @@ To do so, we construct a query using Socrata’s API. This will let us get only 
 ```{r}
 base_url <- "https://datacatalog.cookcountyil.gov/resource/tx2p-k2g9.json"
 
-cw_pins <- GET(
+# Retry request in case of failure, since the Socrata API sometimes closes
+# connections unexpectedly
+cw_pins <- RETRY(
+  "GET",
   base_url,
   query = list(
     year = 2018,

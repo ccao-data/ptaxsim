@@ -23,7 +23,7 @@ repos:
     -   id: file-contents-sorter
         files: '^\.Rbuildignore$'
     -   id: end-of-file-fixer
-        exclude: '\.Rd|\.csv'
+        exclude: '(\.Rd|\.csv|^tests/testthat/_snaps/.*\.md$)'
     -   id: mixed-line-ending
         args: ['--fix=no']
 -   repo: local

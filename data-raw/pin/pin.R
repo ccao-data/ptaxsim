@@ -95,8 +95,9 @@ if (start_year <= 2023) {
       across(c(starts_with("av_"), starts_with("exe_")), as.integer),
       exe_homeowner = ifelse(exe_homeowner < 0L, 0L, exe_homeowner),
       tax_bill_total = tidyr::replace_na(tax_bill_total, 0),
-      # This exemption is new in 2024 and does not exist in the legacy data
-      exe_vet_dis_100 = 0L
+      # These exemptions are new in 2024 and do not exist in the legacy data
+      exe_vet_dis_100 = 0L,
+      exe_wwii = 0L
     )
 } else {
   # If we are only pulling data post-2024, create an empty tibble for the
@@ -121,6 +122,7 @@ if (start_year <= 2023) {
     exe_vet_dis_50_69 = integer(),
     exe_vet_dis_ge70 = integer(),
     exe_vet_dis_100 = integer(),
+    exe_wwii = integer(),
     exe_abate = integer()
   )
 }
@@ -163,7 +165,8 @@ pin_exe_vetdis_athena <- dbGetQuery(
       'exe_vet_dis_lt50',
       'exe_vet_dis_50_69',
       'exe_vet_dis_ge70',
-      'exe_vet_dis_100'
+      'exe_vet_dis_100',
+      'exe_wwii'
     )
     AND COALESCE(exemption_amount, 0) > 0
     AND year >= '2024'
@@ -184,7 +187,8 @@ pin_exe_vetdis_athena <- dbGetQuery(
     exe_vet_dis_tot = exe_vet_dis_lt50 +
       exe_vet_dis_50_69 +
       exe_vet_dis_ge70 +
-      exe_vet_dis_100
+      exe_vet_dis_100 +
+      exe_wwii
   ) %>%
   relocate(
     pin,
@@ -192,7 +196,8 @@ pin_exe_vetdis_athena <- dbGetQuery(
     exe_vet_dis_lt50,
     exe_vet_dis_50_69,
     exe_vet_dis_ge70,
-    exe_vet_dis_100
+    exe_vet_dis_100,
+    exe_wwii
   ) %>%
   rename_with(~ paste0(.x, "_athena"), starts_with("exe_"))
 
@@ -349,6 +354,15 @@ pin_tax_roll_fill <- pin_tax_roll %>%
       exe_vet_dis_100_athena,
       ifelse(
         exe_vet_dis > 0 & exe_vet_dis_100_athena > 0,
+        exe_vet_dis,
+        0L
+      )
+    ),
+    exe_wwii = ifelse(
+      exe_vet_dis == exe_vet_dis_tot_athena,
+      exe_wwii_athena,
+      ifelse(
+        exe_vet_dis > 0 & exe_wwii_athena > 0,
         exe_vet_dis,
         0L
       )

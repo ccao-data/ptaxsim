@@ -37,12 +37,17 @@ db_send_queries <- function(conn, sql) {
 # changes. This is checked against Config/Requires_DB_Version in the DESCRIPTION
 # file via check_db_version(). Schema is:
 # "MAX_YEAR_OF_DATA.MAJOR_VERSION.MINOR_VERSION"
-db_version <- "2023.0.0"
+db_version <- "2024.0.0"
+# Optional pre-release identifier. Informational only, not compared.
+# Set this to an empty string for a public release, or to a string like
+# "alpha.1" for a release candidate. Setting this to a non-empty string will
+# append it to `db_version`, separated by a hyphen
+db_pre_release_version <- ""
 
 # Set the package version required to use this database. This is checked against
 # Version in the DESCRIPTION file. Basically, we have a two-way check so that
 # both the package version and DB version are synced. Schema is SemVer.
-requires_pkg_version <- "0.6.0"
+requires_pkg_version <- "1.1.0"
 
 
 # Create tables ----------------------------------------------------------------
@@ -73,10 +78,19 @@ desc_url_package <- desc %>%
   str_extract("(?<=URL: ).*(?=,)")
 
 db_base_url <- "https://ccao-data-public-us-east-1.s3.amazonaws.com/ptaxsim/"
-db_full_url <- paste0(db_base_url, "ptaxsim-", db_version, ".db.bz2")
+db_full_url <- paste0(
+  db_base_url, "ptaxsim-", db_version,
+  if (nzchar(db_pre_release_version)) {
+    paste0("-", db_pre_release_version)
+  } else {
+    ""
+  },
+  ".db.bz2"
+)
 
 # Load agency files to get min and max year
 agency_df <- read_parquet(file.path(remote_bucket, "agency", "part-0.parquet"))
+
 min_year <- min(as.integer(agency_df$year))
 max_year <- max(as.integer(agency_df$year))
 
@@ -112,7 +126,9 @@ DBI::dbAppendTable(conn, "metadata", metadata_df)
 # Load tables contained in a single file
 files <- c(
   "agency", "agency_info", "agency_fund", "agency_fund_info",
-  "cpi", "eq_factor", "tif", "tif_crosswalk", "tif_distribution"
+  "agency_crosswalk", "agency_fund_crosswalk",
+  "cpi", "eq_factor", "tif", "tif_crosswalk", "tif_distribution",
+  "pin_tif_distribution"
 )
 for (file in files) {
   message("Now loading: ", file)

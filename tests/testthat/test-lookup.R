@@ -1,5 +1,3 @@
-context("test lookup_vec()")
-
 ##### TEST lookup_vec() #####
 
 library(dplyr)
@@ -72,8 +70,6 @@ test_that("test that lookup values are correct compared to real bill data", {
 # Testing the lookups for functions that return data frames. These are harder to
 # test since their output returns complex structured data/objects
 
-context("test lookup_tif()")
-
 ##### TEST lookup_tif() #####
 
 test_that("lookup values/data are correct", {
@@ -92,6 +88,11 @@ test_that("lookup values/data are correct", {
     c(0.0438, 0.0798, 0.226, 0.231),
     tolerance = 0.001
   )
+})
+
+test_that("lookup_tif returns 0 rows for years >= 2024", {
+  expect_equal(nrow(lookup_tif(2024:max_year, "73105")), 0)
+  expect_equal(nrow(lookup_tif(2022:2023, "73105")), 2)
 })
 
 test_that("function returns expect data type/structure", {
@@ -119,8 +120,6 @@ test_that("bad/incorrect inputs throw errors", {
   expect_error(lookup_tif(2019, 23015))
 })
 
-
-context("test lookup_pin()")
 
 ##### TEST lookup_pin() #####
 
@@ -155,10 +154,14 @@ test_that("lookup values/data are correct", {
   )
 
   # Match all values in real data to lookup values
-  expect_equivalent(
+  expect_equal(
     lookup_pin(2018:max_year, sum_df$pin) %>%
       mutate(
-        exe_vet_dis = exe_vet_dis_lt50 + exe_vet_dis_50_69 + exe_vet_dis_ge70,
+        exe_vet_dis = (
+          exe_vet_dis_lt50 + exe_vet_dis_50_69 +
+            exe_vet_dis_ge70 + exe_vet_dis_100 +
+            exe_wwii
+        ),
         across(starts_with("exe_"), ~ .x != 0)
       ) %>%
       select(year, pin, exe_homeowner:exe_disabled, exe_vet_dis) %>%
@@ -168,7 +171,8 @@ test_that("lookup values/data are correct", {
         year, pin, exe_homeowner:exe_disabled,
         exe_vet_dis = exe_vet_disabled
       ) %>%
-      as_tibble()
+      as_tibble(),
+    ignore_attr = TRUE
   )
 })
 
@@ -183,7 +187,7 @@ test_that("function returns expect data type/structure", {
       "year", "pin", "class", "av", "eav", "exe_homeowner", "exe_senior",
       "exe_freeze", "exe_longtime_homeowner", "exe_disabled",
       "exe_vet_returning", "exe_vet_dis_lt50", "exe_vet_dis_50_69",
-      "exe_vet_dis_ge70", "exe_vet_dis_100", "exe_abate"
+      "exe_vet_dis_ge70", "exe_vet_dis_100", "exe_wwii", "exe_abate"
     )
   )
   expect_equal(
@@ -204,7 +208,55 @@ test_that("bad/incorrect inputs throw errors", {
 })
 
 
-context("test lookup_agency()")
+##### TEST lookup_pin_tif() #####
+
+# Use PINs known to be in TIFs in 2024
+pin_in_24_tif <- "01301000160000"
+pin_in_24_tif_2 <- "01303000090000"
+# A random PIN that is not in a TIF in 2024
+pin_not_in_24_tif <- "01011000020000"
+
+test_that("lookup_pin_tif returns 0 rows for pre-2024 years", {
+  expect_equal(nrow(lookup_pin_tif(2023, pin_in_24_tif)), 0)
+})
+
+test_that("lookup_pin_tif returns rows for 2024+", {
+  expect_equal(nrow(lookup_pin_tif(2024, pin_in_24_tif)), 1)
+})
+
+test_that("lookup_pin_tif returns expected data type/structure", {
+  pin_tif <- lookup_pin_tif(2024, pin_in_24_tif)
+  expect_s3_class(pin_tif, c("data.frame", "data.table"))
+  expect_named(pin_tif, c(
+    "year", "pin", "tax_code", "agency_num",
+    "agency_name", "agency_major_type", "agency_minor_type", "tif_share"
+  ))
+})
+
+test_that("lookup_pin_tif returns correct values/data", {
+  expect_equal(
+    lookup_pin_tif(2024, pin_in_24_tif)$tif_share,
+    0.777,
+    tolerance = 0.001
+  )
+})
+
+test_that("lookup_pin_tif returns 0 rows for PIN not in any TIF", {
+  expect_equal(nrow(lookup_pin_tif(2024, pin_not_in_24_tif)), 0)
+})
+
+test_that("lookup_pin_tif bad/incorrect inputs throw errors", {
+  expect_error(lookup_pin_tif("2024", pin_in_24_tif)) # year not numeric
+  expect_error(lookup_pin_tif(2024, 2153010581083)) # PIN not character
+  expect_error(lookup_pin_tif(2024, "021530105810")) # PIN wrong length
+})
+
+test_that("lookup_pin_tif handles multiple PINs", {
+  # A second PIN that is in a TIF district in 2024
+  result <- lookup_pin_tif(2024, c(pin_in_24_tif, pin_in_24_tif_2))
+  expect_equal(nrow(result), 2)
+})
+
 
 ##### TEST lookup_agency() #####
 
@@ -226,7 +278,12 @@ test_that("lookup values/data are correct", {
       3178945619, 286280738, 0, 638172798
     )
   )
+})
 
+# These snapshot tests check to make sure we haven't done something obviously
+# wrong to mess up the `lookup_agency()` function. We do that by testing the
+# function on a sample of real-world data
+test_that("agency lookup matches snapshots", {
   local_edition(3) # Enable snapshot testing
   expect_snapshot_value(
     # Dataframe is necessary for json serialization in expect_snapshot_value,
@@ -237,8 +294,13 @@ test_that("lookup values/data are correct", {
     style = "json2",
     variant = "lookup_agency_over_time"
   )
+  # Extract a sample of years from the sample tax bills to test. We need to
+  # restrict the set of years before we test, otherwise the subsequent
+  # snapshot test will fail every time we add a new year of data
+  sum_df_2018_to_2024 <- sum_df %>% filter(year >= 2018, year <= 2024)
   expect_snapshot_value(
-    as.data.frame(lookup_agency(sum_df$year, sum_df$tax_code)),
+    lookup_agency(sum_df_2018_to_2024$year, sum_df_2018_to_2024$tax_code) %>%
+      as.data.frame(),
     style = "json2",
     variant = "lookup_agency_summary"
   )
@@ -269,8 +331,6 @@ test_that("bad/incorrect inputs throw errors", {
   expect_error(lookup_agency(2019, 73105))
 })
 
-
-context("test lookup_pin10_geometry()")
 
 ##### TEST lookup_pin10_geometry() #####
 

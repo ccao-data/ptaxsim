@@ -1,5 +1,3 @@
-context("test check_dt()")
-
 ##### TEST check_dt() #####
 
 library(data.table)
@@ -21,6 +19,8 @@ assign("ptaxsim_db_conn_wrong", ptaxsim_db_conn_wrong, envir = .GlobalEnv)
 pins <- c("14081020190000", "09274240240000", "07101010391078")
 years <- c(2019, 2019, 2018)
 tax_codes <- c("73105", "22031", "35011")
+# pin_tif_distribution is only populated starting in 2024
+pin_tif_dt_years <- 2024
 
 test_that("lookups return correct checks", {
   expect_true(check_agency_dt_str(lookup_agency(years, tax_codes)))
@@ -29,6 +29,7 @@ test_that("lookups return correct checks", {
   expect_true(check_pin_dt_str(lookup_pin(years[1], pins)))
   expect_true(check_tif_dt_str(lookup_tif(years, tax_codes)))
   expect_true(check_tif_dt_str(lookup_tif(years[1], tax_codes)))
+  expect_true(check_pin_tif_dt_str(lookup_pin_tif(pin_tif_dt_years, pins)))
 })
 
 
@@ -44,6 +45,10 @@ test_that("wrong column types throws error", {
   tif <- lookup_tif(years, tax_codes) %>%
     mutate(agency_num = as.integer(agency_num))
   expect_error(check_tif_dt_str(tif))
+
+  pin_tif <- lookup_pin_tif(pin_tif_dt_years, pins) %>%
+    mutate(agency_num = as.integer(agency_num))
+  expect_error(check_pin_tif_dt_str(pin_tif))
 })
 
 test_that("outputs fail if not keyed data.table", {
@@ -70,10 +75,16 @@ test_that("outputs fail if not keyed data.table", {
   expect_equal(key(tif), c("year", "tax_code", "agency_num"))
   setkey(tif, NULL)
   expect_error(check_tif_dt_str(tif))
+
+  pin_tif <- lookup_pin_tif(pin_tif_dt_years, pins) %>%
+    as_tibble()
+  expect_error(check_pin_tif_dt_str(pin_tif))
+  pin_tif <- lookup_pin_tif(pin_tif_dt_years, pins)
+  expect_equal(key(pin_tif), c("year", "pin", "agency_num"))
+  setkey(pin_tif, NULL)
+  expect_error(check_pin_tif_dt_str(pin_tif))
 })
 
-
-context("test check_db_conn()")
 
 ##### TEST check_db_conn() #####
 
@@ -98,8 +109,6 @@ test_that("missing tables throws error", {
   expect_error(check_db_conn(ptaxsim_db_conn_wrong), regexp = "missing")
 })
 
-
-context("test check_db_sync()")
 
 ##### TEST check_db_sync() #####
 

@@ -147,7 +147,8 @@ tax_bill <- function(year_vec,
   stopifnot(
     check_agency_dt_str(agency_dt),
     check_pin_dt_str(pin_dt),
-    check_tif_dt_str(tif_dt)
+    check_tif_dt_str(tif_dt),
+    check_pin_tif_dt_str(pin_tif_dt)
   )
 
   # Create data.table from inputs. Use the Cartesian product if the inputs are
@@ -241,6 +242,7 @@ tax_bill <- function(year_vec,
   dt[, tax_amt_pre_exe := round(eav * agency_tax_rate, 2)]
   dt[, tax_amt_post_exe := round(tax_amt_pre_exe - tax_amt_exe, 2)]
   dt[tax_amt_post_exe < 0, tax_amt_post_exe := 0]
+  dt[eav - exe_total < 150, tax_amt_post_exe := 0]
   dt[, final_tax_to_tif := tax_amt_post_exe * tif_share]
 
   # add transit tifs

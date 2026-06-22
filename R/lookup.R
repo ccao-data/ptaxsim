@@ -222,6 +222,7 @@ lookup_pin <- function(year,
           p.exe_vet_dis_50_69,
           p.exe_vet_dis_ge70,
           p.exe_vet_dis_100,
+          p.exe_wwii,
           p.exe_abate
       FROM lookup_pin lp
       INNER JOIN pin p
@@ -363,6 +364,10 @@ lookup_tif <- function(year, tax_code, conn = ptaxsim_db_conn) {
     check_db_conn(conn),
     check_db_sync(conn)
   )
+
+  # Make sure to remove any years after 2023 from the year vector, since
+  # otherwise we risk silently returning null TIF shares for post-2024 TIFs
+  year <- year[year <= 2023]
 
   tif_share <- NULL
   dt <- DBI::dbGetQuery(

@@ -23,7 +23,7 @@ Enter PTAXSIM. With some careful data manipulation, PTAXSIM can measure the impa
 
 # The Wheeling Town Center II TIF
 
-Using PTAXSIM, we're going to examine the impact of a single TIF: the Wheeling Town Center II (WTC2) TIF in Wheeling, IL. This TIF was established in 2014 and covers about 200 properties in downtown Wheeling. Since being established, its total increment (property value) has grown substantially, and it now receives about $5.5 million per year in tax revenue (as of 2020). We can determine the impact of the WTC2 TIF by recalculating historical tax bills as if it was never created.
+Using PTAXSIM, we're going to examine the impact of a single TIF: the Wheeling Town Center II (WTC2) TIF in Wheeling, IL. This TIF was established in 2014 and covers about 200 properties in downtown Wheeling. Since being established, its total increment (property value) has grown substantially: in tax year 2020, the TIF raised about $5.5 million per year in tax revenue, while in tax year 2024 its annual revenue grew to $9 million. We can determine the impact of the WTC2 TIF by recalculating historical tax bills as if it was never created.
 
 First, load some useful libraries and instantiate a PTAXSIM database connection with the default name (`ptaxsim_db_conn`) expected by PTAXSIM functions.
 
@@ -74,7 +74,7 @@ wh_tax_codes <- DBI::dbGetQuery(
   SELECT tax_code_num
   FROM tax_code
   WHERE agency_num = '031310000'
-  AND year = 2020
+  AND year = 2024
   "
 )
 ```
@@ -88,7 +88,7 @@ wh_pins <- DBI::dbGetQuery(
     SELECT pin, class
     FROM pin
     WHERE tax_code_num IN ({wh_tax_codes$tax_code_num*})
-    AND year = 2020
+    AND year = 2024
     ",
     .con = ptaxsim_db_conn
   )
@@ -106,7 +106,7 @@ wh_pin10s <- unique(substr(wh_pins$pin, 1, 10))
 
 # The geometry is stored in the database as simple text, so we need to convert
 # it to the correct type using sf
-wh_pins_geo <- lookup_pin10_geometry(year = 2020, pin10 = wh_pin10s)
+wh_pins_geo <- lookup_pin10_geometry(year = 2024, pin10 = wh_pin10s)
 wh_pins_geo <- wh_pins_geo %>%
   st_as_sf(wkt = "geometry", crs = 4326)
 
@@ -196,31 +196,46 @@ wh_pins_map
 
 The map shows the TIF district highlighted in <span style="color:#7d26cd"><strong>purple</strong></span>. It covers mostly commercial buildings and a small park. The primary development is called the [Wheeling Town Center](https://thewheelingtowncenter.com/).
 
-### A quick aside: tax codes
+### A quick aside: tax codes and the 2024 TIF methodology update
 
-The Wheeling Town Center II TIF was created by layering an additional taxing district boundary onto existing districts. When this happened, a new ***tax code*** was created. A tax code is a 5-digit number that identifies the unique combination of overlapping tax districts for a given area.
+The Wheeling Town Center II TIF was created by layering an additional taxing district boundary onto existing districts. When this happened, a new ***tax code*** was created. A tax code is a 5-digit number that identifies the unique combination of overlapping tax districts for a given area. All PINs within the same tax code will have the same composite tax rate, but it is possible for multiple tax codes to represent the same combination of taxing districts.In 2014, the tax code for each PIN within the WTC2 TIF changed to represent their new, unique tax situation. This process is important to understand when dealing with TIFs, especially when calculating counterfactual scenarios.
 
-In 2014, the tax code for each PIN within the WTC2 TIF changed to represent their new, unique tax situation. This process is important to understand when dealing with TIFs, especially when calculating counterfactual scenarios.
+Until 2024, tax codes also played an essential part in calculating a TIF's increment EAV. The frozen EAV, and its subsequent growth, was calculated by summing the frozen and current EAV of all PINs within a tax code. This determined the TIF distribution share (the percent of a tax bill allocated to the TIF) for all PINs within that tax code. Beginning in 2024, the Cook County Clerk calculates TIF increment at the PIN level - this means that the amount a property pays into a TIF will be determined by how much that specific property's value has grown since the TIF was created, rather than the aggregate growth of all properties within a tax code. 
+
+The latest version of PTAXSIM accounts for this methodology change in its `tax_bill()` function, but we need to handle pre-2024 and 2024 tax years slightly differently when calculating the year-over-year increment.
 
 ## Determining the increment
 
-Now that we've mapped our TIF, it's time to see how much taxable value (increment) it contains. We can do this by first gathering all PINs within the TIF, then comparing their total equalized assessed value to the value "frozen" by the TIF. Any property taxes on the value over the frozen amount go directly into the TIF fund.
+Now that we've mapped our TIF, it's time to see how much taxable value (increment) it contains and how that's changed over time. For the pre-2024 years, we can first determine which tax codes make up the TIF by pulling them from the PTAXSIM database with the TIF's agency number.
 
-We can use the TIF's [tax codes](#a-quick-aside-tax-codes) to find all the PINs within it. TIFs can have multiple tax codes, but the Wheeling Town Center II TIF only has one. We can use the agency ID for the TIF to look up its tax codes from the PTAXSIM database.
+For 2024, we can pull all PINs directly now that TIF increment is reported at the PIN level. The new table in the PTAXSIM database is called `pin_tif_distribution` - note that it contains data only for years beginning in 2024. 
+
 
 ```{r}
 # TIF distributions will include all the unique tax codes that make up
 # a TIF
-tif_dists <- DBI::dbGetQuery(
+tif_dists_pre_24 <- DBI::dbGetQuery(
   ptaxsim_db_conn, "
   SELECT *
   FROM tif_distribution
   WHERE agency_num = '031310506'
+  AND year < 2024
+  "
+)
+
+# For 2024 onward, TIF distributions are calculated at the PIN level and are
+# stored in a different table
+pin_tif_dists_24 <- DBI::dbGetQuery(
+  ptaxsim_db_conn, "
+  SELECT *
+  FROM pin_tif_distribution
+  WHERE agency_num = '031310506'
+  AND year = 2024
   "
 )
 ```
 
-Next, we can use the unique tax codes of the TIF to look up all of its PINs. Then we can get the history of those PINs using PTAXSIM's `lookup_pin()` function.
+Next, we can use the unique tax codes of the TIF to look up all of its PINs. Even though we have a list of the TIF PINs for tax year 2024, we want to make sure to query all PINs from those tax codes across all years available as it's possible that not all of the 2024 PINs existed as far back as 2006. We then can get the history of all PINs using PTAXSIM's `lookup_pin()` function.
 
 ```{r}
 tif_pins_vec <- DBI::dbGetQuery(
@@ -228,25 +243,43 @@ tif_pins_vec <- DBI::dbGetQuery(
   glue::glue_sql("
     SELECT DISTINCT pin
     FROM pin
-    WHERE tax_code_num IN ({unique(tif_dists$tax_code_num)*})
+    WHERE tax_code_num IN ({unique(tif_dists_pre_24$tax_code_num)*})
   ",
     .con = ptaxsim_db_conn
   )
 ) %>%
   pull(pin)
 
-tif_pins_dt <- lookup_pin(2006:2020, pin = tif_pins_vec) %>%
+tif_pins_dt <- lookup_pin(2006:2023, pin = tif_pins_vec) %>%
   mutate(tax_code = lookup_tax_code(year, pin))
 ```
 
 We can determine the amount of increment by comparing the total property value in the TIF (in EAV) to the frozen amount. Anything above the frozen amount is taxed by the TIF.
 
+The code below sums up the total EAV of all PINs within the TIF year by year. This is done differently for the pre-2024 and 2024 data, which is ultimately bound together into one dataset.
 ```{r}
 tif_pins_summ <- tif_pins_dt %>%
-  group_by(year) %>%
+  group_by(year, tax_code) %>%
   summarize(total_eav = sum(eav)) %>%
-  left_join(tif_dists, by = "year") %>%
-  mutate(amt_to_tif = total_eav - tax_code_frozen_eav)
+  left_join(tif_dists_pre_24, by = c("tax_code" = "tax_code_num", "year")) %>%
+  mutate(tax_code_increment_eav = total_eav - tax_code_frozen_eav) %>%
+  group_by(year) %>%
+  summarize(
+    total_eav = sum(total_eav),
+    total_frozen_eav = sum(tax_code_frozen_eav),
+    total_increment_eav = sum(tax_code_increment_eav)
+  )
+
+tif_dists_24 <- pin_tif_dists_24 %>%
+  group_by(year) %>%
+  summarize(
+    total_eav = sum(pin_eav),
+    total_frozen_eav = sum(pin_frozen_eav),
+    total_increment_eav = sum(pin_increment_eav)
+  )
+
+tif_pins_summ <- rbind(tif_pins_summ, tif_dists_24) %>%
+  arrange(year)
 ```
 
 Finally, we can plot the total EAV of all PINs in the TIF over time, highlighting the TIF start date and increment captured.
@@ -256,9 +289,12 @@ Finally, we can plot the total EAV of all PINs in the TIF over time, highlightin
 <summary><strong>Click here</strong> to show plot code</summary>
 
 ```{r}
-# Create polygon to highlight the increment taxed by the TIF
+# Create polygon to highlight the increment taxed by the TIF.
+# Make sure the terminating point duplicates the final X-axis value (year)
+# while returning to the first Y-axis value (total EAV) in order to properly
+# close the polygon
 plot_pin_fill <- tibble(
-  x = c(2014, 2015, 2016, 2017, 2018, 2019, 2020, 2020),
+  x = c(2014:2024, 2024),
   y = c(
     tif_pins_summ$total_eav[tif_pins_summ$year >= 2014],
     tif_pins_summ$total_eav[tif_pins_summ$year == 2014]
@@ -302,7 +338,7 @@ tif_inc_plot <- ggplot(tif_pins_summ) +
     labels = scales::label_dollar(scale = 1e-6, suffix = "M"),
     expand = c(0, 0)
   ) +
-  scale_x_continuous(n.breaks = 9, expand = c(0, 0.4)) +
+  scale_x_continuous(n.breaks = 10, expand = c(0, 0.4)) +
   labs(x = "Year", y = "Total EAV of PINs in WTC2") +
   theme_minimal() +
   theme(
@@ -328,14 +364,14 @@ tif_inc_plot <- ggplot(tif_pins_summ) +
 tif_inc_plot
 ```
 
-The plot shows the increment taxed by the TIF highlighted in <span style="color:#7d26cd"><strong>purple</strong></span>. The flat grey area after 2014 represents the "frozen" EAV. Since 2014, the WTC2 TIF has doubled its total increment (purple + grey), with more than half of the new increment (purple) taxed by the TIF.
+The plot shows the increment taxed by the TIF highlighted in <span style="color:#7d26cd"><strong>purple</strong></span>. The flat grey area after 2014 represents the "frozen" EAV. Since 2014, the WTC2 TIF has tripled its total taxable EAV (purple + grey), with more than half of the new increment (purple) taxed by the TIF.
 
 ## Tax revenue by district
 
 Let's look at how the change in increment has impacted the proportion of each tax bill dedicated to the TIF. To do so, we can grab the tax bill history of all PINs in the TIF using PTAXSIM's `tax_bill()` function.
 
 ```{r}
-tif_bills <- tax_bill(2006:2020, tif_pins_vec)
+tif_bills <- tax_bill(2006:2024, tif_pins_vec)
 ```
 
 Then do a quick aggregation to get the proportion of tax revenue dedicated to each district type. We'll collapse some of the district types together to make plotting easier.
@@ -361,7 +397,8 @@ tif_bills_summ <- tif_bills %>%
     )
   ) %>%
   group_by(year, agency_minor_type) %>%
-  summarize(total_rev = sum(final_tax))
+  summarize(total_rev = sum(final_tax)) %>%
+  mutate(year = as.integer(year))
 ```
 
 Finally, we can plot the total tax revenue collected from the WTC2 TIF PINs, breaking out the total by district type.
@@ -390,7 +427,7 @@ tif_dist_plot <- ggplot(data = tif_bills_summ) +
     labels = scales::label_dollar(scale = 1e-6, suffix = "M"),
     expand = c(0, 0)
   ) +
-  scale_x_continuous(n.breaks = 9, expand = c(0, 0.4)) +
+  scale_x_continuous(n.breaks = 10, expand = c(0, 0.4)) +
   scale_fill_manual(
     name = "",
     values = c("#7d26cd", RColorBrewer::brewer.pal(7, "Set2"))
@@ -419,7 +456,7 @@ tif_dist_plot <- ggplot(data = tif_bills_summ) +
 tif_dist_plot
 ```
 
-As of 2020, the WTC2 TIF captures about 55% of the total tax revenue collected from within its boundaries. This number will likely increase as the total EAV within the TIF continues to grow.
+As of 2024, the WTC2 TIF captures about 70% of the total tax revenue collected from within its boundaries. This number will likely increase as the total EAV within the TIF continues to grow.
 
 The plot also shows an earlier bump of revenue collected for a TIF district. This was the first Wheeling Town Center TIF, which was canceled in 2013.
 
@@ -437,12 +474,19 @@ We can then plot the difference between real bills and the counterfactual bills 
 
 ### 1. Update TIF distribution amounts
 
-First, we need to update the output of `lookup_tif()`. This function is an input to `tax_bill()` and contains a column called `tif_share`, which indicates the percentage of each bill dedicated to the TIF. To remove the share of the bill dedicated to a TIF, we simply make this percentage equal to zero.
+First, we need to update the output of `lookup_tif()` for the tax years prior to 2024, as well as the output of `lookup_pin_tif()` for 2024. These functions are inputs to `tax_bill()` and each contain a column called `tif_share`, which indicates the percentage of each bill dedicated to the TIF. To remove the share of the bill dedicated to a TIF, we simply make this percentage equal to zero.
 
 ```{r}
 tif_dt_cntr <- lookup_tif(
-  2006:2020,
-  lookup_tax_code(2006:2020, wh_pins$pin)
+  2006:2023,
+  lookup_tax_code(2006:2023, wh_pins$pin)
+) %>%
+  # Set only the WTC2 TIF share to 0, leave all others untouched
+  mutate(tif_share = ifelse(agency_num == "031310506", 0, tif_share))
+
+
+pin_tif_dt_cntr <- lookup_pin_tif(
+  2024, wh_pins$pin
 ) %>%
   # Set only the WTC2 TIF share to 0, leave all others untouched
   mutate(tif_share = ifelse(agency_num == "031310506", 0, tif_share))
@@ -455,17 +499,17 @@ Second, we need to alter the `lookup_agency()` output to include EAV recovered f
 ```{r}
 # Get the unaltered levy and base for all PINs in Wheeling
 tif_agency_cntr <- lookup_agency(
-  2006:2020,
-  lookup_tax_code(2006:2020, wh_pins$pin)
+  2006:2024,
+  lookup_tax_code(2006:2024, wh_pins$pin)
 )
 
 # For each agency and year, get the amount recovered from the TIF using the
 # summary table we created earlier (tif_pins_summ)
 tif_agency_amt_to_add <- tif_agency_cntr %>%
-  filter(tax_code == "38228") %>%
+  filter(tax_code %in% c("38228", "38249")) %>%
   distinct(year, agency_num) %>%
   left_join(
-    tif_pins_summ %>% select(year, amt_to_tif),
+    tif_pins_summ %>% select(year, total_increment_eav),
     by = "year"
   )
 
@@ -473,8 +517,10 @@ tif_agency_amt_to_add <- tif_agency_cntr %>%
 tif_agency_cntr_updated <- tif_agency_cntr %>%
   left_join(tif_agency_amt_to_add, by = c("year", "agency_num")) %>%
   rowwise() %>%
-  mutate(agency_total_eav = sum(agency_total_eav, amt_to_tif, na.rm = TRUE)) %>%
-  select(-amt_to_tif) %>%
+  mutate(agency_total_eav = sum(agency_total_eav, total_increment_eav,
+    na.rm = TRUE
+  )) %>%
+  select(-total_increment_eav) %>%
   setDT(key = c("year", "tax_code", "agency_num"))
 ```
 
@@ -484,14 +530,15 @@ Third, we can calculate counterfactual tax bills using our altered inputs. All w
 
 ```{r}
 # Calculate unaltered, original bills for comparison
-wh_bills <- tax_bill(2006:2020, wh_pins$pin)
+wh_bills <- tax_bill(2006:2024, wh_pins$pin)
 
 # Calculate counterfactual tax bills where the WTC2 TIF does not exist
 tif_bills_cntr <- tax_bill(
-  year_vec = 2006:2020,
+  year_vec = 2006:2024,
   pin_vec = wh_pins$pin,
   agency_dt = tif_agency_cntr_updated,
-  tif_dt = tif_dt_cntr
+  tif_dt = tif_dt_cntr,
+  pin_tif_dt = pin_tif_dt_cntr
 )
 ```
 
@@ -534,7 +581,7 @@ tif_plot_cntr <- ggplot(tif_bills_cntr_summ) +
     size = 3.5,
     alpha = 0.5
   ) +
-  scale_x_continuous(n.breaks = 9, expand = c(0, 0.4)) +
+  scale_x_continuous(n.breaks = 10, expand = c(0, 0.4)) +
   scale_y_continuous(n.breaks = 7, labels = scales::label_dollar()) +
   scale_color_manual(
     name = "",
@@ -568,7 +615,7 @@ tif_plot_cntr
 
 The plot shows the median tax bill for all PINs in Wheeling. The counterfactual bills are shown in <span style="color:#7d26cd"><strong>purple</strong></span>.
 
-The net effect of the Wheeling Town Center II TIF has been a slight increase in the median Wheeling tax bill. The effect size is small; the difference in 2020 median bills with and without the TIF is less than $100. However, when added up over many properties, this effect becomes substantial and will continue to grow if the WTC2 PINs further increase in value.
+The net effect of the Wheeling Town Center II TIF has been a slight increase in the median Wheeling tax bill. The effect size is small; the difference in 2024 median bills with and without the TIF is less than $200. However, when added up over many properties, this effect becomes substantial and will continue to grow if the WTC2 PINs further increase in value.
 
 Whether or not this effect is desirable is a matter of interpretation. If the properties within the TIF would not have increased in value ***but for*** the TIF, then the TIF served its purpose, since the value it created will eventually return to the tax base. If the properties within the TIF would have increased in value ***regardless of*** the TIF, then the TIF has effectively captured part of the tax base that would otherwise have lowered rates/bills.
 

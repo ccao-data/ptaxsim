@@ -14,6 +14,11 @@ erDiagram
     varchar major_type
   }
 
+  agency_crosswalk {
+    varchar agency_num         PK
+    varchar agency_num_final
+  }
+
   agency_fund {
     int     year               PK
     varchar agency_num         PK
@@ -23,9 +28,17 @@ erDiagram
   }
 
   agency_fund_info {
+    varchar agency_num         PK
     varchar fund_num           PK
     varchar fund_name
     boolean capped_ind
+  }
+
+  agency_fund_crosswalk {
+    varchar agency_num         PK
+    varchar agency_num_final
+    varchar fund_num           PK
+    varchar fund_num_final
   }
 
   cpi {
@@ -90,16 +103,28 @@ erDiagram
     double  tax_code_distribution_pct
   }
 
+  pin_tif_distribution {
+    int     year               PK
+    varchar pin                PK
+    varchar agency_num         PK
+    varchar tax_code_num
+    double  pin_distribution_pct
+  }
+
   eq_factor ||--|{ pin : "applies to"
   pin ||--|{ tax_code : "within"
+  pin ||--o| pin_tif_distribution : "may have"
   cpi ||--|{ agency : "applies to"
   tax_code }|--|| agency : "has"
   tax_code ||--o| tif_distribution : "may have"
   agency ||--|{ agency_fund : "contains"
+  agency ||--o| agency_crosswalk : "may have"
   agency_info ||--|{ agency : "describes"
+  agency_fund ||--o| agency_fund_crosswalk : "may have"
   agency_fund_info ||--|{ agency_fund : "describes"
   tif ||--|| tif_crosswalk : "in"
   tif_distribution }|--|| tif_crosswalk : "in"
+  pin_tif_distribution }|--|| tif_crosswalk : "in"
   agency_info ||--o{ tif: "describes"
   tax_code }|--o| tif : "may have"
   pin_geometry ||--o| pin : "has"
