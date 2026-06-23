@@ -338,16 +338,12 @@ Now that we've looked at AVs, we can also use PTAXSIM to examine the impact of a
 # bills with counterfactual AVs also requires recalculating the base of each
 # taxing district
 chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
-  
-  x <- "mailed"
-  
   chi_pin_dt_actual <- lookup_pin(2024, chi_pins$pin, stage = "clerk")
   chi_pin_dt_stage <- lookup_pin(
     2024,
     chi_pins$pin,
     stage = x
-    ) %>%
-    left_join(chi_pins)
+    ) 
   
   # We need to calculate the new taxable EAV for each PIN at the various 
   # stages. Changes to AV impacts the TIF share for PINs in TIFs, as well 
@@ -361,9 +357,10 @@ chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
   chi_pin_diff <- chi_pin_dt_actual %>%
     left_join(
       chi_pin_dt_stage %>%
-        select(year, pin, stage_eav = eav, pin_frozen_eav),
+        select(year, pin, stage_eav = eav),
       by = c("year", "pin")
     ) %>%
+    left_join(chi_pins) %>%
     mutate(
       tax_code = lookup_tax_code(2024, pin),
       exe_total = rowSums(across(starts_with("exe_"))),
@@ -428,25 +425,25 @@ chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
     as.data.table() %>%
     setkey(year, tax_code, agency_num)
 
-  tax_bill(
+tax_bill(
     2024,
-    sb_pin_dt_stage$pin,
-    pin_dt = sb_pin_dt_stage,
-    agency_dt = sb_agency_dt
+    chi_pin_dt_stage$pin,
+    pin_dt = chi_pin_dt_stage,
+    agency_dt = chi_agency_dt
   ) %>%
     mutate(stage = x)
 })
 
 # Append unaltered 2018 bills, again as a starting point for our index
-sb_bills_all <- tax_bill(2018, sb_pins$pin) %>%
+chi_bills_all <- tax_bill(2023, chi_pins$pin) %>%
   mutate(stage = "board") %>%
-  bind_rows(sb_bills_all)
+  bind_rows(chi_bills_all)
 ```
 
 We now have two sets of bills: the real bills from each `board` stage, and the counterfactual bills from the `mailed` and `certified` stages. Each bill from `tax_bill()` is broken out into per-district line items. In order to visualize the changes in bills, we first collapse the bills into their totals, then aggregate and index them in the same way we did for AVs.
 
 ```{r}
-sb_bills_summ <- sb_bills_all %>%
+chi_bills_summ <- chi_bills_all %>%
   group_by(year, pin, class, stage) %>%
   summarize(bill_total = sum(final_tax)) %>%
   ungroup() %>%
@@ -475,14 +472,14 @@ sb_bills_summ <- sb_bills_all %>%
   )
 ```
 
-We can then plot the change in the median total tax bill (indexed to the `2018 board` median bill) to see the effect of each stage of appeals. The earlier plot showing assessed values is added for reference.
+We can then plot the change in the median total tax bill (indexed to the `2023 board` median bill) to see the effect of each stage of appeals. The earlier plot showing assessed values is added for reference.
 
 <details>
 
 <summary><strong>Click here</strong> to show plot code</summary>
 
 ```{r}
-sb_bills_plot <- bind_rows(
+chi_bills_plot <- bind_rows(
   sb_pins_summ %>% mutate(type = "Assessed Values"),
   sb_bills_summ %>% mutate(type = "Tax Bills")
 ) %>%
@@ -500,7 +497,7 @@ sb_bills_plot <- bind_rows(
   lims(y = c(95, 170)) +
   labs(
     x = "Stage",
-    y = "Median Value, Indexed to 2018 Board",
+    y = "Median Value, Indexed to 2023 Board",
     caption = "Highlighted stage is a reassessment"
   ) +
   facet_wrap(vars(type)) +
