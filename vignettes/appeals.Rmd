@@ -52,17 +52,17 @@ ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.db"))
 
 ```{r, echo=FALSE}
 # This is needed to build the vignette using GitHub Actions
-ptaxsim_db_conn <- DBI::dbConnect(
-  RSQLite::SQLite(),
-  Sys.getenv("PTAXSIM_DB_PATH")
-)
+#ptaxsim_db_conn <- DBI::dbConnect(
+ # RSQLite::SQLite(),
+  #Sys.getenv("PTAXSIM_DB_PATH")
+#)
 ```
 
 ## Gathering PINs of interest
 
-To determine the impact of appeals, we first need a way to gather all the properties (PINs) in Schaumburg. Fortunately, PTAXSIM's database has all the data required to accomplish this task.
+To determine the impact of appeals, we first need a way to gather all the properties (PINs) in Chicago. Fortunately, PTAXSIM's database has all the data required to accomplish this task.
 
-First, we'll need to determine the Village of Schaumburg's *agency number*. This is the ID used by the Clerk to track different taxing bodies. To find Schaumburg's ID, we can directly query PTAXSIM's database and look in the `agency_info` table:
+First, we'll need to determine the City of Chicago's *agency number*. This is the ID used by the Clerk to track different taxing bodies. To find Chicago's ID, we can directly query PTAXSIM's database and look in the `agency_info` table:
 
 ```{r}
 chi_agency_nums <- DBI::dbGetQuery(
@@ -75,7 +75,7 @@ chi_agency_nums <- DBI::dbGetQuery(
 chi_agency_nums
 ```
 
-Here we can see the various taxing bodies around Schaumburg. The agency number we want is `031150000` for the `VILLAGE OF SCHAUMBURG`. With the agency number, we can find all of the *tax codes* that make up the municipality. To do so, we can again query PTAXSIM directly, this time looking in the `tax_code` table:
+Here we can see the various taxing bodies around Schaumburg. The agency number we want is `030210000` for the `CITY OF CHICAGO`. With the agency number, we can find all of the *tax codes* that make up the municipality. To do so, we can again query PTAXSIM directly, this time looking in the `tax_code` table:
 
 ```{r}
 chi_tax_codes <- DBI::dbGetQuery(
@@ -88,7 +88,7 @@ chi_tax_codes <- DBI::dbGetQuery(
 )
 ```
 
-Finally, we can find all of Schaumburg's PINs with one last direct query. This time we'll look in the `pin` table using the tax codes that make up Schaumburg. We'll use the `glue` library for string expansion to make things a bit easier:
+Finally, we can find all of Chicago's PINs with one last direct query. This time we'll look in the `pin` table using the tax codes that make up Chicago. We'll use the `glue` library for string expansion to make things a bit easier:
 
 ```{r}
 chi_pins <- DBI::dbGetQuery(
@@ -97,11 +97,30 @@ chi_pins <- DBI::dbGetQuery(
     SELECT pin, class
     FROM pin
     WHERE tax_code_num IN ({chi_tax_codes$tax_code_num*})
-    AND year = 2024
+    AND pin.year = 2024
     ",
     .con = ptaxsim_db_conn
   )
 )
+
+chi_tif_pins <- DBI::dbGetQuery(
+  ptaxsim_db_conn,
+  glue_sql("
+    SELECT pin,
+    agency_num,
+    pin_eav,
+    pin_frozen_eav
+    FROM pin_tif_distribution
+    WHERE tax_code_num IN ({chi_tax_codes$tax_code_num*})
+    and year = 2024
+    ",
+    .con = ptaxsim_db_conn
+  )
+)
+
+chi_pins <- chi_pins %>%
+  left_join(chi_tif_pins)
+
 ```
 
 ## Mapping the area
@@ -198,7 +217,7 @@ chi_pins_map <- ggplot() +
 chi_pins_map
 ```
 
-The map clearly shows that most commercial buildings cluster on the north side of the village. This is the location of Woodfield Mall and many adjacent commercial buildings.
+
 
 ## Appeals' impact on AVs
 
@@ -242,7 +261,7 @@ chi_pins_summ <- chi_pins_all %>%
         "2024\ncertified", "2024\nboard"
       )
     ),
-    idx = (med_av / med_av[stage == "2023\nboard"]) * 100
+    perc_change = (med_av - med_av[stage == "2023\nboard"])/med_av[stage == "2023\nboard"] *100
   )
 ```
 
@@ -270,14 +289,18 @@ chi_pins_av_plot <- ggplot() +
   ) +
   geom_line(
     data = chi_pins_summ,
-    aes(x = stage, y = idx, color = major_class, group = major_class),
+    aes(x = stage, y = perc_change, color = major_class, group = major_class),
     linewidth = 1.1
   ) +
   scale_color_brewer(name = "", palette = "Set1") +
-  lims(y = c(95, 170)) +
+  scale_y_continuous(
+    limits = c(0, 100),
+    labels = scales::label_percent(scale = 1)
+  ) +
   labs(
     x = "Stage",
-    y = "Median AV, Indexed to 2023 Board",
+    y = NULL,
+    title = "Median AV percent change relative to 2023 Board",
     caption = "Highlighted stage is a reassessment"
   ) +
   theme_minimal() +
@@ -292,7 +315,7 @@ chi_pins_av_plot <- ggplot() +
     legend.title = element_text(size = 14),
     legend.key.size = unit(24, "points"),
     legend.text = element_text(size = 12),
-    legend.position = "bottom"
+    legend.position = "right"
   )
 ```
 
@@ -311,45 +334,26 @@ There's a significant drop in the median commercial property AV due to appeals, 
 Now that we've looked at AVs, we can also use PTAXSIM to examine the impact of appeals on tax bills. To do so, we'll first calculate bills at each stage of assessment. The bills for the `mailed` and `certified` stages are counterfactual; they represent estimates of what bills ***would have been*** at each stage if no further appeals were granted. The `board` stage bills are the actual bills received by property owners.
 
 ```{r}
-# Grab equalization factors from the PTAXSIM database
-eq_dt <- DBI::dbGetQuery(ptaxsim_db_conn, "SELECT * FROM eq_factor")
-
 # Calculate tax bills from 2019 at each stage of appeal. Note that recalculating
 # bills with counterfactual AVs also requires recalculating the base of each
 # taxing district
 chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
+  
+  x <- "mailed"
+  
   chi_pin_dt_actual <- lookup_pin(2024, chi_pins$pin, stage = "clerk")
   chi_pin_dt_stage <- lookup_pin(
     2024,
     chi_pins$pin,
-    stage = x,
-    eq_version = case_when(
-      x %in% c("mailed", "certified") ~ "tentative",
-      x %in% c("board", "clerk") ~ "final"
-    )
-  )
-
-  # Use the tentative equalizer for mailed/certified values and the final
-  # equalizer for board/clerk values
-  eq_dt_stage <- eq_dt %>%
-    mutate(stage_eq_factor = case_when(
-      x %in% c("mailed", "certified") ~ eq_factor_tentative,
-      x %in% c("board", "clerk") ~ eq_factor_final
-    )) %>%
-    select(year, stage_eq_factor, eq_factor_final)
-  
-
+    stage = x
+    ) %>%
+    left_join(chi_pins)
   
   # We need to calculate the new taxable EAV for each PIN at the various 
   # stages. Changes to AV impacts the TIF share for PINs in TIFs, as well 
   # as the senior freeze exemption amount for PINs with that exemption.
-  
-  chi_pin_dt_stage <- chi_pin_dt_stage %>%
-    left_join(eq_dt_stage, by = "year") %>%
-    mutate(
-      eav = av * stage_eq_factor
 
-  # The base of each district in the included PTAXSIM data is based on 2019
+  # The base of each district in the included PTAXSIM data is based on 2024
   # board (post-appeal) values. It is therefore smaller than it would be if
   # appeals had not been granted. As such, we need to calculate the difference
   # for each PIN between the AV at each stage and the AV at the board stage,
@@ -357,53 +361,75 @@ chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
   chi_pin_diff <- chi_pin_dt_actual %>%
     left_join(
       chi_pin_dt_stage %>%
-        select(year, pin, stage_av = av),
+        select(year, pin, stage_eav = eav, pin_frozen_eav),
       by = c("year", "pin")
     ) %>%
-    left_join(eq_dt_stage, by = "year") %>%
     mutate(
-      eav_diff = (stage_av - av) * stage_eq_factor,
+      tax_code = lookup_tax_code(2024, pin),
       exe_total = rowSums(across(starts_with("exe_"))),
-      exe_diff = (exe_total * stage_eq_factor) - (exe_total * eq_factor_final),
-      tax_code = lookup_tax_code(2019, pin)
-    ) %>%
+      # We want to first calculate taxable EAV which is EAV minus exemptions.
+      # The stage taxable EAV should be the same as the actual taxable EAV
+      # if the PIN received a senior freeze exemption
+      taxable_eav = eav - exe_total,
+      taxable_stage_eav = ifelse(  
+      exe_freeze > 0,
+        eav - exe_total,
+        stage_eav - exe_total),
+      # We need to consider if a PIN is in a TIF to determine if any pre-appeal
+      # EAV will be added to the tax base or diverted to the TIF increment
+      eav_diff = case_when(
+        # Scenario 1: If both stage and actual EAV exceed the PIN's frozen EAV
+        # then the extra pre-appeal reduction EAV gets diverted to the TIF
+        taxable_eav > pin_frozen_eav &
+          pin_frozen_eav < taxable_stage_eav ~ 0, 
+        # Scenario 2: If the actual EAV is less than the frozen EAV and
+        # pre-appeal stage EAV is greater than frozen EAV, the diff between
+        # actual EAV and frozen EAV is added into the tax base
+          taxable_eav < pin_frozen_eav &
+          taxable_stage_eav > pin_frozen_eav ~ pin_frozen_eav - taxable_eav,
+        # Scenario 3: If the pre-appeal stage is less than the frozen EAV
+        # all of the EAV diff is added to the tax base.
+        pin_frozen_eav > taxable_stage_eav ~ taxable_stage_eav - taxable_eav,
+        # For all of the non-TIF PINs, calculate the EAV diff
+        TRUE ~ taxable_stage_eav - taxable_eav),
+      pin_stage_increment = ifelse(
+        pin_frozen_eav < taxable_stage_eav,
+        taxable_stage_eav - pin_frozen_eav,
+        0))
+  
+  # Calculate each TIF PIN's TIF share for the stages
+  tif_stage_share <- chi_pin_diff %>%
+    mutate(tif_pin_share = pin_stage_increment / taxable_stage_eav) %>%
+    select(pin, tif_pin_share)
+    
+  # Aggregate the EAV diff by tax code to which will enable joining to 
+  # tax district data
+  chi_tax_code_diff <- chi_pin_diff %>%
     group_by(year, tax_code) %>%
     summarize(
       eav_diff_total = sum(eav_diff),
-      exe_diff_total = sum(exe_diff)
     )
 
   # Update each district base using the amount recovered from "undoing" appeals
-  # Note that the base must be converted to use the "correct" equalizer for each
-  # stage. Additionally, because exemptions change with the equalizer, we must
-  # also calculate their difference and add them to the base
-  sb_agency_dt <- lookup_agency(sb_pin_diff$year, sb_pin_diff$tax_code) %>%
-    left_join(sb_pin_diff, by = c("year", "tax_code")) %>%
-    left_join(eq_dt_stage, by = "year") %>%
+  chi_agency_dt <- lookup_agency(chi_pin_diff$year, chi_pin_diff$tax_code) %>%
+    left_join(chi_tax_code_diff, by = c("year", "tax_code")) %>%
     # Aggregate the total differences for each district
     group_by(agency_num, agency_name) %>%
     mutate(
-      eav_diff_total = sum(eav_diff_total),
-      exe_diff_total = sum(exe_diff_total)
+      eav_diff_total = sum(eav_diff_total)
     ) %>%
     ungroup() %>%
     mutate(
-      # Recalculate the base in terms of the "tentative" or "final" equalizer
-      agency_total_eav = round(
-        (agency_total_eav / eq_factor_final) * stage_eq_factor
-      ),
-      agency_total_eav = agency_total_eav + exe_diff_total,
       agency_total_eav = agency_total_eav + eav_diff_total
     ) %>%
     select(
-      -eav_diff_total, -exe_diff_total,
-      -eq_factor_final, -stage_eq_factor
+      -eav_diff_total
     ) %>%
     as.data.table() %>%
     setkey(year, tax_code, agency_num)
 
   tax_bill(
-    2019,
+    2024,
     sb_pin_dt_stage$pin,
     pin_dt = sb_pin_dt_stage,
     agency_dt = sb_agency_dt
