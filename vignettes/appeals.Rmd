@@ -464,11 +464,11 @@ chi_bills_summ <- chi_bills_all %>%
     stage = factor(
       paste0(year, "\n", stage),
       levels = c(
-        "2018\nboard", "2019\nmailed",
-        "2019\ncertified", "2019\nboard"
+        "2023\nboard", "2024\nmailed",
+        "2024\ncertified", "2024\nboard"
       )
     ),
-    idx = (med_bill / med_bill[stage == "2018\nboard"]) * 100
+    perc_change = (med_bill - med_bill[stage == "2023\nboard"])/med_bill[stage == "2023\nboard"] *100
   )
 ```
 
@@ -480,21 +480,24 @@ We can then plot the change in the median total tax bill (indexed to the `2023 b
 
 ```{r}
 chi_bills_plot <- bind_rows(
-  sb_pins_summ %>% mutate(type = "Assessed Values"),
-  sb_bills_summ %>% mutate(type = "Tax Bills")
+  chi_pins_summ %>% mutate(type = "Assessed Values"),
+  chi_bills_summ %>% mutate(type = "Tax Bills")
 ) %>%
   ggplot() +
   geom_vline(
-    xintercept = "2019\nmailed",
+    xintercept = "2024\nmailed",
     linetype = "dotted",
     color = "red"
   ) +
   geom_line(
-    aes(x = stage, y = idx, color = major_class, group = major_class),
+    aes(x = stage, y = perc_change, color = major_class, group = major_class),
     linewidth = 1.1
   ) +
   scale_color_brewer(name = "", palette = "Set1") +
-  lims(y = c(95, 170)) +
+   scale_y_continuous(
+    limits = c(0, 50),
+    labels = scales::label_percent(scale = 1)
+  ) +
   labs(
     x = "Stage",
     y = "Median Value, Indexed to 2023 Board",
@@ -522,7 +525,7 @@ chi_bills_plot <- bind_rows(
 <br>
 
 ```{r, out.width="100%", echo=FALSE}
-sb_bills_plot
+chi_bills_plot
 ```
 
 Overall, post-reassessment appeals in Schaumburg resulted in a roughly 11% increase in the median residential tax bill and a 17% decrease in the median commercial tax bill. Without appeals, particularly at the Board of Review, the median commercial bill would have increased roughly 27% from 2018.
@@ -534,139 +537,153 @@ The plot above shows the zero-sum nature of assessment appeals. The large AV dec
 ```{r, warning=FALSE}
 # Again we need to calculate bills at each stage of appeal. This time it's more
 # complicated since we need to exclude commercial appeals
-sb_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
-  sb_pin_dt_actual <- lookup_pin(2019, sb_pins$pin, stage = "clerk")
-  sb_pin_dt_mailed <- lookup_pin(
-    2019,
-    sb_pins$pin,
+chi_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
+  chi_pin_dt_actual <- lookup_pin(2024, chi_pins$pin, stage = "clerk")
+  chi_pin_dt_mailed <- lookup_pin(
+    2024,
+    chi_pins$pin,
     stage = "mailed",
-    eq_version = "tentative"
   )
-  sb_pin_dt_stage <- lookup_pin(
-    2019,
-    sb_pins$pin,
-    stage = x,
-    eq_version = case_when(
-      x %in% c("mailed", "certified") ~ "tentative",
-      x %in% c("board", "clerk") ~ "final"
+  chi_pin_dt_stage <- lookup_pin(
+    2024,
+    chi_pins$pin,
+    stage = x
     )
-  )
-
-  # Again use tentative equalizer for any non-final (board) values
-  eq_dt_stage <- eq_dt %>%
-    mutate(stage_eq_factor = case_when(
-      x %in% c("mailed", "certified") ~ eq_factor_tentative,
-      x %in% c("board", "clerk") ~ eq_factor_final
-    )) %>%
-    select(year, stage_eq_factor, eq_factor_final)
-
+  
   # To recalculate the base, we get two distinct sets of differences:
   # 1. Residential PINs act normally, the amount back to the base from each
   #    PIN is the difference between the stage EAV and the 2019 final EAV
   # 2. Commercial PINs are not granted appeals. So the amount back to the base
   #    for all stages is the difference between the initial mailed value (no
   #    appeals) and the final 2019 value (which contains appeals)
-  sb_pin_diff <- rbind(
-    sb_pin_dt_actual %>%
+  chi_pin_diff <- rbind(
+    chi_pin_dt_actual %>%
       filter(!substr(class, 1, 1) %in% c("3", "5")) %>%
       left_join(
-        sb_pin_dt_stage %>%
-          select(year, pin, stage_av = av),
+        chi_pin_dt_stage %>%
+          select(year, pin, stage_eav = eav),
         by = c("year", "pin")
       ) %>%
-      left_join(eq_dt_stage, by = "year") %>%
-      mutate(
-        eav_diff = (stage_av - av) * stage_eq_factor,
-        exe_total = rowSums(across(starts_with("exe_"))),
-        exe_diff = (exe_total * stage_eq_factor) -
-          (exe_total * eq_factor_final),
-        tax_code = lookup_tax_code(2019, pin)
-      ),
-    sb_pin_dt_actual %>%
+      left_join(chi_pins) %>%
+    mutate(
+      tax_code = lookup_tax_code(2024, pin),
+      exe_total = rowSums(across(starts_with("exe_"))),
+      # We want to first calculate taxable EAV which is EAV minus exemptions.
+      # The stage taxable EAV should be the same as the actual taxable EAV
+      # if the PIN received a senior freeze exemption
+      taxable_eav = eav - exe_total,
+      taxable_stage_eav = ifelse(  
+      exe_freeze > 0,
+        eav - exe_total,
+        stage_eav - exe_total),
+      # We need to consider if a PIN is in a TIF to determine if any pre-appeal
+      # EAV will be added to the tax base or diverted to the TIF increment
+      eav_diff = case_when(
+        # Scenario 1: If both stage and actual EAV exceed the PIN's frozen EAV
+        # then the extra pre-appeal reduction EAV gets diverted to the TIF
+        taxable_eav > pin_frozen_eav &
+          pin_frozen_eav < taxable_stage_eav ~ 0, 
+        # Scenario 2: If the actual EAV is less than the frozen EAV and
+        # pre-appeal stage EAV is greater than frozen EAV, the diff between
+        # actual EAV and frozen EAV is added into the tax base
+          taxable_eav < pin_frozen_eav &
+          taxable_stage_eav > pin_frozen_eav ~ pin_frozen_eav - taxable_eav,
+        # Scenario 3: If the pre-appeal stage is less than the frozen EAV
+        # all of the EAV diff is added to the tax base.
+        pin_frozen_eav > taxable_stage_eav ~ taxable_stage_eav - taxable_eav,
+        # For all of the non-TIF PINs, calculate the EAV diff
+        TRUE ~ taxable_stage_eav - taxable_eav)),
+    chi_pin_dt_actual %>%
       filter(substr(class, 1, 1) %in% c("3", "5")) %>%
       left_join(
-        sb_pin_dt_mailed %>%
-          select(year, pin, stage_av = av),
+        chi_pin_dt_mailed %>%
+          select(year, pin, stage_eav = eav),
         by = c("year", "pin")
       ) %>%
-      left_join(eq_dt_stage, by = "year") %>%
-      mutate(
-        eav_diff = (stage_av - av) * stage_eq_factor,
-        tax_code = lookup_tax_code(2019, pin)
-      ),
-    fill = TRUE
-  ) %>%
+      left_join(chi_pins) %>%
+    mutate(
+      tax_code = lookup_tax_code(2024, pin),
+      exe_total = rowSums(across(starts_with("exe_"))),
+      # We want to first calculate taxable EAV which is EAV minus exemptions.
+      # The stage taxable EAV should be the same as the actual taxable EAV
+      # if the PIN received a senior freeze exemption
+      taxable_eav = eav - exe_total,
+      taxable_stage_eav = ifelse(  
+      exe_freeze > 0,
+        eav - exe_total,
+        stage_eav - exe_total),
+      # We need to consider if a PIN is in a TIF to determine if any pre-appeal
+      # EAV will be added to the tax base or diverted to the TIF increment
+      eav_diff = case_when(
+        # Scenario 1: If both stage and actual EAV exceed the PIN's frozen EAV
+        # then the extra pre-appeal reduction EAV gets diverted to the TIF
+        taxable_eav > pin_frozen_eav &
+          pin_frozen_eav < taxable_stage_eav ~ 0, 
+        # Scenario 2: If the actual EAV is less than the frozen EAV and
+        # pre-appeal stage EAV is greater than frozen EAV, the diff between
+        # actual EAV and frozen EAV is added into the tax base
+          taxable_eav < pin_frozen_eav &
+          taxable_stage_eav > pin_frozen_eav ~ pin_frozen_eav - taxable_eav,
+        # Scenario 3: If the pre-appeal stage is less than the frozen EAV
+        # all of the EAV diff is added to the tax base.
+        pin_frozen_eav > taxable_stage_eav ~ taxable_stage_eav - taxable_eav,
+        # For all of the non-TIF PINs, calculate the EAV diff
+        TRUE ~ taxable_stage_eav - taxable_eav)))
+      
+  # Aggregate the EAV diff by tax code to which will enable joining to 
+  # tax district data
+  chi_tax_code_diff <- chi_pin_diff %>%
     group_by(year, tax_code) %>%
     summarize(
       eav_diff_total = sum(eav_diff),
-      exe_diff_total = sum(exe_diff, na.rm = TRUE)
     )
 
-  # Aggregate the PIN EAV and exemption differences into a new agency
-  # data table with an adjusted base
-  sb_agency_dt <- lookup_agency(sb_pin_diff$year, sb_pin_diff$tax_code) %>%
-    left_join(sb_pin_diff, by = c("year", "tax_code")) %>%
-    left_join(eq_dt_stage, by = "year") %>%
+  # Update each district base using the amount recovered from "undoing" appeals
+  chi_agency_dt <- lookup_agency(chi_pin_diff$year, chi_pin_diff$tax_code) %>%
+    left_join(chi_tax_code_diff, by = c("year", "tax_code")) %>%
+    # Aggregate the total differences for each district
     group_by(agency_num, agency_name) %>%
     mutate(
-      eav_diff_total = sum(eav_diff_total),
-      exe_diff_total = sum(exe_diff_total)
+      eav_diff_total = sum(eav_diff_total)
     ) %>%
     ungroup() %>%
     mutate(
-      agency_total_eav = round(
-        (agency_total_eav / eq_factor_final) * stage_eq_factor
-      ),
-      agency_total_eav = agency_total_eav + exe_diff_total,
       agency_total_eav = agency_total_eav + eav_diff_total
     ) %>%
     select(
-      -eav_diff_total, -exe_diff_total,
-      -eq_factor_final, -stage_eq_factor
+      -eav_diff_total
     ) %>%
     as.data.table() %>%
     setkey(year, tax_code, agency_num)
 
-  # Commercial PINs don't get appeals, so their EAVs only come from the
-  # "mailed" stage. However, commercial EAVs must use the equalizer for their
-  # respective stage, so we adjust the "mailed" EAVs to the final equalizer
-  # (only for the final/board stage)
-  if (x == "board") {
-    sb_pin_dt_mailed <- sb_pin_dt_mailed %>%
-      left_join(eq_dt, by = "year") %>%
-      mutate(
-        eav = round((eav / eq_factor_tentative) * eq_factor_final)
-      ) %>%
-      select(-starts_with("eq_factor_"))
-  }
 
   # Combine residential and adjusted into a single PIN input data table
-  sb_pin_dt_combo <- rbind(
-    sb_pin_dt_stage %>%
+  chi_pin_dt_combo <- rbind(
+    chi_pin_dt_stage %>%
       filter(!substr(class, 1, 1) %in% c("3", "5")),
-    sb_pin_dt_mailed %>%
+    chi_pin_dt_mailed %>%
       filter(substr(class, 1, 1) %in% c("3", "5"))
   ) %>%
     setkey(year, pin)
 
   tax_bill(
-    2019,
-    sb_pin_dt_combo$pin,
-    pin_dt = sb_pin_dt_combo,
-    agency_dt = sb_agency_dt
+    2024,
+    chi_pin_dt_combo$pin,
+    pin_dt = chi_pin_dt_combo,
+    agency_dt = chi_agency_dt
   ) %>%
     mutate(stage = x)
 })
 
-sb_cntr_all <- tax_bill(2018, sb_pins$pin) %>%
+chi_cntr_all <- tax_bill(2023, chi_pins$pin) %>%
   mutate(stage = "board") %>%
-  bind_rows(sb_cntr_all)
+  bind_rows(chi_cntr_all)
 ```
 
 We again have two sets of bills: real bills from the `mailed` stage, and counterfactual bills from the 2019 `certified` and `board` stages, _as if no commercial appeals were granted_. We can aggregate and index these bills the same way we did previously.
 
 ```{r}
-sb_cntr_summ <- sb_cntr_all %>%
+chi_cntr_summ <- chi_cntr_all %>%
   group_by(year, pin, class, stage) %>%
   summarize(bill_total = sum(final_tax)) %>%
   ungroup() %>%
@@ -687,11 +704,11 @@ sb_cntr_summ <- sb_cntr_all %>%
     stage = factor(
       paste0(year, "\n", stage),
       levels = c(
-        "2018\nboard", "2019\nmailed",
-        "2019\ncertified", "2019\nboard"
+        "2023\nboard", "2024\nmailed",
+        "2024\ncertified", "2024\nboard"
       )
     ),
-    idx = (med_bill / med_bill[stage == "2018\nboard"]) * 100
+    perc_change = (med_bill - med_bill[stage == "2023\nboard"])/med_bill[stage == "2023\nboard"] *100
   )
 ```
 
@@ -702,30 +719,30 @@ Finally, we again plot the change in the median bill for each stage. The previou
 <summary><strong>Click here</strong> to show plot code</summary>
 
 ```{r}
-sb_pins_no_app <- purrr::map_dfr(
+chi_pins_no_app <- purrr::map_dfr(
   c("mailed", "certified", "board"),
   function(x) {
-    comm_pins <- sb_pins %>%
+    comm_pins <- chi_pins %>%
       filter(substr(class, 1, 1) %in% c("3", "5")) %>%
       pull(pin)
-    other_pins <- sb_pins %>%
+    other_pins <- chi_pins %>%
       filter(!substr(class, 1, 1) %in% c("3", "5")) %>%
       pull(pin)
 
     rbind(
-      lookup_pin(2019, comm_pins, stage = "mailed") %>%
+      lookup_pin(2024, comm_pins, stage = "mailed") %>%
         mutate(stage = x),
-      lookup_pin(2019, other_pins, stage = x) %>%
+      lookup_pin(2024, other_pins, stage = x) %>%
         mutate(stage = x)
     )
   }
 )
 
-sb_pins_no_app <- lookup_pin(2018, sb_pins$pin, stage = "board") %>%
+chi_pins_no_app <- lookup_pin(2023, chi_pins$pin, stage = "board") %>%
   mutate(stage = "board") %>%
-  bind_rows(sb_pins_no_app)
+  bind_rows(chi_pins_no_app)
 
-sb_pins_summ_no_app <- sb_pins_no_app %>%
+chi_pins_summ_no_app <- chi_pins_no_app %>%
   mutate(major_class = substr(class, 1, 1)) %>%
   filter(major_class %in% c("2", "3", "5")) %>%
   mutate(
@@ -743,34 +760,34 @@ sb_pins_summ_no_app <- sb_pins_no_app %>%
     stage = factor(
       paste0(year, "\n", stage),
       levels = c(
-        "2018\nboard", "2019\nmailed",
-        "2019\ncertified", "2019\nboard"
+        "2023\nboard", "2024\nmailed",
+        "2024\ncertified", "2024\nboard"
       )
     ),
-    idx = (med_av / med_av[stage == "2018\nboard"]) * 100
+    perc_change = (med_av - med_av[stage == "2023\nboard"])/med_av[stage == "2023\nboard"] *100
   )
 
-sb_cntr_plot <- bind_rows(
-  sb_pins_summ %>% mutate(type = "Assessed Values"),
-  sb_bills_summ %>% mutate(type = "Tax Bills"),
-  sb_pins_summ_no_app %>%
+chi_cntr_plot <- bind_rows(
+  chi_pins_summ %>% mutate(type = "Assessed Values"),
+  chi_bills_summ %>% mutate(type = "Tax Bills"),
+  chi_pins_summ_no_app %>%
     mutate(type = "Assessed Values\n(No Commercial Appeals)"),
-  sb_cntr_summ %>%
+  chi_cntr_summ %>%
     mutate(type = "Tax Bills\n(No Commercial Appeals)")
 ) %>%
   ggplot() +
   geom_vline(
-    xintercept = "2019\nmailed",
+    xintercept = "2024\nmailed",
     linetype = "dotted",
     color = "red"
   ) +
   geom_line(
-    aes(x = stage, y = idx, color = major_class, group = major_class),
+    aes(x = stage, y = perc_change, color = major_class, group = major_class),
     linewidth = 1.1
   ) +
   scale_color_brewer(name = "", palette = "Set1") +
   facet_wrap(vars(type), nrow = 2, ncol = 2, dir = "v") +
-  lims(y = c(95, 170)) +
+  lims(y = c(0, 50)) +
   labs(
     x = "Stage",
     y = "Median Value, Indexed to 2018 Board",
@@ -797,7 +814,7 @@ sb_cntr_plot <- bind_rows(
 <br>
 
 ```{r, out.width="100%", fig.height=8, echo=FALSE}
-sb_cntr_plot
+chi_cntr_plot
 ```
 
 Holding commercial appeals constant makes their effect on residential tax bills clearer: large commercial appeals shift the property tax burden back to residential property owners. In the case of Schaumburg, the drop in commercial AVs during the second level of review (at the Board of Review) contributed to a roughly 11% rise in the median residential tax bill.
