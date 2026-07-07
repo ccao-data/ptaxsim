@@ -75,7 +75,7 @@ chi_agency_nums <- DBI::dbGetQuery(
 chi_agency_nums
 ```
 
-Here we can see the various taxing bodies around Schaumburg. The agency number we want is `030210000` for the `CITY OF CHICAGO`. With the agency number, we can find all of the *tax codes* that make up the municipality. To do so, we can again query PTAXSIM directly, this time looking in the `tax_code` table:
+Here we can see the various taxing bodies associated with the Chicago.  The agency number we want is `030210000` for the municipality, `CITY OF CHICAGO`. With the agency number, we can find all of the *tax codes* that make up the municipality. To do so, we can again query PTAXSIM directly, this time looking in the `tax_code` table:
 
 ```{r}
 chi_tax_codes <- DBI::dbGetQuery(
@@ -122,102 +122,6 @@ chi_pins <- chi_pins %>%
   left_join(chi_tif_pins)
 
 ```
-
-## Mapping the area
-
-Now that we have Schaumburg's PINs, we can use them to get a quick look at the area using a map. First, we'll get the PIN boundaries. These are included in PTAXSIM's database and can be retrieved using `lookup_pin10_geometry()`.
-
-```{r}
-# PIN geometries only exist for 10-digit PINs, so we'll need to truncate our
-# existing Schaumburg PINs
-chi_pin10s <- unique(substr(chi_pins$pin, 1, 10))
-
-# The geometry is stored in the database as simple text, so we need to convert
-# it to the correct type using sf
-chi_pins_geo <- lookup_pin10_geometry(year = 2020, pin10 = chi_pin10s)
-chi_pins_geo <- chi_pins_geo %>%
-  st_as_sf(wkt = "geometry", crs = 4326)
-
-# We'll also attach the first class code from each PIN14 to each PIN10 geometry
-# and group them into broad buckets. This is just to help our visualization
-chi_pins_geo <- chi_pins_geo %>%
-  left_join(
-    chi_pins %>%
-      mutate(pin10 = substr(pin, 1, 10)) %>%
-      group_by(pin10) %>%
-      summarize(class = first(class)),
-    by = "pin10"
-  ) %>%
-  mutate(
-    major_class = substr(class, 1, 1),
-    major_class_fct = recode_factor(
-      major_class,
-      "2" = "2 - Residential",
-      "3" = "3 & 5 - Commercial",
-      "5" = "3 & 5 - Commercial",
-      "0" = "Other", "1" = "Other", "4" = "Other", "6" = "Other", "7" = "Other"
-    )
-  )
-
-chi_pins_geo <- st_make_valid(chi_pins_geo)
-
-chi_pins_class_geo <- chi_pins_geo %>%
-  group_by(major_class_fct) %>%
-  summarize(geometry = st_union(geometry), .groups = "drop")
-
-
-```
-
-For added flavor, we can get the municipality boundary for Schaumburg from [Cook Central](https://hub-cookcountyil.opendata.arcgis.com/search), the County GIS data portal.
-
-```{r, results='hide'}
-muni <- st_read(paste0(
-  "https://opendata.arcgis.com/api/v3/datasets/",
-  "534226c6b1034985aca1e14a2eb234af_2/downloads/",
-  "data?format=geojson&spatialRefId=4326&where=1%3D1"
-))
-
-muni <- muni %>%
-  filter(MUNICIPALITY == "Chicago")
-```
-
-Finally, we can plot our PINs of interest on a map, along with Schaumburg's boundary and a basemap.
-
-<details>
-
-<summary><strong>Click here</strong> to show plot code</summary>
-
-```{r}
-chi_pins_map <- ggplot() +
-  annotation_map_tile(type = "cartolight", zoomin = -1) +
-  geom_sf(
-    data = chi_pins_geo,
-    aes(fill = major_class_fct),
-    alpha = 0.5,
-    linewidth = 0
-  ) +
-  geom_sf(data = muni, fill = "transparent", linewidth = 1) +
-  annotation_scale(location = "br") +
-  scale_fill_brewer(name = "", palette = "Set1") +
-  guides(color = guide_legend(override.aes = list(size = 5))) +
-  theme_void() +
-  theme(
-    legend.title = element_text(size = 14),
-    legend.text = element_text(size = 12),
-    legend.key.size = unit(24, "points"),
-    legend.position = "bottom"
-  )
-```
-
-</details>
-
-<br>
-
-```{r, out.width="100%", echo=FALSE, results='hide'}
-chi_pins_map
-```
-
-
 
 ## Appeals' impact on AVs
 
