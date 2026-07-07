@@ -30,9 +30,9 @@ Enter PTAXSIM, which can simulate counterfactual estimated tax bills and contain
 
 We can use these values and PTAXSIM's `tax_bill()` function to calculate pre- and post-appeal estimated property tax bills and ultimately determine the impact of appeals. This vignette will cover that process.
 
-# Appeals in Schaumburg
+# Appeals in Chicago
 
-Using PTAXSIM, we're going to examine property values and tax bills in Schaumburg, IL, a village in northwestern Cook County. Specifically, we'll focus on the impact of appeals after Schaumburg's 2019 reassessment.
+Using PTAXSIM, we're going to examine property values and tax bills in Chicago after its 2024 reassessment.
 
 First, load some useful libraries and instantiate a PTAXSIM database connection with the default name (`ptaxsim_db_conn`) expected by PTAXSIM functions.
 
@@ -125,7 +125,7 @@ chi_pins <- chi_pins %>%
 
 ## Appeals' impact on AVs
 
-Now that we've gathered our PINs of interest, we can start to investigate how they were affected by appeals after the 2019 reassessment. Let's start by looking at changes in assessed values. We can gather the AVs from each assessment stage using PTAXSIM's `lookup_pin()` function.
+Now that we've gathered our PINs of interest, we can start to investigate how they were affected by appeals after the 2024 reassessment. Let's start by looking at changes in assessed values. We can gather the AVs from each assessment stage using PTAXSIM's `lookup_pin()` function.
 
 ```{r}
 # Iterate through the difference stages, then combine into a single data.frame
@@ -140,7 +140,7 @@ chi_pins_all <- lookup_pin(2023, chi_pins$pin, stage = "board") %>%
   bind_rows(chi_pins_all)
 ```
 
-Next, we get the median AV for each assessment stage and major class. We also create an index to make the relative changes in AV easier to see. The indexed stage is `2018 board`, meaning a change of 20 means a 20% increase in the median AV from the `2018 board` median AV.
+Next, we get the median AV for each assessment stage and major class. We also calculate the percent change in median AV compared to the `2023 board` stage, meaning a value of 25% indicates the median AV has increased relative to the `2023 board` median AV.
 
 ```{r}
 chi_pins_summ <- chi_pins_all %>%
@@ -169,7 +169,7 @@ chi_pins_summ <- chi_pins_all %>%
   )
 ```
 
-Finally, we can plot the index over time to see how reassessment and the subsequent appeals at each stage impacted assessed values.
+Finally, we can plot the percent change in median AV over time to see how reassessment and the subsequent appeals at each stage impacted assessed values.
 
 <details>
 
@@ -198,7 +198,7 @@ chi_pins_av_plot <- ggplot() +
   ) +
   scale_color_brewer(name = "", palette = "Set1") +
   scale_y_continuous(
-    limits = c(0, 100),
+    limits = c(0, 50),
     labels = scales::label_percent(scale = 1)
   ) +
   labs(
@@ -231,14 +231,14 @@ chi_pins_av_plot <- ggplot() +
 chi_pins_av_plot
 ```
 
-There's a significant drop in the median commercial property AV due to appeals, particularly after the second level of review (at the Board of Review). However, commercial properties also received much larger AV increases during the 2019 reassessment compared to residential properties.
+There's a significant drop in the median commercial property AV due to appeals, particularly after the second level of review (at the Board of Review). However, commercial properties also received larger AV increases during the 2024 reassessment compared to residential properties.
 
 ## Appeals' impact on bills
 
 Now that we've looked at AVs, we can also use PTAXSIM to examine the impact of appeals on tax bills. To do so, we'll first calculate bills at each stage of assessment. The bills for the `mailed` and `certified` stages are counterfactual; they represent estimates of what bills ***would have been*** at each stage if no further appeals were granted. The `board` stage bills are the actual bills received by property owners.
 
 ```{r}
-# Calculate tax bills from 2019 at each stage of appeal. Note that recalculating
+# Calculate tax bills from 2024 at each stage of appeal. Note that recalculating
 # bills with counterfactual AVs also requires recalculating the base of each
 # taxing district
 chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
@@ -338,7 +338,7 @@ tax_bill(
     mutate(stage = x)
 })
 
-# Append unaltered 2018 bills, again as a starting point for our index
+# Append unaltered 2023 bills, again as a starting point for our index
 chi_bills_all <- tax_bill(2023, chi_pins$pin) %>%
   mutate(stage = "board") %>%
   bind_rows(chi_bills_all)
@@ -376,7 +376,7 @@ chi_bills_summ <- chi_bills_all %>%
   )
 ```
 
-We can then plot the change in the median total tax bill (indexed to the `2023 board` median bill) to see the effect of each stage of appeals. The earlier plot showing assessed values is added for reference.
+We can then plot the percent change in the median total tax bill (indexed to the `2023 board` median bill) to see the effect of each stage of appeals. The earlier plot showing assessed values is added for reference.
 
 <details>
 
@@ -432,11 +432,14 @@ chi_bills_plot <- bind_rows(
 chi_bills_plot
 ```
 
-Overall, post-reassessment appeals in Schaumburg resulted in a roughly 11% increase in the median residential tax bill and a 17% decrease in the median commercial tax bill. Without appeals, particularly at the Board of Review, the median commercial bill would have increased roughly 27% from 2018.
+Overall, post-reassessment appeals in Chicago resulted in a roughly 9% increase in the median residential tax bill and a 5% decrease in the median commercial tax bill. Without appeals, particularly at the Board of Review, the median commercial bill would have increased roughly 10% from 2023.
+
+*A note about the equalizer*: Our appeals counterfactual experiment does not incorporate the impact of using the tentative equalizer rather than the final equalizer in calculating tax bills in the pre-appeal stage. Arguably the scenario in which pre-appeal values are used should use the tentative equalizer as we typically see a slight increase in the final equalizer once the Board's reductions are considered. The Illinois Department of Revenue (IDOR), who is responsible for calculating the equalizer, argues that the value of the equalizer does not impact tax bills. *However*, it does in fact impact the relative value of most homestead exemptions which are applied as flat reductions to a property's EAV. Because of the nature of most exemptions, impact of a higher equalizer does further shift the burden on to residential PINs. We do not incorporate the impact of the higher final equalizer here due to the challenges of rebuilding the taxing districts' tax base with the tentative equalizer, but we wanted to note it as a point of consideration - in a true and perfect counterfactual, we would likely see a slightly larger increase of residential tax bills in the `board` stage.
+
 
 # Counterfactual scenario
 
-The plot above shows the zero-sum nature of assessment appeals. The large AV decreases for commercial properties in Schaumburg raised the median tax bill for residential property owners. We can test this by holding the assessed value of all commercial properties constant (as if no appeals were granted) and then recalculating tax bills.
+The plot above shows the zero-sum nature of assessment appeals. The large AV decreases for commercial properties in Chicago raised the median tax bill for residential property owners. We can test this by holding the assessed value of all commercial properties constant (as if no appeals were granted) and then recalculating tax bills.
 
 ```{r, warning=FALSE}
 # Again we need to calculate bills at each stage of appeal. This time it's more
@@ -456,10 +459,10 @@ chi_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
   
   # To recalculate the base, we get two distinct sets of differences:
   # 1. Residential PINs act normally, the amount back to the base from each
-  #    PIN is the difference between the stage EAV and the 2019 final EAV
+  #    PIN is the difference between the stage EAV and the 2024 final EAV
   # 2. Commercial PINs are not granted appeals. So the amount back to the base
   #    for all stages is the difference between the initial mailed value (no
-  #    appeals) and the final 2019 value (which contains appeals)
+  #    appeals) and the final 2024 value (which contains appeals)
   chi_pin_diff <- rbind(
     chi_pin_dt_actual %>%
       filter(!substr(class, 1, 1) %in% c("3", "5")) %>%
@@ -584,7 +587,7 @@ chi_cntr_all <- tax_bill(2023, chi_pins$pin) %>%
   bind_rows(chi_cntr_all)
 ```
 
-We again have two sets of bills: real bills from the `mailed` stage, and counterfactual bills from the 2019 `certified` and `board` stages, _as if no commercial appeals were granted_. We can aggregate and index these bills the same way we did previously.
+We again have two sets of bills: real bills from the `mailed` stage, and counterfactual bills from the 2024 `certified` and `board` stages, _as if no commercial appeals were granted_. We can aggregate and index these bills the same way we did previously.
 
 ```{r}
 chi_cntr_summ <- chi_cntr_all %>%
@@ -691,10 +694,13 @@ chi_cntr_plot <- bind_rows(
   ) +
   scale_color_brewer(name = "", palette = "Set1") +
   facet_wrap(vars(type), nrow = 2, ncol = 2, dir = "v") +
-  lims(y = c(0, 50)) +
+  scale_y_continuous(
+    limits = c(0, 50),
+    labels = scales::label_percent(scale = 1)
+  ) +
   labs(
     x = "Stage",
-    y = "Median Value, Indexed to 2018 Board",
+    y = "Median Value, Indexed to 2023 Board",
     caption = "Highlighted stage is a reassessment"
   ) +
   theme_minimal() +
@@ -705,7 +711,7 @@ chi_cntr_plot <- bind_rows(
     axis.text = element_text(size = 11),
     axis.text.x = element_text(color = stage_labs),
     strip.text = element_text(size = 16),
-    strip.background = element_rect(fill = "#c9c9c9"),
+    #strip.background = element_rect(fill = "#c9c9c9"),
     legend.title = element_text(size = 14),
     legend.key.size = unit(24, "points"),
     legend.text = element_text(size = 12),
@@ -721,8 +727,8 @@ chi_cntr_plot <- bind_rows(
 chi_cntr_plot
 ```
 
-Holding commercial appeals constant makes their effect on residential tax bills clearer: large commercial appeals shift the property tax burden back to residential property owners. In the case of Schaumburg, the drop in commercial AVs during the second level of review (at the Board of Review) contributed to a roughly 11% rise in the median residential tax bill.
+Holding commercial appeals constant makes their effect on residential tax bills clearer: large commercial appeals shift the property tax burden back to residential property owners. In the case of Chicago, the drop in commercial AVs during the second level of review (at the Board of Review) contributed to a roughly 9% rise in the median residential tax bill.
 
-Whether or not this is correct is mostly a matter of interpretation. If the Assessor's commercial values are accurate, then the subsequent appeals unjustly shifted tax burden back to residential properties. If the Board of Review's post-appeal values are accurate, then their appeals rightly reversed the unjust increase in commercial tax bills resulting from the 2019 reassessment.
+Whether or not this is correct is mostly a matter of interpretation. If the Assessor's commercial values are accurate, then the subsequent appeals unjustly shifted tax burden back to residential properties. If the Board of Review's post-appeal values are accurate, then their appeals rightly reversed the unjust increase in commercial tax bills resulting from the 2024 reassessment.
 
 PTAXSIM doesn't offer a definitive answer or make any normative claims, but it's an incredibly useful tool for weighing the effects and trade-offs associated with appeals.
