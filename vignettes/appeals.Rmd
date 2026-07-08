@@ -72,7 +72,7 @@ chi_agency_nums <- DBI::dbGetQuery(
   WHERE agency_name LIKE '%CITY OF CHICAGO%'"
 )
 
-chi_agency_nums
+head(chi_agency_nums)
 ```
 
 Here we can see the various taxing bodies associated with the Chicago.  The agency number we want is `030210000` for the municipality, `CITY OF CHICAGO`. With the agency number, we can find all of the *tax codes* that make up the municipality. To do so, we can again query PTAXSIM directly, this time looking in the `tax_code` table:
@@ -196,7 +196,7 @@ chi_pins_av_plot <- ggplot() +
     aes(x = stage, y = perc_change, color = major_class, group = major_class),
     linewidth = 1.1
   ) +
-  scale_color_brewer(name = "", palette = "Set1") +
+  scale_color_manual(name = "", values = c("#29428d", "#ffaf00")) +
   scale_y_continuous(
     limits = c(0, 50),
     labels = scales::label_percent(scale = 1)
@@ -397,7 +397,7 @@ chi_bills_plot <- bind_rows(
     aes(x = stage, y = perc_change, color = major_class, group = major_class),
     linewidth = 1.1
   ) +
-  scale_color_brewer(name = "", palette = "Set1") +
+  scale_color_manual(name = "",  values = c("#29428d", "#ffaf00")) +
    scale_y_continuous(
     limits = c(0, 50),
     labels = scales::label_percent(scale = 1)
@@ -416,7 +416,6 @@ chi_bills_plot <- bind_rows(
     axis.text = element_text(size = 11),
     axis.text.x = element_text(color = stage_labs),
     strip.text = element_text(size = 16),
-    strip.background = element_rect(fill = "#c9c9c9"),
     legend.title = element_text(size = 14),
     legend.key.size = unit(24, "points"),
     legend.text = element_text(size = 12),
@@ -433,9 +432,6 @@ chi_bills_plot
 ```
 
 Overall, post-reassessment appeals in Chicago resulted in a roughly 9% increase in the median residential tax bill and a 5% decrease in the median commercial tax bill. Without appeals, particularly at the Board of Review, the median commercial bill would have increased roughly 10% from 2023.
-
-*A note about the equalizer*: Our appeals counterfactual experiment does not incorporate the impact of using the tentative equalizer rather than the final equalizer in calculating tax bills in the pre-appeal stage. Arguably the scenario in which pre-appeal values are used should use the tentative equalizer as we typically see a slight increase in the final equalizer once the Board's reductions are considered. The Illinois Department of Revenue (IDOR), who is responsible for calculating the equalizer, argues that the value of the equalizer does not impact tax bills. *However*, it does in fact impact the relative value of most homestead exemptions which are applied as flat reductions to a property's EAV. Because of the nature of most exemptions, impact of a higher equalizer does further shift the burden on to residential PINs. We do not incorporate the impact of the higher final equalizer here due to the challenges of rebuilding the taxing districts' tax base with the tentative equalizer, but we wanted to note it as a point of consideration - in a true and perfect counterfactual, we would likely see a slightly larger increase of residential tax bills in the `board` stage.
-
 
 # Counterfactual scenario
 
@@ -692,7 +688,7 @@ chi_cntr_plot <- bind_rows(
     aes(x = stage, y = perc_change, color = major_class, group = major_class),
     linewidth = 1.1
   ) +
-  scale_color_brewer(name = "", palette = "Set1") +
+  scale_color_manual(name = "", values = c("#29428d", "#ffaf00")) +
   facet_wrap(vars(type), nrow = 2, ncol = 2, dir = "v") +
   scale_y_continuous(
     limits = c(0, 50),
