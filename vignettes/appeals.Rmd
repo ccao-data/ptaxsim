@@ -75,7 +75,7 @@ chi_agency_nums <- DBI::dbGetQuery(
 head(chi_agency_nums)
 ```
 
-Here we can see the various taxing bodies associated with the Chicago.  The agency number we want is `030210000` for the municipality, `CITY OF CHICAGO`. With the agency number, we can find all of the *tax codes* that make up the municipality. To do so, we can again query PTAXSIM directly, this time looking in the `tax_code` table:
+Here we can see the various taxing bodies associated with the City of Chicago.  The agency number we want is `030210000` for the municipality, `CITY OF CHICAGO`. With the agency number, we can find all of the *tax codes* that make up the municipality. To do so, we can again query PTAXSIM directly, this time looking in the `tax_code` table:
 
 ```{r}
 chi_tax_codes <- DBI::dbGetQuery(
@@ -723,7 +723,7 @@ chi_cntr_plot <- bind_rows(
 chi_cntr_plot
 ```
 
-Holding commercial appeals constant makes their effect on residential tax bills clearer: large commercial appeals shift the property tax burden back to residential property owners. In the case of Chicago, the drop in commercial AVs during the second level of review (at the Board of Review) contributed to a roughly 9% rise in the median residential tax bill.
+Holding commercial assessments constant makes their effect on residential tax bills clearer: large commercial appeals shift the property tax burden back to residential property owners. In the case of Chicago, the drop in commercial AVs during the second level of review (at the Board of Review) contributed to a roughly 9% rise in the median residential tax bill.
 
 Whether or not this is correct is mostly a matter of interpretation. If the Assessor's commercial values are accurate, then the subsequent appeals unjustly shifted tax burden back to residential properties. If the Board of Review's post-appeal values are accurate, then their appeals rightly reversed the unjust increase in commercial tax bills resulting from the 2024 reassessment.
 
