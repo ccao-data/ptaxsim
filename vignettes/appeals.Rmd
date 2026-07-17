@@ -15,18 +15,18 @@ knitr::opts_chunk$set(
 
 Appeals are a way to contest the assessed value (AV) of a property after it is determined by the Assessor's Office. If an appeal is granted, the property value is lowered and the owner pays taxes on the reduced value. Cook County has three opportunities to appeal, which happen in order:
 
-1. **Assessor's Office**
-2. **Board of Review**
-3. **Property Tax Appeal Board (PTAB) or Circuit Court**
+1.  **Assessor's Office**
+2.  **Board of Review**
+3.  **Property Tax Appeal Board (PTAB) or Circuit Court**
 
 Due to the nature of Cook County's property tax system, appeals are a zero-sum affair: each successful appeal with the Assessor's Office or Board of Review will increase the property tax bill of other property owners. However, measuring this effect is difficult since it requires recalculating tax bills pre- and post-appeal for many properties.
 
 Enter PTAXSIM, which can simulate counterfactual estimated tax bills and contains data on assessed values at each "stage" of appeals. The stages are stored in separate columns of the `pin` table in the PTAXSIM database:
 
-1. **`av_mailed`** - Initial assessed values when mailed to property owners, after Desk Review
-2. **`av_certified`** - Assessed values after Assessor's Office appeals
-3. **`av_board`** - Assessed values after Board of Review appeals
-4. **`av_clerk`** - Final assessed values used by the Clerk and Treasurer to calculate bills. Identical to `av_board` in 99.9% of cases
+1.  **`av_mailed`** - Initial assessed values when mailed to property owners, after Desk Review
+2.  **`av_certified`** - Assessed values after Assessor's Office appeals
+3.  **`av_board`** - Assessed values after Board of Review appeals
+4.  **`av_clerk`** - Final assessed values used by the Clerk and Treasurer to calculate bills. Identical to `av_board` in 99.9% of cases
 
 We can use these values and PTAXSIM's `tax_bill()` function to calculate pre- and post-appeal estimated property tax bills and ultimately determine the impact of appeals. This vignette will cover that process.
 
@@ -44,6 +44,7 @@ library(ggplot2)
 library(ggspatial)
 library(glue)
 library(here)
+library(purrr)
 library(ptaxsim)
 library(sf)
 
@@ -52,10 +53,10 @@ ptaxsim_db_conn <- DBI::dbConnect(RSQLite::SQLite(), here("./ptaxsim.db"))
 
 ```{r, echo=FALSE}
 # This is needed to build the vignette using GitHub Actions
-#ptaxsim_db_conn <- DBI::dbConnect(
- # RSQLite::SQLite(),
-  #Sys.getenv("PTAXSIM_DB_PATH")
-#)
+ptaxsim_db_conn <- DBI::dbConnect(
+  RSQLite::SQLite(),
+  Sys.getenv("PTAXSIM_DB_PATH")
+)
 ```
 
 ## Gathering PINs of interest
@@ -75,7 +76,7 @@ chi_agency_nums <- DBI::dbGetQuery(
 head(chi_agency_nums)
 ```
 
-Here we can see the various taxing bodies associated with the City of Chicago.  The agency number we want is `030210000` for the municipality, `CITY OF CHICAGO`. With the agency number, we can find all of the *tax codes* that make up the municipality. To do so, we can again query PTAXSIM directly, this time looking in the `tax_code` table:
+Here we can see the various taxing bodies associated with the City of Chicago. The agency number we want is `030210000` for the municipality, `CITY OF CHICAGO`. With the agency number, we can find all of the *tax codes* that make up the municipality. To do so, we can again query PTAXSIM directly, this time looking in the `tax_code` table:
 
 ```{r}
 chi_tax_codes <- DBI::dbGetQuery(
@@ -94,7 +95,9 @@ Finally, we can find all of Chicago's PINs with one last direct query. This time
 chi_pins <- DBI::dbGetQuery(
   ptaxsim_db_conn,
   glue_sql("
-    SELECT pin, class
+    SELECT pin, class,
+    av_certified,
+    av_board
     FROM pin
     WHERE tax_code_num IN ({chi_tax_codes$tax_code_num*})
     AND pin.year = 2024
@@ -122,6 +125,149 @@ chi_pins <- chi_pins %>%
   left_join(chi_tif_pins)
 
 ```
+
+## Mapping Chicago
+
+We can query the `pin_geometry` table from PTAXSIM's SQLite database or use the use the `lookup_pin10() function in order to map Chicago's parcels by their major class codes.
+
+*Mapping all Chicago parcels is a memory intensive job, so we created the map with a simple python script which has proven to be more efficient at mapping large quantities of data. That code can be viewed below.*
+
+<details>
+
+<summary><strong>Click here</strong> to show plot code</summary>
+```{python}
+#| eval: false
+#| 
+import sqlite3
+import pandas as pd
+import geopandas as gpd
+from shapely import wkt
+from pathlib import Path
+import contextily as ctx
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+from matplotlib_scalebar.scalebar import ScaleBar
+
+DB_PATH = "/home/user/ptaxsim-2024.0.0.db"
+TAX_YEAR = 2024
+TAX_CODE_PREFIXES = ["70", "71", "72", "73", "74", "75", "76", "77"]
+OUTPUT_DIR = Path("/home/user/output")
+OUTPUT_DIR.mkdir(exist_ok=True)
+
+def classify_property(class_code):
+    if pd.isna(class_code):
+        return "Other"
+    first = str(class_code).strip()[0]
+    return {
+        "0": "Other",
+        "1": "Other",
+        "2": "Residential",
+        "3": "Commercial",
+        "4": "Other",
+        "5": "Commercial",
+        "6": "Other",
+        "7": "Other",
+        "8": "Other",
+        "9": "Other"
+    }.get(first, "Other")
+
+color_map = {
+    "Residential": "#e07b7b",
+    "Commercial": "#7bafd4",
+    "Other": "#90c490"
+}
+
+conn = sqlite3.connect(DB_PATH)
+prefix_list = "','".join(TAX_CODE_PREFIXES)
+
+print("Loading PINs...")
+pins = pd.read_sql(f"""
+    SELECT pin, tax_code_num, class
+    FROM pin
+    WHERE year = {TAX_YEAR}
+    AND substr(tax_code_num, 1, 2) IN ('{prefix_list}')
+""", conn)
+pins["pin10"] = pins["pin"].str[:10]
+pins["property_type"] = pins["class"].apply(classify_property)
+
+# Deduplicate to one row per pin10
+pins_deduped = pins.groupby("pin10").agg(
+    property_type=("property_type", "first")
+).reset_index()
+
+print("Loading geometries...")
+pin10_list = "','".join(pins["pin10"].unique())
+geo = pd.read_sql(f"""
+    SELECT pin10, geometry
+    FROM pin_geometry_raw
+    WHERE pin10 IN ('{pin10_list}')
+    AND start_year <= {TAX_YEAR}
+    AND end_year >= {TAX_YEAR}
+""", conn)
+conn.close()
+
+merged = geo.merge(pins_deduped, on="pin10", how="inner")
+merged["geometry"] = merged["geometry"].apply(wkt.loads)
+gdf = gpd.GeoDataFrame(merged, geometry="geometry", crs="EPSG:4326")
+gdf["geometry"] = gdf.geometry.buffer(0)
+
+# Reproject to Illinois State Plane for accurate scale bar
+gdf = gdf.to_crs("EPSG:26971")
+
+# Fix invalid geometries again after reprojection
+gdf["geometry"] = gdf.geometry.buffer(0)
+
+# Township boundary outline
+boundary = gdf.dissolve().boundary
+
+# Map each parcel to its color
+gdf["color"] = gdf["property_type"].map(color_map)
+
+print("Plotting...")
+# Get the aspect ratio from your data bounds
+minx, miny, maxx, maxy = gdf.total_bounds
+aspect = (maxy - miny) / (maxx - minx)
+fig_width = 12
+fig_height = fig_width * aspect
+
+fig, ax = plt.subplots(1, 1, figsize=(fig_width, fig_height))
+
+# Plot each property type separately so legend works cleanly
+for ptype, color in color_map.items():
+    subset = gdf[gdf["property_type"] == ptype]
+    if len(subset) > 0:
+        subset.plot(ax=ax, color=color, linewidth=0.1, edgecolor=color, alpha=0.8)
+
+# Township boundary
+boundary.plot(ax=ax, color="black", linewidth=0.06)
+
+# Add background basemap to the image
+ctx.add_basemap(
+    ax,
+    crs=gdf.crs.to_string(),
+    source=ctx.providers.CartoDB.Positron,
+    alpha=0.5
+)
+
+# Legend
+patches = [mpatches.Patch(color=color, label=ptype) for ptype, color in color_map.items()]
+ax.legend(handles=patches, loc="lower center", ncol=3, fontsize=11,
+          bbox_to_anchor=(0.5, -0.03), frameon=False, markerscale=2)
+
+# Remove axis labels 
+ax.set_axis_off()
+
+# Save map to specified path
+out_path = OUTPUT_DIR / f"map_property_types_static_{TAX_YEAR}.png"
+plt.savefig(out_path, dpi=150, bbox_inches="tight", pad_inches=0)
+print(f"Saved {out_path}")
+```
+</details>
+<br>
+
+![](images/chi_parcel_class_map.png)
+
+
 
 ## Appeals' impact on AVs
 
@@ -282,7 +428,7 @@ chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
         # Scenario 1: If both stage and actual EAV exceed the PIN's frozen EAV
         # then the extra pre-appeal reduction EAV gets diverted to the TIF
         taxable_eav > pin_frozen_eav &
-          pin_frozen_eav < taxable_stage_eav ~ 0, 
+          taxable_stage_eav > pin_frozen_eav  ~ 0, 
         # Scenario 2: If the actual EAV is less than the frozen EAV and
         # pre-appeal stage EAV is greater than frozen EAV, the diff between
         # actual EAV and frozen EAV is added into the tax base
@@ -303,7 +449,7 @@ chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
     mutate(tif_pin_share = pin_stage_increment / taxable_stage_eav) %>%
     select(pin, tif_pin_share)
     
-  # Aggregate the EAV diff by tax code to which will enable joining to 
+  # Aggregate the EAV diff by tax code which will enable joining to 
   # tax district data
   chi_tax_code_diff <- chi_pin_diff %>%
     group_by(year, tax_code) %>%
@@ -506,15 +652,6 @@ chi_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
       left_join(chi_pins) %>%
     mutate(
       tax_code = lookup_tax_code(2024, pin),
-      exe_total = rowSums(across(starts_with("exe_"))),
-      # We want to first calculate taxable EAV which is EAV minus exemptions.
-      # The stage taxable EAV should be the same as the actual taxable EAV
-      # if the PIN received a senior freeze exemption
-      taxable_eav = eav - exe_total,
-      taxable_stage_eav = ifelse(  
-      exe_freeze > 0,
-        eav - exe_total,
-        stage_eav - exe_total),
       # We need to consider if a PIN is in a TIF to determine if any pre-appeal
       # EAV will be added to the tax base or diverted to the TIF increment
       eav_diff = case_when(
@@ -583,7 +720,7 @@ chi_cntr_all <- tax_bill(2023, chi_pins$pin) %>%
   bind_rows(chi_cntr_all)
 ```
 
-We again have two sets of bills: real bills from the `mailed` stage, and counterfactual bills from the 2024 `certified` and `board` stages, _as if no commercial appeals were granted_. We can aggregate and index these bills the same way we did previously.
+We again have two sets of bills: real bills from the `mailed` stage, and counterfactual bills from the 2024 `certified` and `board` stages, *as if no commercial appeals were granted*. We can aggregate and index these bills the same way we did previously.
 
 ```{r}
 chi_cntr_summ <- chi_cntr_all %>%
