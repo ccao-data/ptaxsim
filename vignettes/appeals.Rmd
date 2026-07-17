@@ -267,7 +267,7 @@ print(f"Saved {out_path}")
 
 ![](images/chi_parcel_class_map.png)
 
-
+The map illustrates that geographically, most of Chicago's parcels are residential, with commercial and other property classes concentrated downtown and along various commercial corridors. 
 
 ## Appeals' impact on AVs
 
