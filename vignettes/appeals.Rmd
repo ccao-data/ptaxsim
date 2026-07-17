@@ -135,9 +135,7 @@ We can query the `pin_geometry` table from PTAXSIM's SQLite database or use the 
 <details>
 
 <summary><strong>Click here</strong> to show plot code</summary>
-```{python}
-#| eval: false
-#| 
+```{python, eval = FALSE}
 import sqlite3
 import pandas as pd
 import geopandas as gpd
@@ -311,7 +309,8 @@ chi_pins_summ <- chi_pins_all %>%
         "2024\ncertified", "2024\nboard"
       )
     ),
-    perc_change = (med_av - med_av[stage == "2023\nboard"])/med_av[stage == "2023\nboard"] *100
+    perc_change = (med_av - med_av[stage == "2023\nboard"])/
+      med_av[stage == "2023\nboard"] *100
   )
 ```
 
@@ -518,7 +517,8 @@ chi_bills_summ <- chi_bills_all %>%
         "2024\ncertified", "2024\nboard"
       )
     ),
-    perc_change = (med_bill - med_bill[stage == "2023\nboard"])/med_bill[stage == "2023\nboard"] *100
+    perc_change = (med_bill - med_bill[stage == "2023\nboard"])/
+      med_bill[stage == "2023\nboard"] *100
   )
 ```
 
@@ -652,6 +652,11 @@ chi_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
       left_join(chi_pins) %>%
     mutate(
       tax_code = lookup_tax_code(2024, pin),
+      exe_total = rowSums(across(starts_with("exe_"))),
+      # Because commercial parcels are not eligible for homestead exemptions
+      # taxable_eav is the same as eav
+      taxable_eav = eav,
+      taxable_stage_eav = stage_eav,
       # We need to consider if a PIN is in a TIF to determine if any pre-appeal
       # EAV will be added to the tax base or diverted to the TIF increment
       eav_diff = case_when(
@@ -748,7 +753,8 @@ chi_cntr_summ <- chi_cntr_all %>%
         "2024\ncertified", "2024\nboard"
       )
     ),
-    perc_change = (med_bill - med_bill[stage == "2023\nboard"])/med_bill[stage == "2023\nboard"] *100
+    perc_change = (med_bill - med_bill[stage == "2023\nboard"])/
+      med_bill[stage == "2023\nboard"] *100
   )
 ```
 
@@ -804,7 +810,8 @@ chi_pins_summ_no_app <- chi_pins_no_app %>%
         "2024\ncertified", "2024\nboard"
       )
     ),
-    perc_change = (med_av - med_av[stage == "2023\nboard"])/med_av[stage == "2023\nboard"] *100
+    perc_change = (med_av - med_av[stage == "2023\nboard"])/
+      med_av[stage == "2023\nboard"] *100
   )
 
 chi_cntr_plot <- bind_rows(
