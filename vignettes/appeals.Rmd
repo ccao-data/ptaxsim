@@ -135,7 +135,7 @@ We can query the `pin_geometry` table from PTAXSIM's SQLite database or use the 
 <details>
 
 <summary><strong>Click here</strong> to show plot code</summary>
-```{python, eval = FALSE}
+```{python, eval = FALSE, python.reticulate = FALSE}
 import sqlite3
 import pandas as pd
 import geopandas as gpd
@@ -309,8 +309,8 @@ chi_pins_summ <- chi_pins_all %>%
         "2024\ncertified", "2024\nboard"
       )
     ),
-    perc_change = (med_av - med_av[stage == "2023\nboard"])/
-      med_av[stage == "2023\nboard"] *100
+    perc_change = (med_av - med_av[stage == "2023\nboard"]) /
+      med_av[stage == "2023\nboard"] * 100
   )
 ```
 
@@ -392,10 +392,10 @@ chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
     2024,
     chi_pins$pin,
     stage = x
-    ) 
-  
-  # We need to calculate the new taxable EAV for each PIN at the various 
-  # stages. Changes to AV impacts the TIF share for PINs in TIFs, as well 
+    )
+
+  # We need to calculate the new taxable EAV for each PIN at the various
+  # stages. Changes to AV impacts the TIF share for PINs in TIFs, as well
   # as the senior freeze exemption amount for PINs with that exemption.
 
   # The base of each district in the included PTAXSIM data is based on 2024
@@ -417,7 +417,7 @@ chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
       # The stage taxable EAV should be the same as the actual taxable EAV
       # if the PIN received a senior freeze exemption
       taxable_eav = eav - exe_total,
-      taxable_stage_eav = ifelse(  
+      taxable_stage_eav = ifelse( 
       exe_freeze > 0,
         eav - exe_total,
         stage_eav - exe_total),
@@ -427,7 +427,7 @@ chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
         # Scenario 1: If both stage and actual EAV exceed the PIN's frozen EAV
         # then the extra pre-appeal reduction EAV gets diverted to the TIF
         taxable_eav > pin_frozen_eav &
-          taxable_stage_eav > pin_frozen_eav  ~ 0, 
+          taxable_stage_eav > pin_frozen_eav  ~ 0,
         # Scenario 2: If the actual EAV is less than the frozen EAV and
         # pre-appeal stage EAV is greater than frozen EAV, the diff between
         # actual EAV and frozen EAV is added into the tax base
@@ -442,12 +442,12 @@ chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
         pin_frozen_eav < taxable_stage_eav,
         taxable_stage_eav - pin_frozen_eav,
         0))
-  
+
   # Calculate each TIF PIN's TIF share for the stages
   tif_stage_share <- chi_pin_diff %>%
     mutate(tif_pin_share = pin_stage_increment / taxable_stage_eav) %>%
     select(pin, tif_pin_share)
-    
+  
   # Aggregate the EAV diff by tax code which will enable joining to 
   # tax district data
   chi_tax_code_diff <- chi_pin_diff %>%
@@ -517,8 +517,8 @@ chi_bills_summ <- chi_bills_all %>%
         "2024\ncertified", "2024\nboard"
       )
     ),
-    perc_change = (med_bill - med_bill[stage == "2023\nboard"])/
-      med_bill[stage == "2023\nboard"] *100
+    perc_change = (med_bill - med_bill[stage == "2023\nboard"]) /
+      med_bill[stage == "2023\nboard"] * 100
   )
 ```
 
@@ -663,7 +663,7 @@ chi_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
         # Scenario 1: If both stage and actual EAV exceed the PIN's frozen EAV
         # then the extra pre-appeal reduction EAV gets diverted to the TIF
         taxable_eav > pin_frozen_eav &
-          pin_frozen_eav < taxable_stage_eav ~ 0, 
+          pin_frozen_eav < taxable_stage_eav ~ 0,
         # Scenario 2: If the actual EAV is less than the frozen EAV and
         # pre-appeal stage EAV is greater than frozen EAV, the diff between
         # actual EAV and frozen EAV is added into the tax base
@@ -753,8 +753,8 @@ chi_cntr_summ <- chi_cntr_all %>%
         "2024\ncertified", "2024\nboard"
       )
     ),
-    perc_change = (med_bill - med_bill[stage == "2023\nboard"])/
-      med_bill[stage == "2023\nboard"] *100
+    perc_change = (med_bill - med_bill[stage == "2023\nboard"]) /
+      med_bill[stage == "2023\nboard"] * 100
   )
 ```
 
@@ -810,8 +810,8 @@ chi_pins_summ_no_app <- chi_pins_no_app %>%
         "2024\ncertified", "2024\nboard"
       )
     ),
-    perc_change = (med_av - med_av[stage == "2023\nboard"])/
-      med_av[stage == "2023\nboard"] *100
+    perc_change = (med_av - med_av[stage == "2023\nboard"]) /
+      med_av[stage == "2023\nboard"] * 100
   )
 
 chi_cntr_plot <- bind_rows(
