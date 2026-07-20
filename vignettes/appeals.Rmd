@@ -417,7 +417,7 @@ chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
       # The stage taxable EAV should be the same as the actual taxable EAV
       # if the PIN received a senior freeze exemption
       taxable_eav = eav - exe_total,
-      taxable_stage_eav = ifelse( 
+      taxable_stage_eav = ifelse(
       exe_freeze > 0,
         eav - exe_total,
         stage_eav - exe_total),
@@ -447,8 +447,8 @@ chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
   tif_stage_share <- chi_pin_diff %>%
     mutate(tif_pin_share = pin_stage_increment / taxable_stage_eav) %>%
     select(pin, tif_pin_share)
-  
-  # Aggregate the EAV diff by tax code which will enable joining to 
+
+  # Aggregate the EAV diff by tax code which will enable joining to
   # tax district data
   chi_tax_code_diff <- chi_pin_diff %>%
     group_by(year, tax_code) %>%
@@ -598,7 +598,7 @@ chi_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
     chi_pins$pin,
     stage = x
     )
-  
+
   # To recalculate the base, we get two distinct sets of differences:
   # 1. Residential PINs act normally, the amount back to the base from each
   #    PIN is the difference between the stage EAV and the 2024 final EAV
@@ -621,7 +621,7 @@ chi_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
       # The stage taxable EAV should be the same as the actual taxable EAV
       # if the PIN received a senior freeze exemption
       taxable_eav = eav - exe_total,
-      taxable_stage_eav = ifelse(  
+      taxable_stage_eav = ifelse(
       exe_freeze > 0,
         eav - exe_total,
         stage_eav - exe_total),
@@ -631,7 +631,7 @@ chi_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
         # Scenario 1: If both stage and actual EAV exceed the PIN's frozen EAV
         # then the extra pre-appeal reduction EAV gets diverted to the TIF
         taxable_eav > pin_frozen_eav &
-          pin_frozen_eav < taxable_stage_eav ~ 0, 
+          pin_frozen_eav < taxable_stage_eav ~ 0,
         # Scenario 2: If the actual EAV is less than the frozen EAV and
         # pre-appeal stage EAV is greater than frozen EAV, the diff between
         # actual EAV and frozen EAV is added into the tax base
@@ -674,8 +674,8 @@ chi_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
         pin_frozen_eav > taxable_stage_eav ~ taxable_stage_eav - taxable_eav,
         # For all of the non-TIF PINs, calculate the EAV diff
         TRUE ~ taxable_stage_eav - taxable_eav)))
-      
-  # Aggregate the EAV diff by tax code to which will enable joining to 
+
+  # Aggregate the EAV diff by tax code to which will enable joining to
   # tax district data
   chi_tax_code_diff <- chi_pin_diff %>%
     group_by(year, tax_code) %>%
