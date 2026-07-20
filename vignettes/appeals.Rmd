@@ -630,7 +630,7 @@ chi_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
           stage_eav - exe_total
         ),
         # We need to consider if a PIN is in a TIF to determine if any
-        # pre-appeal EAV will be added to the tax base or diverted to the 
+        # pre-appeal EAV will be added to the tax base or diverted to the
         # TIF increment
         eav_diff = case_when(
           # Scenario 1: If both stage and actual EAV exceed the PIN's frozen EAV
@@ -664,8 +664,8 @@ chi_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
         # taxable_eav is the same as eav
         taxable_eav = eav,
         taxable_stage_eav = stage_eav,
-        # We need to consider if a PIN is in a TIF to determine if any 
-        # pre-appeal EAV will be added to the tax base or diverted to the 
+        # We need to consider if a PIN is in a TIF to determine if any
+        # pre-appeal EAV will be added to the tax base or diverted to the
         # TIF increment
         eav_diff = case_when(
           # Scenario 1: If both stage and actual EAV exceed the PIN's frozen EAV
