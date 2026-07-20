@@ -123,7 +123,6 @@ chi_tif_pins <- DBI::dbGetQuery(
 
 chi_pins <- chi_pins %>%
   left_join(chi_tif_pins)
-
 ```
 
 ## Mapping Chicago
@@ -392,7 +391,7 @@ chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
     2024,
     chi_pins$pin,
     stage = x
-    )
+  )
 
   # We need to calculate the new taxable EAV for each PIN at the various
   # stages. Changes to AV impacts the TIF share for PINs in TIFs, as well
@@ -418,30 +417,34 @@ chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
       # if the PIN received a senior freeze exemption
       taxable_eav = eav - exe_total,
       taxable_stage_eav = ifelse(
-      exe_freeze > 0,
+        exe_freeze > 0,
         eav - exe_total,
-        stage_eav - exe_total),
+        stage_eav - exe_total
+      ),
       # We need to consider if a PIN is in a TIF to determine if any pre-appeal
       # EAV will be added to the tax base or diverted to the TIF increment
       eav_diff = case_when(
         # Scenario 1: If both stage and actual EAV exceed the PIN's frozen EAV
         # then the extra pre-appeal reduction EAV gets diverted to the TIF
         taxable_eav > pin_frozen_eav &
-          taxable_stage_eav > pin_frozen_eav  ~ 0,
+          taxable_stage_eav > pin_frozen_eav ~ 0,
         # Scenario 2: If the actual EAV is less than the frozen EAV and
         # pre-appeal stage EAV is greater than frozen EAV, the diff between
         # actual EAV and frozen EAV is added into the tax base
-          taxable_eav < pin_frozen_eav &
+        taxable_eav < pin_frozen_eav &
           taxable_stage_eav > pin_frozen_eav ~ pin_frozen_eav - taxable_eav,
         # Scenario 3: If the pre-appeal stage is less than the frozen EAV
         # all of the EAV diff is added to the tax base.
         pin_frozen_eav > taxable_stage_eav ~ taxable_stage_eav - taxable_eav,
         # For all of the non-TIF PINs, calculate the EAV diff
-        TRUE ~ taxable_stage_eav - taxable_eav),
+        TRUE ~ taxable_stage_eav - taxable_eav
+      ),
       pin_stage_increment = ifelse(
         pin_frozen_eav < taxable_stage_eav,
         taxable_stage_eav - pin_frozen_eav,
-        0))
+        0
+      )
+    )
 
   # Calculate each TIF PIN's TIF share for the stages
   tif_stage_share <- chi_pin_diff %>%
@@ -474,7 +477,7 @@ chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
     as.data.table() %>%
     setkey(year, tax_code, agency_num)
 
-tax_bill(
+  tax_bill(
     2024,
     chi_pin_dt_stage$pin,
     pin_dt = chi_pin_dt_stage,
@@ -543,8 +546,8 @@ chi_bills_plot <- bind_rows(
     aes(x = stage, y = perc_change, color = major_class, group = major_class),
     linewidth = 1.1
   ) +
-  scale_color_manual(name = "",  values = c("#29428d", "#ffaf00")) +
-   scale_y_continuous(
+  scale_color_manual(name = "", values = c("#29428d", "#ffaf00")) +
+  scale_y_continuous(
     limits = c(0, 50),
     labels = scales::label_percent(scale = 1)
   ) +
@@ -597,7 +600,7 @@ chi_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
     2024,
     chi_pins$pin,
     stage = x
-    )
+  )
 
   # To recalculate the base, we get two distinct sets of differences:
   # 1. Residential PINs act normally, the amount back to the base from each
@@ -614,34 +617,37 @@ chi_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
         by = c("year", "pin")
       ) %>%
       left_join(chi_pins) %>%
-    mutate(
-      tax_code = lookup_tax_code(2024, pin),
-      exe_total = rowSums(across(starts_with("exe_"))),
-      # We want to first calculate taxable EAV which is EAV minus exemptions.
-      # The stage taxable EAV should be the same as the actual taxable EAV
-      # if the PIN received a senior freeze exemption
-      taxable_eav = eav - exe_total,
-      taxable_stage_eav = ifelse(
-      exe_freeze > 0,
-        eav - exe_total,
-        stage_eav - exe_total),
-      # We need to consider if a PIN is in a TIF to determine if any pre-appeal
-      # EAV will be added to the tax base or diverted to the TIF increment
-      eav_diff = case_when(
-        # Scenario 1: If both stage and actual EAV exceed the PIN's frozen EAV
-        # then the extra pre-appeal reduction EAV gets diverted to the TIF
-        taxable_eav > pin_frozen_eav &
-          pin_frozen_eav < taxable_stage_eav ~ 0,
-        # Scenario 2: If the actual EAV is less than the frozen EAV and
-        # pre-appeal stage EAV is greater than frozen EAV, the diff between
-        # actual EAV and frozen EAV is added into the tax base
+      mutate(
+        tax_code = lookup_tax_code(2024, pin),
+        exe_total = rowSums(across(starts_with("exe_"))),
+        # We want to first calculate taxable EAV which is EAV minus exemptions.
+        # The stage taxable EAV should be the same as the actual taxable EAV
+        # if the PIN received a senior freeze exemption
+        taxable_eav = eav - exe_total,
+        taxable_stage_eav = ifelse(
+          exe_freeze > 0,
+          eav - exe_total,
+          stage_eav - exe_total
+        ),
+        # We need to consider if a PIN is in a TIF to determine if any pre-appeal
+        # EAV will be added to the tax base or diverted to the TIF increment
+        eav_diff = case_when(
+          # Scenario 1: If both stage and actual EAV exceed the PIN's frozen EAV
+          # then the extra pre-appeal reduction EAV gets diverted to the TIF
+          taxable_eav > pin_frozen_eav &
+            pin_frozen_eav < taxable_stage_eav ~ 0,
+          # Scenario 2: If the actual EAV is less than the frozen EAV and
+          # pre-appeal stage EAV is greater than frozen EAV, the diff between
+          # actual EAV and frozen EAV is added into the tax base
           taxable_eav < pin_frozen_eav &
-          taxable_stage_eav > pin_frozen_eav ~ pin_frozen_eav - taxable_eav,
-        # Scenario 3: If the pre-appeal stage is less than the frozen EAV
-        # all of the EAV diff is added to the tax base.
-        pin_frozen_eav > taxable_stage_eav ~ taxable_stage_eav - taxable_eav,
-        # For all of the non-TIF PINs, calculate the EAV diff
-        TRUE ~ taxable_stage_eav - taxable_eav)),
+            taxable_stage_eav > pin_frozen_eav ~ pin_frozen_eav - taxable_eav,
+          # Scenario 3: If the pre-appeal stage is less than the frozen EAV
+          # all of the EAV diff is added to the tax base.
+          pin_frozen_eav > taxable_stage_eav ~ taxable_stage_eav - taxable_eav,
+          # For all of the non-TIF PINs, calculate the EAV diff
+          TRUE ~ taxable_stage_eav - taxable_eav
+        )
+      ),
     chi_pin_dt_actual %>%
       filter(substr(class, 1, 1) %in% c("3", "5")) %>%
       left_join(
@@ -650,30 +656,33 @@ chi_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
         by = c("year", "pin")
       ) %>%
       left_join(chi_pins) %>%
-    mutate(
-      tax_code = lookup_tax_code(2024, pin),
-      exe_total = rowSums(across(starts_with("exe_"))),
-      # Because commercial parcels are not eligible for homestead exemptions
-      # taxable_eav is the same as eav
-      taxable_eav = eav,
-      taxable_stage_eav = stage_eav,
-      # We need to consider if a PIN is in a TIF to determine if any pre-appeal
-      # EAV will be added to the tax base or diverted to the TIF increment
-      eav_diff = case_when(
-        # Scenario 1: If both stage and actual EAV exceed the PIN's frozen EAV
-        # then the extra pre-appeal reduction EAV gets diverted to the TIF
-        taxable_eav > pin_frozen_eav &
-          pin_frozen_eav < taxable_stage_eav ~ 0,
-        # Scenario 2: If the actual EAV is less than the frozen EAV and
-        # pre-appeal stage EAV is greater than frozen EAV, the diff between
-        # actual EAV and frozen EAV is added into the tax base
+      mutate(
+        tax_code = lookup_tax_code(2024, pin),
+        exe_total = rowSums(across(starts_with("exe_"))),
+        # Because commercial parcels are not eligible for homestead exemptions
+        # taxable_eav is the same as eav
+        taxable_eav = eav,
+        taxable_stage_eav = stage_eav,
+        # We need to consider if a PIN is in a TIF to determine if any pre-appeal
+        # EAV will be added to the tax base or diverted to the TIF increment
+        eav_diff = case_when(
+          # Scenario 1: If both stage and actual EAV exceed the PIN's frozen EAV
+          # then the extra pre-appeal reduction EAV gets diverted to the TIF
+          taxable_eav > pin_frozen_eav &
+            pin_frozen_eav < taxable_stage_eav ~ 0,
+          # Scenario 2: If the actual EAV is less than the frozen EAV and
+          # pre-appeal stage EAV is greater than frozen EAV, the diff between
+          # actual EAV and frozen EAV is added into the tax base
           taxable_eav < pin_frozen_eav &
-          taxable_stage_eav > pin_frozen_eav ~ pin_frozen_eav - taxable_eav,
-        # Scenario 3: If the pre-appeal stage is less than the frozen EAV
-        # all of the EAV diff is added to the tax base.
-        pin_frozen_eav > taxable_stage_eav ~ taxable_stage_eav - taxable_eav,
-        # For all of the non-TIF PINs, calculate the EAV diff
-        TRUE ~ taxable_stage_eav - taxable_eav)))
+            taxable_stage_eav > pin_frozen_eav ~ pin_frozen_eav - taxable_eav,
+          # Scenario 3: If the pre-appeal stage is less than the frozen EAV
+          # all of the EAV diff is added to the tax base.
+          pin_frozen_eav > taxable_stage_eav ~ taxable_stage_eav - taxable_eav,
+          # For all of the non-TIF PINs, calculate the EAV diff
+          TRUE ~ taxable_stage_eav - taxable_eav
+        )
+      )
+  )
 
   # Aggregate the EAV diff by tax code to which will enable joining to
   # tax district data
@@ -851,7 +860,7 @@ chi_cntr_plot <- bind_rows(
     axis.text = element_text(size = 11),
     axis.text.x = element_text(color = stage_labs),
     strip.text = element_text(size = 16),
-    #strip.background = element_rect(fill = "#c9c9c9"),
+    # strip.background = element_rect(fill = "#c9c9c9"),
     legend.title = element_text(size = 14),
     legend.key.size = unit(24, "points"),
     legend.text = element_text(size = 12),
