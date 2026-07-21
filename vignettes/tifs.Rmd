@@ -148,7 +148,7 @@ bound_tif <- st_read(paste0(
   "data?format=geojson&spatialRefId=4326&where=1%3D1"
 ), quiet = TRUE) %>%
   # Pulled from the table of agency numbers above
-  filter(AGENCY == 031310506)
+  filter(AGENCYNUM == "031310506")
 ```
 
 Finally, we can plot the PINs, municipality boundary, and TIF boundary on a map.
