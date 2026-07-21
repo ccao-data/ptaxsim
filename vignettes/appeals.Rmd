@@ -169,9 +169,9 @@ def classify_property(class_code):
     }.get(first, "Other")
 
 color_map = {
-    "Residential": "#e07b7b",
-    "Commercial": "#7bafd4",
-    "Other": "#90c490"
+    "Residential": "#29428D",
+    "Commercial": "#FFAF00",
+    "Other": "#787878"
 }
 
 conn = sqlite3.connect(DB_PATH)
