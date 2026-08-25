@@ -152,7 +152,9 @@ agency_fund <- map_dfr(file_names, function(file) {
   # Remove duplicate rows included in Clerk report in 2024 for certain
   # bond funds where levy data is empty
   filter(
-    !is.na(levy_plus_loss)
+    !is.na(levy_plus_loss),
+  # Remove rows added in 2025 for ALL FUND TYPES
+    fund_num != "000000"
   )
 
 
@@ -268,6 +270,18 @@ agency <- map_dfr(file_names, function(file) {
     rename_with(~ rep("mchenry_eav", length(.x)), any_of(c(
       "mc_henry_eav",
       "mchency_eav"
+    ))) %>%
+    rename_with(~ rep("agency", length(.x)), any_of(c(
+      "mf_num"
+    ))) %>%
+    rename_with(~ rep("agency_name", length(.x)), any_of(c(
+      "auth_name"
+    ))) %>%
+    rename_with(~ rep("home_rule_ind", length(.x)), any_of(c(
+      "home_rule"
+    ))) %>%
+    rename_with(~ rep("percent_burden", length(.x)), any_of(c(
+      "b"
     ))) %>%
     # Select, order, and rename columns
     select(
