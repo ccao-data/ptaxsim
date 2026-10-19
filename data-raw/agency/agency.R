@@ -384,7 +384,7 @@ agency_2013 <- agency %>%
 agency <- agency %>%
   filter(year != 2013) %>%
   bind_rows(agency_2013) %>%
-  select(-cty_overall_eav) %>%
+  select(-cty_overall_eav, -total_levy_loss) %>%
   arrange(year, agency_num)
 
 
