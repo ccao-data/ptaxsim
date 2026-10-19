@@ -543,15 +543,7 @@ pin_tif_distribution <- map_dfr(pin_dist_file_names_xls, function(file) {
 
   all_tif_pins <- readxl::read_xlsx(file, sheet = 1)
 
-  transit_tif_pins <- readxl::read_xlsx(file, sheet = 2)
-
-  all_tif_pins <- all_tif_pins %>%
-    filter(!TIFPIN %in% transit_tif_pins$TIFPIN)
-
-  df <- bind_rows(all_tif_pins, transit_tif_pins)
-
-
-  df %>%
+  all_tif_pins %>%
     mutate(year = year_ext) %>%
     set_names(snakecase::to_snake_case(names(.))) %>%
     select(
@@ -564,20 +556,9 @@ pin_tif_distribution <- map_dfr(pin_dist_file_names_xls, function(file) {
       pin_frozen_eav = frozen_eav,
       pin_increment_eav = increment_eav,
       pin_revenue = tif_revenue,
-      pin_distribution_pct = pintif,
-      transit_tif_to_cps = cps_transit_tif,
-      transit_tif_to_tif = transit_tif,
-      transit_tif_to_dist = districts_transit_tif
-    ) %>%
-    mutate(
-      is_transit_tif =
-        case_when(
-          !is.na(transit_tif_to_tif) ~
-            TRUE,
-          TRUE ~ FALSE
-        ),
+      pin_distribution_pct = pintif
     )
-})
+  })
 
 # Write to S3
 arrow::write_parquet(
