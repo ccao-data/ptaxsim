@@ -24,8 +24,8 @@ remote_path_pin_geometry_raw <- file.path(
 
 # Start and end years of data to query, inclusive.
 # Set these to the same value if you want to update only one year of data
-start_year <- 2025
-end_year <- 2025
+start_year <- 2024
+end_year <- 2024
 
 
 # pin --------------------------------------------------------------------------
@@ -374,7 +374,9 @@ pin_tax_roll_fill <- pin_tax_roll %>%
   select(-exe_vet_dis, -ends_with("_athena"))
 
 # Join pre- and post-2024 data
-pin <- bind_rows(pin_legacy_fill, pin_tax_roll_fill)
+# ensure duplicate rows are removed
+pin <- bind_rows(pin_legacy_fill, pin_tax_roll_fill) %>%
+  distinct()
 
 # Write to S3
 arrow::write_dataset(

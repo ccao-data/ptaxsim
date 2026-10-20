@@ -37,12 +37,12 @@ db_send_queries <- function(conn, sql) {
 # changes. This is checked against Config/Requires_DB_Version in the DESCRIPTION
 # file via check_db_version(). Schema is:
 # "MAX_YEAR_OF_DATA.MAJOR_VERSION.MINOR_VERSION"
-db_version <- "2024.0.0"
+db_version <- "2025.0.0"
 # Optional pre-release identifier. Informational only, not compared.
 # Set this to an empty string for a public release, or to a string like
 # "alpha.1" for a release candidate. Setting this to a non-empty string will
 # append it to `db_version`, separated by a hyphen
-db_pre_release_version <- ""
+db_pre_release_version <- "alpha.1"
 
 # Set the package version required to use this database. This is checked against
 # Version in the DESCRIPTION file. Basically, we have a two-way check so that
