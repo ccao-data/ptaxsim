@@ -155,7 +155,16 @@ agency_fund <- map_dfr(file_names, function(file) {
     !is.na(levy_plus_loss),
   # Remove rows added in 2025 for ALL FUND TYPES
     fund_num != "000000"
-  )
+  ) %>%
+  # Remove rows that are exact duplicates of (year, agency_num, fund_num)
+  # where all numeric fields are 0 — these are spurious zero-value rows
+  # that duplicate a legitimate non-zero row for the same fund
+  mutate(
+    all_zero = rowSums(across(where(is.numeric)) != 0, na.rm = TRUE) == 0
+  ) %>%
+  add_count(year, agency_num, fund_num, name = "n_dupe_key") %>%
+  filter(!(n_dupe_key > 1 & all_zero)) %>%
+  select(-n_dupe_key, -all_zero)
 
 
 # agency_fund_info -------------------------------------------------------------
@@ -187,12 +196,8 @@ agency_fund_info <- agency_fund %>%
 agency_fund <- agency_fund %>%
   select(-fund_name, -fund_type_num)
 
-# Write the resulting datasets to S3
-arrow::write_parquet(
-  x = agency_fund,
-  sink = remote_path_agency_fund,
-  compression = "zstd"
-)
+# Write the resulting agency_fund_info to S3
+# We will write agency_fund to s3 after agency is finalized
 arrow::write_parquet(
   x = agency_fund_info,
   sink = remote_path_agency_fund_info,
@@ -387,6 +392,18 @@ agency <- agency %>%
   select(-cty_overall_eav, -total_levy_loss) %>%
   arrange(year, agency_num)
 
+# Remove any agency_fund rows that don't have a matching (year, agency_num)
+# in the agency table, to avoid FOREIGN KEY constraint failures when loading
+# into the PTAXSIM SQLite database
+agency_fund <- agency_fund %>%
+  semi_join(agency, by = c("year", "agency_num"))
+
+# Write agency_fund now that it's been filtered against the final agency table
+arrow::write_parquet(
+  x = agency_fund,
+  sink = remote_path_agency_fund,
+  compression = "zstd"
+)
 
 # agency_info ------------------------------------------------------------------
 
