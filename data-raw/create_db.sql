@@ -269,13 +269,8 @@ CREATE TABLE pin_tif_distribution (
     pin_revenue             double   CHECK(pin_revenue >= 0)           NOT NULL,
     pin_increment_eav       int      CHECK(pin_increment_eav >= 0)     NOT NULL,
     pin_distribution_pct    double   CHECK(pin_distribution_pct >= 0)  NOT NULL,
-    transit_tif_to_cps      double   CHECK(transit_tif_to_cps >= 0)            ,
-    transit_tif_to_tif      double   CHECK(transit_tif_to_tif >= 0)            ,
-    transit_tif_to_dist     double   CHECK(transit_tif_to_dist >= 0)           ,
-    is_transit_tif          boolean                                    NOT NULL,
     PRIMARY KEY (year, pin, agency_num)
-    FOREIGN KEY (year, agency_num) REFERENCES tif_crosswalk(year, agency_num_dist)
-) WITHOUT ROWID;
+   ) WITHOUT ROWID;
 
 CREATE INDEX ix_pin_tif_distribution_year ON pin_tif_distribution(year);
 CREATE INDEX ix_pin_tif_distribution_agency_num ON pin_tif_distribution(agency_num);
