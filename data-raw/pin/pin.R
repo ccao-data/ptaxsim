@@ -24,8 +24,8 @@ remote_path_pin_geometry_raw <- file.path(
 
 # Start and end years of data to query, inclusive.
 # Set these to the same value if you want to update only one year of data
-start_year <- 2024
-end_year <- 2024
+start_year <- 2025
+end_year <- 2025
 
 
 # pin --------------------------------------------------------------------------
