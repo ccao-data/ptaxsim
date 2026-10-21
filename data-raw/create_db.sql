@@ -237,7 +237,7 @@ CREATE TABLE tif_distribution (
     year                    int                                        NOT NULL,
     agency_num              varchar(9)                                 NOT NULL,
     tax_code_num            varchar(5)                                 NOT NULL,
-    tax_code_rate           double   CHECK(tax_code_rate >= 0)         NOT NULL,
+    tax_code_rate           double   CHECK(tax_code_rate >= 0)                 ,
     tax_code_eav            bigint   CHECK(tax_code_eav >= 0)          NOT NULL,
     tax_code_frozen_eav     bigint   CHECK(tax_code_frozen_eav >= 0)   NOT NULL,
     tax_code_revenue        bigint   CHECK(tax_code_revenue >= 0)      NOT NULL,
