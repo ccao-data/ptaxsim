@@ -35,7 +35,7 @@ Suggests:
     DT,
     geoarrow,
     ggplot2,
-    ggspatial,
+    ggspatial (>= 1.1.11),
     here,
     jsonlite,
     httr,
