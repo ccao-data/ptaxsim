@@ -152,6 +152,16 @@ TAX_CODE_PREFIXES = ["70", "71", "72", "73", "74", "75", "76", "77"]
 OUTPUT_DIR = Path("/home/user/output")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
+# Basemap tiles from CARTO require an API key
+CARTO_API_KEY = os.environ.get("CARTO_API_KEY")
+if not CARTO_API_KEY:
+    raise RuntimeError(
+        "The CARTO_API_KEY environment variable is not set, but it is "
+        "required to download basemap tiles. Request a free key at "
+        "https://carto.com/basemaps/apikey/ and then set it with "
+        "`export CARTO_API_KEY=<your key>`."
+    )
+
 def classify_property(class_code):
     if pd.isna(class_code):
         return "Other"
@@ -244,7 +254,7 @@ boundary.plot(ax=ax, color="black", linewidth=0.06)
 ctx.add_basemap(
     ax,
     crs=gdf.crs.to_string(),
-    source=ctx.providers.CartoDB.Positron(apikey=os.environ["CARTO_API_KEY"]),
+    source=ctx.providers.CartoDB.Positron(apikey=CARTO_API_KEY),
     alpha=0.5
 )
 
