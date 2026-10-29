@@ -561,7 +561,7 @@ agency_info <- bind_rows(agency_name, tif_name) %>%
         "MUNI", "TIF", "SSA", "GEN ASST", "INFRA"
       ) ~ "MUNICIPALITY/TOWNSHIP",
       mit == "LIBRARY" & str_detect(an, "FUND") ~ "MUNICIPALITY/TOWNSHIP",
-      mit == "HEALTH" & str_detect(an, "EXPANDED") ~ "MISCELLANEOUS",
+      mit == "HEALTH" & str_starts(agency_num, "14") ~ "MISCELLANEOUS",
       mit == "HEALTH" ~ "MUNICIPALITY/TOWNSHIP",
       mit == "LIBRARY" ~ "MISCELLANEOUS"
     ),
