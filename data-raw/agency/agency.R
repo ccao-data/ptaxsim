@@ -152,8 +152,19 @@ agency_fund <- map_dfr(file_names, function(file) {
   # Remove duplicate rows included in Clerk report in 2024 for certain
   # bond funds where levy data is empty
   filter(
-    !is.na(levy_plus_loss)
-  )
+    !is.na(levy_plus_loss),
+    # Remove rows added in 2025 for ALL FUND TYPES
+    fund_num != "000000"
+  ) %>%
+  # Remove rows that are exact duplicates of (year, agency_num, fund_num)
+  # where all numeric fields are 0 — these are spurious zero-value rows
+  # that duplicate a legitimate non-zero row for the same fund
+  mutate(
+    all_zero = rowSums(across(where(is.numeric)) != 0, na.rm = TRUE) == 0
+  ) %>%
+  add_count(year, agency_num, fund_num, name = "n_dupe_key") %>%
+  filter(!(n_dupe_key > 1 & all_zero)) %>%
+  select(-n_dupe_key, -all_zero)
 
 
 # agency_fund_info -------------------------------------------------------------
@@ -185,12 +196,8 @@ agency_fund_info <- agency_fund %>%
 agency_fund <- agency_fund %>%
   select(-fund_name, -fund_type_num)
 
-# Write the resulting datasets to S3
-arrow::write_parquet(
-  x = agency_fund,
-  sink = remote_path_agency_fund,
-  compression = "zstd"
-)
+# Write the resulting agency_fund_info to S3
+# We will write agency_fund to s3 after agency is finalized
 arrow::write_parquet(
   x = agency_fund_info,
   sink = remote_path_agency_fund_info,
@@ -268,6 +275,18 @@ agency <- map_dfr(file_names, function(file) {
     rename_with(~ rep("mchenry_eav", length(.x)), any_of(c(
       "mc_henry_eav",
       "mchency_eav"
+    ))) %>%
+    rename_with(~ rep("agency", length(.x)), any_of(c(
+      "mf_num"
+    ))) %>%
+    rename_with(~ rep("agency_name", length(.x)), any_of(c(
+      "auth_name"
+    ))) %>%
+    rename_with(~ rep("home_rule_ind", length(.x)), any_of(c(
+      "home_rule"
+    ))) %>%
+    rename_with(~ rep("percent_burden", length(.x)), any_of(c(
+      "b"
     ))) %>%
     # Select, order, and rename columns
     select(
@@ -370,9 +389,21 @@ agency_2013 <- agency %>%
 agency <- agency %>%
   filter(year != 2013) %>%
   bind_rows(agency_2013) %>%
-  select(-cty_overall_eav) %>%
+  select(-cty_overall_eav, -total_levy_loss) %>%
   arrange(year, agency_num)
 
+# Remove any agency_fund rows that don't have a matching (year, agency_num)
+# in the agency table, to avoid FOREIGN KEY constraint failures when loading
+# into the PTAXSIM SQLite database
+agency_fund <- agency_fund %>%
+  semi_join(agency, by = c("year", "agency_num"))
+
+# Write agency_fund now that it's been filtered against the final agency table
+arrow::write_parquet(
+  x = agency_fund,
+  sink = remote_path_agency_fund,
+  compression = "zstd"
+)
 
 # agency_info ------------------------------------------------------------------
 
@@ -530,7 +561,7 @@ agency_info <- bind_rows(agency_name, tif_name) %>%
         "MUNI", "TIF", "SSA", "GEN ASST", "INFRA"
       ) ~ "MUNICIPALITY/TOWNSHIP",
       mit == "LIBRARY" & str_detect(an, "FUND") ~ "MUNICIPALITY/TOWNSHIP",
-      mit == "HEALTH" & str_detect(an, "EXPANDED") ~ "MISCELLANEOUS",
+      mit == "HEALTH" & str_starts(agency_num, "14") ~ "MISCELLANEOUS",
       mit == "HEALTH" ~ "MUNICIPALITY/TOWNSHIP",
       mit == "LIBRARY" ~ "MISCELLANEOUS"
     ),

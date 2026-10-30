@@ -24,8 +24,8 @@ remote_path_pin_geometry_raw <- file.path(
 
 # Start and end years of data to query, inclusive.
 # Set these to the same value if you want to update only one year of data
-start_year <- 2006
-end_year <- 2024
+start_year <- 2025
+end_year <- 2025
 
 
 # pin --------------------------------------------------------------------------
@@ -169,7 +169,7 @@ pin_exe_vetdis_athena <- dbGetQuery(
       'exe_wwii'
     )
     AND COALESCE(exemption_amount, 0) > 0
-    AND year >= '2024'
+    AND year >= '{start_year}'
     AND year <= '{end_year}'
   ", .con = ccaoathena),
 ) %>%
@@ -255,9 +255,12 @@ pin_tax_roll <- map_dfr(pin_tax_roll_csv_files$Key, \(f) {
     ) %>%
     # Drop some fields that are only present post-2024
     select(
-      -tax_rate, -equalized_assessed_value, -tax_billed_1, -tax_billed_2
+      -tax_rate, -equalized_assessed_value, -tax_billed_1, -tax_billed_2,
+      -ends_with("_flag")
     ) %>%
-    arrange(year, pin, desc(av_clerk))
+    arrange(year, pin, desc(av_clerk)) %>%
+    # Limit to the years between the start and end years defined
+    filter(year >= start_year & year <= end_year)
 })
 
 # Fill missing values in the legacy (pre-2023) PIN data with values from Athena
@@ -371,7 +374,9 @@ pin_tax_roll_fill <- pin_tax_roll %>%
   select(-exe_vet_dis, -ends_with("_athena"))
 
 # Join pre- and post-2024 data
-pin <- bind_rows(pin_legacy_fill, pin_tax_roll_fill)
+# ensure duplicate rows are removed
+pin <- bind_rows(pin_legacy_fill, pin_tax_roll_fill) %>%
+  distinct()
 
 # Write to S3
 arrow::write_dataset(
