@@ -153,7 +153,7 @@ agency_fund <- map_dfr(file_names, function(file) {
   # bond funds where levy data is empty
   filter(
     !is.na(levy_plus_loss),
-  # Remove rows added in 2025 for ALL FUND TYPES
+    # Remove rows added in 2025 for ALL FUND TYPES
     fund_num != "000000"
   ) %>%
   # Remove rows that are exact duplicates of (year, agency_num, fund_num)
