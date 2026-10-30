@@ -135,6 +135,7 @@ We can query the `pin_geometry` table from PTAXSIM's SQLite database or use the 
 
 <summary><strong>Click here</strong> to show plot code</summary>
 ```{python, eval = FALSE, python.reticulate = FALSE}
+import os
 import sqlite3
 import pandas as pd
 import geopandas as gpd
@@ -150,6 +151,16 @@ TAX_YEAR = 2024
 TAX_CODE_PREFIXES = ["70", "71", "72", "73", "74", "75", "76", "77"]
 OUTPUT_DIR = Path("/home/user/output")
 OUTPUT_DIR.mkdir(exist_ok=True)
+
+# Basemap tiles from CARTO require an API key
+CARTO_API_KEY = os.environ.get("CARTO_API_KEY")
+if not CARTO_API_KEY:
+    raise RuntimeError(
+        "The CARTO_API_KEY environment variable is not set, but it is "
+        "required to download basemap tiles. Request a free key at "
+        "https://carto.com/basemaps/apikey/ and then set it with "
+        "`export CARTO_API_KEY=<your key>`."
+    )
 
 def classify_property(class_code):
     if pd.isna(class_code):
@@ -238,11 +249,12 @@ for ptype, color in color_map.items():
 # Township boundary
 boundary.plot(ax=ax, color="black", linewidth=0.06)
 
-# Add background basemap to the image
+# Add background basemap to the image. CARTO requires an API key, which
+# requires xyzservices >= 2026.9.0
 ctx.add_basemap(
     ax,
     crs=gdf.crs.to_string(),
-    source=ctx.providers.CartoDB.Positron,
+    source=ctx.providers.CartoDB.Positron(apikey=CARTO_API_KEY),
     alpha=0.5
 )
 
