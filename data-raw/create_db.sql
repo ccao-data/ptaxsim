@@ -20,7 +20,7 @@ CREATE TABLE agency (
     pct_burden              double   CHECK((pct_burden >= 0
                                      AND   pct_burden <= 1)
                                   AND (year >= 2024 OR pct_burden IS NOT NULL)),
-    total_levy              bigint   CHECK(total_levy >= 0)                    ,
+    total_levy              bigint   CHECK(total_levy >= 0)            NOT NULL,
     total_max_levy          bigint   CHECK(total_max_levy >= 0)        NOT NULL,
     total_prelim_rate       double   CHECK(total_prelim_rate >= 0)     NOT NULL,
     total_final_levy        bigint   CHECK(total_final_levy >= 0)      NOT NULL,
