@@ -395,9 +395,38 @@ agency <- agency %>%
   select(-cty_overall_eav) %>%
   arrange(year, agency_num)
 
+# Agencies whose agency_fund rows are known to have no matching (year,
+# agency_num) in the agency table. These are dropped without a warning
+known_unmatched_agencies <- c(
+  "020090003",
+  "020220002",
+  "020290003",
+  "030210001",
+  "050200001"
+
+)
+
 # Remove any agency_fund rows that don't have a matching (year, agency_num)
 # in the agency table, to avoid FOREIGN KEY constraint failures when loading
-# into the PTAXSIM SQLite database
+# into the PTAXSIM SQLite database. 
+unexpected_unmatched <- agency_fund %>%
+  anti_join(agency, by = c("year", "agency_num")) %>%
+  filter(!agency_num %in% known_unmatched_agencies) %>%
+  distinct(year, agency_num)
+
+if (nrow(unexpected_unmatched) > 0) {
+  unexpected_keys <- paste0(
+    unexpected_unmatched$agency_num, " (", unexpected_unmatched$year, ")"
+  )
+  warning(
+    nrow(unexpected_unmatched), " unexpected agency-year(s) in agency_fund ",
+    "have no matching row in agency and will be removed: ",
+    paste(head(unexpected_keys, 20), collapse = ", "),
+    if (length(unexpected_keys) > 20) ", ..." else "",
+    call. = FALSE
+  )
+}
+
 agency_fund <- agency_fund %>%
   semi_join(agency, by = c("year", "agency_num"))
 
