@@ -288,7 +288,7 @@ agency <- map_dfr(file_names, function(file) {
     rename_with(~ rep("percent_burden", length(.x)), any_of(c(
       "b"
     ))) %>%
-      rename_with(~ rep("grand_total_levy", length(.x)), any_of(c(
+    rename_with(~ rep("grand_total_levy", length(.x)), any_of(c(
       "grand_total_levy_loss"
     ))) %>%
     # Select, order, and rename columns
