@@ -263,6 +263,10 @@ pin_tax_roll <- map_dfr(pin_tax_roll_csv_files$Key, \(f) {
     filter(year >= start_year & year <= end_year)
 })
 
+# In 2025, class 0 was replaced by 000 - we wil coerce all 000 values to 0 for consistency with the legacy data 
+pin_tax_roll <-pin_tax_roll %>%
+  mutate(class = replace(class, class == "000", "0")) 
+
 # Fill missing values in the legacy (pre-2023) PIN data with values from Athena
 pin_legacy_fill <- pin_legacy %>%
   # There are a few (less than 100) rows with Clerk AVs split for the same PIN.
