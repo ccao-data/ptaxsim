@@ -288,6 +288,9 @@ agency <- map_dfr(file_names, function(file) {
     rename_with(~ rep("percent_burden", length(.x)), any_of(c(
       "b"
     ))) %>%
+      rename_with(~ rep("grand_total_levy", length(.x)), any_of(c(
+      "grand_total_levy_loss"
+    ))) %>%
     # Select, order, and rename columns
     select(
       year,
@@ -389,7 +392,7 @@ agency_2013 <- agency %>%
 agency <- agency %>%
   filter(year != 2013) %>%
   bind_rows(agency_2013) %>%
-  select(-cty_overall_eav, -total_levy_loss) %>%
+  select(-cty_overall_eav) %>%
   arrange(year, agency_num)
 
 # Remove any agency_fund rows that don't have a matching (year, agency_num)
