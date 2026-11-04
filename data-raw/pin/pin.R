@@ -263,9 +263,15 @@ pin_tax_roll <- map_dfr(pin_tax_roll_csv_files$Key, \(f) {
     filter(year >= start_year & year <= end_year)
 })
 
-# In 2025, class 0 was replaced by 000 - we wil coerce all 000 values to 0 for consistency with the legacy data 
-pin_tax_roll <-pin_tax_roll %>%
-  mutate(class = replace(class, class == "000", "0")) 
+# In 2025, class 0 was replaced by 000 - we will coerce all 000 values to 0 for
+# consistency with the legacy data
+# 2025 data also classifies railroad as RR whereas historically they've been
+# classed as 0 so we must replace those values as well
+pin_tax_roll <- pin_tax_roll %>%
+  mutate(
+    class = replace(class, class == "000", "0"),
+    class = replace(class, class == "RR", "0")
+  )
 
 # Fill missing values in the legacy (pre-2023) PIN data with values from Athena
 pin_legacy_fill <- pin_legacy %>%
