@@ -403,12 +403,11 @@ known_unmatched_agencies <- c(
   "020290003",
   "030210001",
   "050200001"
-
 )
 
 # Remove any agency_fund rows that don't have a matching (year, agency_num)
 # in the agency table, to avoid FOREIGN KEY constraint failures when loading
-# into the PTAXSIM SQLite database. 
+# into the PTAXSIM SQLite database.
 unexpected_unmatched <- agency_fund %>%
   anti_join(agency, by = c("year", "agency_num")) %>%
   filter(!agency_num %in% known_unmatched_agencies) %>%
