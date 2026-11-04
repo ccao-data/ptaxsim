@@ -271,7 +271,10 @@ pin_tax_roll <- pin_tax_roll %>%
   mutate(
     class = replace(class, class == "000", "0"),
     class = replace(class, class == "RR", "0")
-  )
+  ) %>%
+  # A PIN that has not existed since 2018 shows up in the 2025 tax roll with
+  # NA values for av_mailed, av_certified, av_board which causes a test failure
+  filter(pin != "28224230088002")
 
 # Fill missing values in the legacy (pre-2023) PIN data with values from Athena
 pin_legacy_fill <- pin_legacy %>%
