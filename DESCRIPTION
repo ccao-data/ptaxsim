@@ -33,7 +33,6 @@ Suggests:
     devtools,
     dplyr,
     DT,
-    geoarrow,
     ggplot2,
     ggspatial (>= 1.1.11),
     here,
@@ -54,6 +53,7 @@ Suggests:
     rmarkdown,
     scales,
     sf,
+    sfarrow,
     snakecase,
     stringr,
     tabulapdf,
@@ -64,7 +64,6 @@ Suggests:
 Depends:
     R (>= 3.5)
 Remotes:
-    paleolimbot/geoarrow,
     ropensci/tabulapdf,
     DyfanJones/noctua@*release
 Config/Requires_DB_Version: 2025.0.0

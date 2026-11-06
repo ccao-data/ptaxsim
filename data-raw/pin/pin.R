@@ -2,7 +2,6 @@ library(arrow)
 library(aws.s3)
 library(DBI)
 library(dplyr)
-library(geoarrow)
 library(glue)
 library(noctua)
 library(odbc)
@@ -415,10 +414,12 @@ remote_bucket_geometry <- "s3://ccao-data-warehouse-us-east-1/spatial/parcel"
 pin_geometry_df_full <- arrow::open_dataset(remote_bucket_geometry) %>%
   filter(year >= 2006 & year <= max_year) %>%
   select(year, x = lon, y = lat, pin10, town_code, geometry) %>%
-  geoarrow_collect_sf() %>%
+  sfarrow::read_sf_dataset() %>%
   # Fill missing townships, prefering the newest available
   arrange(pin10, year) %>%
-  fill(town_code, .direction = "updown", .by = pin10) %>%
+  group_by(pin10) %>%
+  fill(town_code, .direction = "updown") %>%
+  ungroup() %>%
   # For remaining missing town codes, replace with 99 to make looping through
   # them below easier.
   mutate(town_code = replace_na(town_code, 99))
@@ -457,8 +458,8 @@ pin_geometry_df_raw <- map(unique(pin_geometry_df_full$town_code), \(town) {
   bind_rows()
 
 # Write the raw PIN geometry to S3
-geoarrow::write_geoparquet(
+sfarrow::st_write_parquet(
   pin_geometry_df_raw,
-  sink = remote_path_pin_geometry_raw,
+  dsn = remote_path_pin_geometry_raw,
   compression = "zstd"
 )
