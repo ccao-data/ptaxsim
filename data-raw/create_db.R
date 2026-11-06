@@ -145,7 +145,7 @@ for (dataset in datasets) {
 }
 
 # Load geometry tables manually
-pin_geometry_raw <- geoarrow::read_geoparquet_sf(
+pin_geometry_raw <- sfarrow::st_read_parquet(
   file.path(remote_bucket, "pin_geometry_raw", "part-0.parquet")
 ) %>%
   mutate(wkt = sf::st_as_text(geometry)) %>%
