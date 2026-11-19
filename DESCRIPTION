@@ -64,8 +64,7 @@ Suggests:
 Depends:
     R (>= 3.5)
 Remotes:
-    ropensci/tabulapdf,
-    DyfanJones/noctua@*release
+    ropensci/tabulapdf
 Config/Requires_DB_Version: 2025.0.0
 Config/Wants_DB_Version: 2025.0.0
 Config/testthat/edition: 3
