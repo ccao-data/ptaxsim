@@ -16,15 +16,15 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Setup pandoc
-        uses: r-lib/actions/setup-pandoc@a51a8012b0aab7c32ef9d19bf54da93f3254335e # v2.12.0
+        uses: r-lib/actions/setup-pandoc@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
 
       - name: Setup R
-        uses: r-lib/actions/setup-r@a51a8012b0aab7c32ef9d19bf54da93f3254335e # v2.12.0
+        uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
         with:
           use-public-rspm: true
 
       - name: Setup R dependencies
-        uses: r-lib/actions/setup-r-dependencies@a51a8012b0aab7c32ef9d19bf54da93f3254335e # v2.12.0
+        uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2.14.0
         with:
           extra-packages: any::pkgdown, local::.
           needs: website
@@ -48,15 +48,22 @@ jobs:
 
       - name: Install docs build dependencies
         run: npm install -g @mermaid-js/mermaid-cli
+        env:
+          # We use the runner's system Chrome instead (see below)
+          PUPPETEER_SKIP_DOWNLOAD: "true"
 
       - name: Prepare Mermaid assets for docs
         run: |
+          # Use the runner's system Chrome rather than the one Puppeteer
+          # downloads. Ubuntu's AppArmor user namespace restrictions block the
+          # Chromium sandbox unless Chrome runs under an AppArmor profile that
+          # allows user namespaces. Ubuntu ships such a profile, but it only
+          # attaches automatically to the system Chrome install. See:
+          # https://chromium.googlesource.com/chromium/src/+/main/docs/security/apparmor-userns-restrictions.md
+          puppeteer_config="$RUNNER_TEMP/puppeteer-config.json"
+          echo '{"executablePath": "/usr/bin/google-chrome"}' > "$puppeteer_config"
           for file in inst/mermaid/*.mmd; do
-            # Confine the mermaid process to an AppArmor profile, necessary on
-            # Ubuntu >= 23.10 to work around new AppArmor rules that block the
-            # Puppeteer sandbox (used by mermaid) from working. See:
-            # https://github.com/mermaid-js/mermaid-cli/issues/730#issuecomment-2408615110
-            aa-exec --profile=chrome mmdc -i "$file" -o "${file/.mmd/.svg}"
+            mmdc -p "$puppeteer_config" -i "$file" -o "${file/.mmd/.svg}"
           done
           mkdir -p docs/mermaid
           mv inst/mermaid/*.svg docs/mermaid
