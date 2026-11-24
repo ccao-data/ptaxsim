@@ -28,3 +28,4 @@ labels: release
 - [ ] Use the S3 console (or API) to make the database file public via an ACL
 - [ ] Push the code updates on GitHub. Wait for the resulting CI pipeline to finish
 - [ ] If there are no pipeline errors, merge the branch to master
+- [ ] Run the Glue crawler called `ccao-data-ptaxsim-crawler` to update the `tax` tables in Athena with the latest year of data (not necessary to release the database, but useful for internal analysis) 
