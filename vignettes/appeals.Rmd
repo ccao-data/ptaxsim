@@ -394,11 +394,17 @@ There's a significant drop in the median commercial property AV due to appeals, 
 Now that we've looked at AVs, we can also use PTAXSIM to examine the impact of appeals on tax bills. To do so, we'll first calculate bills at each stage of assessment. The bills for the `mailed` and `certified` stages are counterfactual; they represent estimates of what bills ***would have been*** at each stage if no further appeals were granted. The `board` stage bills are the actual bills received by property owners.
 
 ```{r}
+# Before we start calculating tax bills for each stage, pre-compute a few
+# datatables that we will reuse across stages
+chi_pin_dt_actual <- lookup_pin(2024, chi_pins$pin, stage = "clerk")
+chi_pin_dt_mailed <- lookup_pin(2024, chi_pins$pin, stage = "mailed")
+chi_pin_ids <- unique(chi_pins$pin)
+chi_pin_tax_codes <- lookup_tax_code(2024, chi_pin_ids)
+
 # Calculate tax bills from 2024 at each stage of appeal. Note that recalculating
 # bills with counterfactual AVs also requires recalculating the base of each
 # taxing district
 chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
-  chi_pin_dt_actual <- lookup_pin(2024, chi_pins$pin, stage = "clerk")
   chi_pin_dt_stage <- lookup_pin(
     2024,
     chi_pins$pin,
@@ -422,7 +428,7 @@ chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
     ) %>%
     left_join(chi_pins) %>%
     mutate(
-      tax_code = lookup_tax_code(2024, pin),
+      tax_code = chi_pin_tax_codes[match(pin, chi_pin_ids)],
       exe_total = rowSums(across(starts_with("exe_"))),
       # We want to first calculate taxable EAV which is EAV minus exemptions.
       # The stage taxable EAV should be the same as the actual taxable EAV
@@ -495,22 +501,23 @@ chi_bills_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
     pin_dt = chi_pin_dt_stage,
     agency_dt = chi_agency_dt
   ) %>%
+    group_by(year, pin, class) %>%
+    summarize(bill_total = sum(final_tax), .groups = "drop") %>%
     mutate(stage = x)
 })
 
 # Append unaltered 2023 bills, again as a starting point for our index
 chi_bills_all <- tax_bill(2023, chi_pins$pin) %>%
+  group_by(year, pin, class) %>%
+  summarize(bill_total = sum(final_tax), .groups = "drop") %>%
   mutate(stage = "board") %>%
   bind_rows(chi_bills_all)
 ```
 
-We now have two sets of bills: the real bills from each `board` stage, and the counterfactual bills from the `mailed` and `certified` stages. Each bill from `tax_bill()` is broken out into per-district line items. In order to visualize the changes in bills, we first collapse the bills into their totals, then aggregate and index them in the same way we did for AVs.
+We now have two sets of bills: the real bills from each `board` stage, and the counterfactual bills from the `mailed` and `certified` stages. Each bill from `tax_bill()` is broken out into per-district line items, which we collapsed into one total per PIN above. In order to visualize the changes in bills, we aggregate and index these totals in the same way we did for AVs.
 
 ```{r}
 chi_bills_summ <- chi_bills_all %>%
-  group_by(year, pin, class, stage) %>%
-  summarize(bill_total = sum(final_tax)) %>%
-  ungroup() %>%
   mutate(major_class = substr(class, 1, 1)) %>%
   filter(major_class %in% c("2", "3", "5")) %>%
   mutate(
@@ -602,12 +609,6 @@ The plot above shows the zero-sum nature of assessment appeals. The large AV dec
 # Again we need to calculate bills at each stage of appeal. This time it's more
 # complicated since we need to exclude commercial appeals
 chi_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
-  chi_pin_dt_actual <- lookup_pin(2024, chi_pins$pin, stage = "clerk")
-  chi_pin_dt_mailed <- lookup_pin(
-    2024,
-    chi_pins$pin,
-    stage = "mailed",
-  )
   chi_pin_dt_stage <- lookup_pin(
     2024,
     chi_pins$pin,
@@ -630,7 +631,7 @@ chi_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
       ) %>%
       left_join(chi_pins) %>%
       mutate(
-        tax_code = lookup_tax_code(2024, pin),
+        tax_code = chi_pin_tax_codes[match(pin, chi_pin_ids)],
         exe_total = rowSums(across(starts_with("exe_"))),
         # We want to first calculate taxable EAV which is EAV minus exemptions.
         # The stage taxable EAV should be the same as the actual taxable EAV
@@ -670,7 +671,7 @@ chi_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
       ) %>%
       left_join(chi_pins) %>%
       mutate(
-        tax_code = lookup_tax_code(2024, pin),
+        tax_code = chi_pin_tax_codes[match(pin, chi_pin_ids)],
         exe_total = rowSums(across(starts_with("exe_"))),
         # Because commercial parcels are not eligible for homestead exemptions
         # taxable_eav is the same as eav
@@ -740,10 +741,14 @@ chi_cntr_all <- purrr::map_dfr(c("mailed", "certified", "board"), function(x) {
     pin_dt = chi_pin_dt_combo,
     agency_dt = chi_agency_dt
   ) %>%
+    group_by(year, pin, class) %>%
+    summarize(bill_total = sum(final_tax), .groups = "drop") %>%
     mutate(stage = x)
 })
 
 chi_cntr_all <- tax_bill(2023, chi_pins$pin) %>%
+  group_by(year, pin, class) %>%
+  summarize(bill_total = sum(final_tax), .groups = "drop") %>%
   mutate(stage = "board") %>%
   bind_rows(chi_cntr_all)
 ```
@@ -752,9 +757,6 @@ We again have two sets of bills: real bills from the `mailed` stage, and counter
 
 ```{r}
 chi_cntr_summ <- chi_cntr_all %>%
-  group_by(year, pin, class, stage) %>%
-  summarize(bill_total = sum(final_tax)) %>%
-  ungroup() %>%
   mutate(major_class = substr(class, 1, 1)) %>%
   filter(major_class %in% c("2", "3", "5")) %>%
   mutate(
